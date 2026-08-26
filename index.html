@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cyber-Elemental Roguelike</title>
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="game-container">
+        <!-- Barra superior genérica -->
+        <div id="top-bar">
+            <button id="btn-inventory" class="inventory-btn" onclick="openInventory()">🎒 Inventario</button>
+            <div id="scrap-display">Chatarra: 0 ⚙️</div>
+        </div>
+
+        <!-- Pantalla de Inicio -->
+        <div id="screen-start" class="screen active">
+            <div class="start-header">
+                <div class="sub-header-badge">SISTEMA DE DESPLIEGUE // ROGUELIKE v2.0</div>
+                <h1 class="game-title">CYBER-ELEMENTAL</h1>
+                <p class="start-instruction">Configura tu unidad táctica y armamento inicial para la incursión</p>
+            </div>
+            
+            <div class="selector-container">
+                <!-- Selector de Robot -->
+                <div class="selector-box" id="box-robot">
+                    <div class="box-header">
+                        <span class="box-title">🤖 UNIDAD // CHASIS</span>
+                        <span id="robot-page-indicator" class="page-pill">1 / 4</span>
+                    </div>
+                    <div class="carousel">
+                        <button id="btn-prev-robot" class="carousel-nav-btn" title="Anterior Chasis">◀</button>
+                        <div id="robot-preview" class="preview-area"></div>
+                        <button id="btn-next-robot" class="carousel-nav-btn" title="Siguiente Chasis">▶</button>
+                    </div>
+                </div>
+
+                <!-- Selector de Arma -->
+                <div class="selector-box" id="box-weapon">
+                    <div class="box-header">
+                        <span class="box-title">⚔️ MÓDULO // ARMAMENTO</span>
+                        <span id="weapon-page-indicator" class="page-pill">1 / 4</span>
+                    </div>
+                    <div class="carousel">
+                        <button id="btn-prev-weapon" class="carousel-nav-btn" title="Anterior Arma">◀</button>
+                        <div id="weapon-preview" class="preview-area"></div>
+                        <button id="btn-next-weapon" class="carousel-nav-btn" title="Siguiente Arma">▶</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="start-footer">
+                <button id="btn-start" class="btn-start-game">
+                    <span class="btn-icon">⚡</span> COMENZAR INCURSIÓN <span class="btn-arrow">➔</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Pantalla del Mapa -->
+        <div id="screen-map" class="screen">
+            <div class="map-header-panel">
+                <div class="map-header-badge">🗼 SISTEMA DE NAVEGACIÓN // TORRE SECTORIAL</div>
+                <div class="map-title-row">
+                    <h2 class="map-main-title">TORRE CIBERNÉTICA</h2>
+                    <div class="map-floor-pill">
+                        <span class="pill-label">PISO ACTUAL:</span>
+                        <span id="current-floor" class="pill-val">1</span>
+                        <span class="pill-max">/ 10</span>
+                    </div>
+                </div>
+                
+                <!-- Leyenda Táctica de Nodos -->
+                <div class="map-legend-bar">
+                    <span class="legend-item"><span class="legend-icon">👾</span> Combate</span>
+                    <span class="legend-item"><span class="legend-icon">💀</span> Élite</span>
+                    <span class="legend-item"><span class="legend-icon">🎁</span> Tesoro</span>
+                    <span class="legend-item"><span class="legend-icon">🛒</span> Mercado</span>
+                    <span class="legend-item"><span class="legend-icon">⛺</span> Taller</span>
+                    <span class="legend-item"><span class="legend-icon">❓</span> Misterio</span>
+                    <span class="legend-item"><span class="legend-icon">👑</span> Jefe Final</span>
+                </div>
+            </div>
+            
+            <div id="map-container">
+                <!-- Nodos del mapa -->
+            </div>
+        </div>
+
+        <!-- Pantalla de Evento / Nodo -->
+        <div id="screen-event" class="screen">
+            <h2 id="event-title">Evento</h2>
+            <div id="event-content" class="emoji-graphic"></div>
+            <p id="event-description">Descripción del evento.</p>
+            <div id="event-actions" class="actions-container">
+                <!-- Botones de acción -->
+            </div>
+            <div id="team-status-event" class="team-status"></div>
+        </div>
+
+        <!-- Pantalla de Combate -->
+        <div id="screen-combat" class="screen">
+            <div id="combat-arena-bg" class="combat-arena">
+                <!-- Capa de piso holográfico -->
+                <div class="arena-floor-grid"></div>
+
+                <!-- Barra de Iniciativa / Cola de Turnos -->
+                <div id="combat-turn-queue" class="combat-turn-queue"></div>
+
+                <!-- Escuadrón Aliado (1 a 3 robots simultáneos) -->
+                <div id="combat-player-team" class="combat-player-team">
+                    <!-- Unidades aliadas generadas dinámicamente -->
+                </div>
+                
+                <!-- Combatiente Enemigo -->
+                <div class="combatant combat-enemy-container" id="combat-enemy">
+                    <!-- Barras de estado -->
+                    <div class="status-bars">
+                        <div class="buff-bar" id="enemy-buffs"></div>
+                        <div class="debuff-bar" id="enemy-debuffs"></div>
+                    </div>
+
+                    <div class="hit-effect-container" id="enemy-hit-container">
+                        <div class="combat-holo-platform enemy-platform"></div>
+                        <div class="combat-avatar-emoji" id="enemy-robot-emoji">👾</div>
+                    </div>
+                    <div class="stats combat-hud-card enemy-hud">
+                        <div class="hud-name-row">
+                            <div class="hud-name-container">
+                                <span id="enemy-robot-name" class="hud-robot-name">Enemigo</span>
+                                <span id="enemy-weapon-badge" class="hud-weapon-icon" style="display: none;"></span>
+                            </div>
+                            <span id="enemy-element" class="hud-element-badge">🔥</span>
+                        </div>
+                        <div class="hud-hp-row">
+                            <span class="hud-hp-label">HP</span>
+                            <span id="enemy-robot-hp" class="hud-hp-val">0/0</span>
+                        </div>
+                        <progress id="enemy-robot-hp-bar" value="0" max="100"></progress>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Botones de Acción -->
+            <div id="combat-actions" class="combat-actions-bar">
+                <!-- Habilidades del robot activo -->
+            </div>
+            
+            <!-- Panel Inferior: Log de Combate + Botón Historial -->
+            <div class="combat-bottom-panel">
+                <div class="combat-log-container">
+                    <div class="combat-log-header">
+                        <span class="log-terminal-icon">📟</span> REGISTRO TÁCTICO DE COMBATE
+                    </div>
+                    <div id="combat-log" class="log-box-styled"></div>
+                </div>
+                <button class="btn-history-styled" onclick="openCombatHistory()" title="Ver historial completo">
+                    <span class="history-icon">📜</span>
+                    <span class="history-text">HISTORIAL</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Modal del Historial de Combate -->
+        <div id="combat-history-modal" class="modal" style="display:none;">
+            <div class="modal-content">
+                <span class="close-btn" onclick="closeCombatHistory()">×</span>
+                <h2>Historial del Combate</h2>
+                <div id="history-log-list" style="max-height: 50vh; overflow-y: auto; text-align: left; padding: 10px; background: rgba(0,0,0,0.5); border-radius: 4px; font-size: 14px;">
+                </div>
+            </div>
+        </div>
+
+        <!-- Pantalla Post-Batalla -->
+        <div id="screen-post-battle" class="screen">
+            <div class="post-battle-container">
+                <div class="post-header-badge">SISTEMA DE SEGURIDAD // SECTOR ASEGURADO</div>
+                <h1 class="post-battle-title">¡VICTORIA TÁCTICA!</h1>
+                
+                <div class="post-summary-card">
+                    <div class="defeated-hero-box">
+                        <div class="defeated-holo-platform"></div>
+                        <div class="defeated-avatar" id="defeated-emoji">💀</div>
+                        <span class="defeated-label">NEUTRALIZADO</span>
+                    </div>
+                    
+                    <div class="post-rewards-content">
+                        <div id="post-rewards-badges" class="rewards-badges-row"></div>
+                        <div id="post-battle-desc" class="post-battle-log"></div>
+                    </div>
+                </div>
+
+                <div id="post-battle-actions" class="post-actions-row">
+                    <!-- Botones generados dinámicamente -->
+                </div>
+
+                <div class="team-section-container">
+                    <div class="team-section-header">
+                        <span class="team-section-icon">🛡️</span> ESTADO OPERATIVO DEL ESCUADRÓN
+                    </div>
+                    <div id="team-status-post" class="team-status-grid"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pantalla Game Over -->
+        <div id="screen-game-over" class="screen">
+            <div class="endgame-container gameover-container">
+                <div class="endgame-header-badge alert-badge">🚨 ALERTA CRÍTICA // FALLO DE ESCUADRÓN</div>
+                <h1 class="endgame-title gameover-title">SISTEMAS OFFLINE</h1>
+                <p class="endgame-subtitle">Todo el personal robótico de la incursión ha sido destruido en combate.</p>
+                
+                <div class="endgame-stats-card">
+                    <div class="endgame-stat-item">
+                        <span class="endgame-stat-label">Piso Máximo</span>
+                        <span id="gameover-floor" class="endgame-stat-val">1</span>
+                    </div>
+                    <div class="endgame-stat-item">
+                        <span class="endgame-stat-label">Chatarra Acumulada</span>
+                        <span id="gameover-scrap" class="endgame-stat-val">0 ⚙️</span>
+                    </div>
+                    <div class="endgame-stat-item">
+                        <span class="endgame-stat-label">Robots Caídos</span>
+                        <span id="gameover-team-count" class="endgame-stat-val">1 💀</span>
+                    </div>
+                </div>
+
+                <button class="btn-endgame-cta btn-gameover" onclick="location.reload()">
+                    <span>🔄 REINICIAR SIMULACIÓN</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Pantalla Victoria Final -->
+        <div id="screen-victory" class="screen">
+            <div class="endgame-container victory-container">
+                <div class="endgame-header-badge victory-badge">🏆 PROTOCOLO COMPLETADO // SECTOR LIBERADO</div>
+                <h1 class="endgame-title victory-title">¡SECTOR ASEGURADO!</h1>
+                <p class="endgame-subtitle">Has derrotado al Titán Supremo y restaurado la integridad de la red neuronal.</p>
+                
+                <div class="endgame-stats-card">
+                    <div class="endgame-stat-item">
+                        <span class="endgame-stat-label">Sector Conquistado</span>
+                        <span class="endgame-stat-val" style="color: #66fcf1;">NIVEL 10 ✔</span>
+                    </div>
+                    <div class="endgame-stat-item">
+                        <span class="endgame-stat-label">Chatarra Total</span>
+                        <span id="victory-scrap" class="endgame-stat-val">0 ⚙️</span>
+                    </div>
+                    <div class="endgame-stat-item">
+                        <span class="endgame-stat-label">Supervivientes</span>
+                        <span id="victory-team-count" class="endgame-stat-val">1 🤖</span>
+                    </div>
+                </div>
+
+                <div id="victory-team-roster" class="victory-roster-row"></div>
+
+                <button class="btn-endgame-cta btn-victory" onclick="location.reload()">
+                    <span>🌟 NUEVA INCURSIÓN</span>
+                </button>
+            </div>
+        </div>
+        
+        <!-- Modal de Inventario -->
+        <div id="inventory-modal" class="modal" style="display: none;">
+            <div class="modal-content inventory-modal-box">
+                <button class="close-btn" onclick="closeInventory()" title="Cerrar ventana">&times;</button>
+                
+                <div class="inventory-modal-header">
+                    <span class="inv-header-badge">🎒 LOGÍSTICA // GESTIÓN DE ESCUADRÓN</span>
+                    <h2 class="inv-modal-title">MOCHILA Y ARSENAL</h2>
+                </div>
+
+                <!-- Sección: Escuadrón Actual -->
+                <div class="inv-section-title-row">
+                    <span class="inv-section-icon">🛡️</span>
+                    <span class="inv-section-title">UNIDADES DEL ESCUADRÓN</span>
+                </div>
+                <div id="inventory-team-list" class="inventory-team-grid"></div>
+
+                <!-- Sección: Almacén de Mochila -->
+                <div class="inv-section-title-row" style="margin-top: 18px;">
+                    <span class="inv-section-icon">📦</span>
+                    <span class="inv-section-title">ALMACÉN DE OBJETOS Y ARSENAL</span>
+                </div>
+                
+                <div class="inventory-items-container">
+                    <!-- 1. Armas -->
+                    <div class="inv-category-block">
+                        <div class="inv-cat-header">
+                            <span class="cat-icon">⚔️</span> ARMAS Y EQUIPO
+                        </div>
+                        <div id="inventory-weapons-list" class="inv-cards-grid"></div>
+                    </div>
+                    
+                    <!-- 2. Chips -->
+                    <div class="inv-category-block">
+                        <div class="inv-cat-header">
+                            <span class="cat-icon">💾</span> CHIPS DE HABILIDAD
+                        </div>
+                        <div id="inventory-chips-list" class="inv-cards-grid"></div>
+                    </div>
+                    
+                    <!-- 3. Consumibles -->
+                    <div class="inv-category-block">
+                        <div class="inv-cat-header">
+                            <span class="cat-icon">🧪</span> SUMINISTROS Y CONSUMIBLES
+                        </div>
+                        <div id="inventory-consumables-list" class="inv-cards-grid"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/constants.js"></script>
+    <script src="js/database.js"></script>
+    <script src="js/eventsDatabase.js"></script>
+    <script src="js/Robot.js"></script>
+    <script src="js/teamManager.js"></script>
+    <script src="js/inventory.js"></script>
+    <script src="js/mapGenerator.js"></script>
+    <script src="js/combatSystem.js"></script>
+    <script src="js/eventHandler.js"></script>
+    <script src="js/postBattle.js"></script>
+    <script src="js/main.js"></script>
+</body>
+</html>
