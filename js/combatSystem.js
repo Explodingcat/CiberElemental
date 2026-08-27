@@ -229,10 +229,10 @@ function renderTurnQueue(currentActor) {
 
 function formatStatusLabel(type) {
     switch (type) {
-        case 'MARCA_FUEGO': return 'Marca Fuego';
-        case 'MARCA_AGUA': return 'Marca Agua';
-        case 'MARCA_TIERRA': return 'Marca Tierra';
-        case 'MARCA_AIRE': return 'Marca Aire';
+        case 'MARCA_FUEGO': return 'Marca de Fuego 🔥';
+        case 'MARCA_AGUA': return 'Marca de Agua 💦';
+        case 'MARCA_TIERRA': return 'Marca de Tierra 🪨';
+        case 'MARCA_AIRE': return 'Marca de Aire 💨';
         case 'BURN': return 'Quemadura';
         case 'STUN': return 'Aturdimiento';
         case 'BARRIER': return 'Barrera Plasma';
@@ -240,7 +240,7 @@ function formatStatusLabel(type) {
         case 'SLOW': return 'Ralentizado';
         default: 
             if (type && type.startsWith('MARCA_')) {
-                return `Marca ${type.replace('MARCA_', '')}`;
+                return `Marca de ${type.replace('MARCA_', '')}`;
             }
             return type;
     }
@@ -322,13 +322,23 @@ async function advanceTurnQueue() {
         
         // Procesar estados alterados de todos los aliados y enemigo
         let roundMessages = [];
-        GAME_STATE.team.forEach(r => {
+        GAME_STATE.team.forEach((r, idx) => {
             if (!r.isOffline && r.hp > 0) {
-                roundMessages.push(...r.updateStatuses());
+                let prevHp = r.hp;
+                let msgs = r.updateStatuses();
+                roundMessages.push(...msgs);
+                if (prevHp > r.hp) {
+                    showDamagePopup(prevHp - r.hp, false, idx, false);
+                }
             }
         });
         if (combatState.enemy && combatState.enemy.hp > 0) {
-            roundMessages.push(...combatState.enemy.updateStatuses());
+            let prevHp = combatState.enemy.hp;
+            let msgs = combatState.enemy.updateStatuses();
+            roundMessages.push(...msgs);
+            if (prevHp > combatState.enemy.hp) {
+                showDamagePopup(prevHp - combatState.enemy.hp, true, 0, false);
+            }
         }
         roundMessages.forEach(msg => logCombat(msg));
         
@@ -604,6 +614,29 @@ function showComboPopup(reaction, isTargetEnemy, targetIndex = 0) {
     setTimeout(() => popup.remove(), 1200);
 }
 
+function showDamagePopup(amount, isTargetEnemy, targetIndex = 0, isCrit = false) {
+    let containerId = isTargetEnemy ? 'enemy-hit-container' : `player-hit-container-${targetIndex}`;
+    const container = document.getElementById(containerId);
+    if (!container) return;
+    
+    const popup = document.createElement('div');
+    popup.className = 'damage-popup-banner' + (isCrit ? ' damage-popup-crit' : '');
+    
+    const valText = amount > 0 ? `-${amount}` : (amount === 0 ? `🛡️ 0` : `${amount}`);
+    
+    popup.innerHTML = `
+        ${isCrit ? '<span class="damage-popup-crit-tag">¡CRÍTICO!</span>' : ''}
+        <span class="damage-popup-val">${valText}</span>
+    `;
+    container.appendChild(popup);
+    
+    setTimeout(() => {
+        if (container.contains(popup)) {
+            popup.remove();
+        }
+    }, 1100);
+}
+
 function processElementalCombo(attackElement, defender, attacker, baseDmg) {
     let reaction = null;
     let finalDmg = baseDmg;
@@ -706,10 +739,12 @@ function executeTurn(attacker, skill, defender, isAttackerAlly, allyIndex = 0) {
             
             let mult = getMultiplier(attackElement, defender.element);
             let baseDmg = Math.floor(attacker.atk * skill.power * mult);
+            let isCrit = false;
             
             // Espada: 5% Probabilidad de Golpe Crítico (+50% Daño)
             if (attacker.equippedWeapon && attacker.equippedWeapon.type === WEAPON_TYPES.ESPADA && Math.random() < 0.05) {
                 baseDmg = Math.floor(baseDmg * 1.5);
+                isCrit = true;
                 logCombat(`🗡️💥 ¡Impacto Crítico de Espada (+50% Daño)!`);
             }
             
@@ -731,12 +766,16 @@ function executeTurn(attacker, skill, defender, isAttackerAlly, allyIndex = 0) {
             let multMsg = mult > 1 ? " ¡Súper efectivo!" : (mult < 1 ? " Poco efectivo..." : "");
             logCombat(`- Inflige ${dmgDealt} de daño a ${defender.name}.${multMsg}`);
             
+            // Mostrar número de daño acentuado en amarillo
+            showDamagePopup(dmgDealt, isAttackerAlly, allyIndex, isCrit);
+            
             // Mutador Élite Espinas
             if (defender.mutator && defender.mutator.type === 'ESPINAS' && dmgDealt > 0) {
                 let recoil = Math.floor(dmgDealt * 0.15);
                 if (recoil > 0) {
                     attacker.takeDamage(recoil, 0, true);
                     logCombat(`💀 [Élite] Espinas devuelve ${recoil} daño a ${attacker.name}.`);
+                    setTimeout(() => showDamagePopup(recoil, !isAttackerAlly, allyIndex, false), 200);
                 }
             }
             
@@ -760,7 +799,10 @@ function executeTurn(attacker, skill, defender, isAttackerAlly, allyIndex = 0) {
                     } else {
                         let dmgDealt2 = defender.takeDamage(baseDmg, penetrationRatio, false, attacker);
                         logCombat(`- Inflige ${dmgDealt2} de daño extra a ${defender.name}.`);
-                        setTimeout(() => showHitAnimation(attackElement, isAttackerAlly, allyIndex), 200);
+                        setTimeout(() => {
+                            showHitAnimation(attackElement, isAttackerAlly, allyIndex);
+                            showDamagePopup(dmgDealt2, isAttackerAlly, allyIndex, false);
+                        }, 200);
                     }
                 }
             }

@@ -42,6 +42,10 @@ function initPostBattle(enemy) {
             droppedWeapon = generateRandomWeapon(enemy.element);
             droppedWeapon.isUpgraded = true;
             droppedWeapon.name += " +1";
+            if (droppedWeapon.type === WEAPON_TYPES.DAGA) droppedWeapon.desc = '40% prob. doble ataque';
+            if (droppedWeapon.type === WEAPON_TYPES.HACHA) droppedWeapon.desc = 'Perfora 75% de barreras y defensas';
+            if (droppedWeapon.type === WEAPON_TYPES.BACULO) droppedWeapon.desc = 'Cura 5% HP al final del turno';
+            if (droppedWeapon.type === WEAPON_TYPES.ESPADA) droppedWeapon.desc = '+30% Daño + 5% Crítico';
         } else {
             let chipKeys = Object.keys(ITEM_TYPES).filter(k => k.includes('CHIP'));
             let randomChipType = ITEM_TYPES[chipKeys[Math.floor(Math.random() * chipKeys.length)]];

@@ -54,14 +54,14 @@ El juego opera bajo una rueda de afinidades elemental táctica:
 ### Acciones por Turno
 1. **⚔️ Ataque / Habilidad:** Ejecuta una habilidad básica (0 CD) o especial del robot activo.
 2. **🛡️ Defender:** Recupera **5% del HP Máximo** y **reduce a la mitad (50%)** todo el daño recibido ese turno.
-3. **🎒 Objeto:** Usa consumibles de la mochila de forma **gratuita** (no consume turno).
+3. **🎒 Objeto:** Usa consumibles tácticos desde la mochila (los Nanobots y Núcleos de Sobrecarga son acciones gratuitas; la Bomba PEM gasta el turno de acción).
 
 ---
 
 ## 3. Matriz Completa de Reacciones y Marcas Elementales
 
 ### ¿Cómo se aplican las marcas?
-Toda **Habilidad Especial con Cooldown** (incluyendo habilidades nativas y las aprendidas por **Chips**) aplica una **Marca Elemental** (`MARCA_FUEGO`, `MARCA_AGUA`, `MARCA_TIERRA`, `MARCA_AIRE`) al objetivo durante **3 turnos**.
+Toda **Habilidad Especial con Cooldown** (incluyendo habilidades nativas y las aprendidas por **Chips**) aplica una **Marca Elemental** (**Marca de Fuego 🔥, Marca de Agua 💦, Marca de Tierra 🪨, Marca de Aire 💨**) al objetivo durante **3 turnos**.
 
 > [!IMPORTANT]
 > Un combatiente solo puede tener **1 Marca Elemental activa** a la vez. Aplicar una nueva sobreescribe la anterior.
@@ -70,19 +70,19 @@ Toda **Habilidad Especial con Cooldown** (incluyendo habilidades nativas y las a
 
 | Marca en el Defensor | Elemento Atacante | Nombre del Combo | Efecto Táctico de la Reacción |
 | :--- | :---: | :--- | :--- |
-| 💦 **MARCA_AGUA** | 🔥 **FUEGO** | **¡VAPORIZACIÓN!** | Daño crítico duplicado (**2.0x / 200% de Daño**). |
-| 💦 **MARCA_AGUA** | 🪨 **TIERRA** | **¡LODO!** | Inflige 1.3x Daño y **Aturde (STUN)** al enemigo por 1 turno completo. |
-| 💦 **MARCA_AGUA** | 💨 **AIRE** | **¡VENTISCA!** | Inflige **1.5x Daño** con choque de escarcha gélida. |
-| 🔥 **MARCA_FUEGO** | 💨 **AIRE** | **¡TORMENTA ÍGNEA!** | Inflige **1.4x Daño** y provoca **Quemadura Grave (BURN)** (drena HP por 2 turnos). |
-| 🔥 **MARCA_FUEGO** | 💦 **AGUA** | **¡CHOQUE TÉRMICO!** | Extinción explosiva que inflige **1.75x de Daño**. |
-| 🔥 **MARCA_FUEGO** | 🪨 **TIERRA** | **¡ERUPCIÓN DE MAGMA!** | Inflige **1.5x Daño** e inflige estado de Quemadura. |
-| 🪨 **MARCA_TIERRA** | 🔥 **FUEGO** | **¡CRISTALIZACIÓN!** | Inflige **1.3x Daño** y otorga al atacante una **Barrera de Plasma** (bloquea 100% del próximo golpe). |
-| 🪨 **MARCA_TIERRA** | 💦 **AGUA** | **¡EROSIÓN!** | Inflige **1.5x Daño** y el atacante **absorbe y cura un 15% de su HP Máximo**. |
-| 🪨 **MARCA_TIERRA** | 💨 **AIRE** | **¡TORMENTA DE ARENA!** | Inflige 1.4x Daño y **Aturde (STUN)** al enemigo durante 1 turno. |
-| 💨 **MARCA_AIRE** | 🔥 **FUEGO** | **¡DEFLAGRACIÓN!** | Inflige **1.6x Daño** masivo y aplica estado de Quemadura por 2 turnos. |
-| 💨 **MARCA_AIRE** | 💦 **AGUA** | **¡CICLÓN TORMENTOSO!** | Desata un vórtice acuático que inflige **1.6x Daño**. |
-| 💨 **MARCA_AIRE** | 🪨 **TIERRA** | **¡COLAPSO SÍSMICO!** | Inflige **1.5x Daño** y derriba al objetivo dejándolo **Aturdido (STUN)** por 1 turno. |
-| 🛡️ *(Barrera Activa)* | *(Cualquiera)* | **RETRIBUCIÓN DE BARRERA** | Si un enemigo impacta contra tu Barrera, esta absorbe el 100% del daño y castiga al agresor aplicándole **3 marcas** del elemento de tu robot defensor. |
+| 💦 **Marca de Agua** | 🔥 **FUEGO** | **¡VAPORIZACIÓN!** | Daño crítico duplicado (**2.0x / 200% de Daño**). |
+| 💦 **Marca de Agua** | 🪨 **TIERRA** | **¡LODO!** | Inflige 1.3x Daño y **Aturde (STUN)** al enemigo por 1 turno completo. |
+| 💦 **Marca de Agua** | 💨 **AIRE** | **¡VENTISCA!** | Inflige **1.5x Daño** con choque de escarcha gélida. |
+| 🔥 **Marca de Fuego** | 💨 **AIRE** | **¡TORMENTA ÍGNEA!** | Inflige **1.4x Daño** y provoca **Quemadura Grave (BURN)** (drena HP por 2 turnos). |
+| 🔥 **Marca de Fuego** | 💦 **AGUA** | **¡CHOQUE TÉRMICO!** | Extinción explosiva que inflige **1.75x de Daño**. |
+| 🔥 **Marca de Fuego** | 🪨 **TIERRA** | **¡ERUPCIÓN DE MAGMA!** | Inflige **1.5x Daño** e inflige estado de Quemadura. |
+| 🪨 **Marca de Tierra** | 🔥 **FUEGO** | **¡CRISTALIZACIÓN!** | Inflige **1.3x Daño** y otorga al atacante una **Barrera de Plasma** (bloquea 100% del próximo golpe). |
+| 🪨 **Marca de Tierra** | 💦 **AGUA** | **¡EROSIÓN!** | Inflige **1.5x Daño** y el atacante **absorbe y cura un 15% de su HP Máximo**. |
+| 🪨 **Marca de Tierra** | 💨 **AIRE** | **¡TORMENTA DE ARENA!** | Inflige 1.4x Daño y **Aturde (STUN)** al enemigo durante 1 turno. |
+| 💨 **Marca de Aire** | 🔥 **FUEGO** | **¡DEFLAGRACIÓN!** | Inflige **1.6x Daño** masivo y aplica estado de Quemadura por 2 turnos. |
+| 💨 **Marca de Aire** | 💦 **AGUA** | **¡CICLÓN TORMENTOSO!** | Desata un vórtice acuático que inflige **1.6x Daño**. |
+| 💨 **Marca de Aire** | 🪨 **TIERRA** | **¡COLAPSO SÍSMICO!** | Inflige **1.5x Daño** y derriba al objetivo dejándolo **Aturdido (STUN)** por 1 turno. |
+| 🛡️ *(Barrera Activa)* | *(Cualquiera)* | **RETRIBUCIÓN DE BARRERA** | Si un enemigo impacta contra tu Barrera, esta absorbe el daño y contraataca aplicando la **Marca Elemental** del robot defensor al agresor durante **3 turnos**. |
 
 ---
 
@@ -95,10 +95,10 @@ Los **Chips Elementales (💾)** permiten a un robot aprender habilidades de **o
 
 | Chip | Icono | Habilidad Añadida | Elemento | CD | Potencia | Efecto Táctico y Marca |
 | :--- | :---: | :--- | :---: | :---: | :---: | :--- |
-| **Chip de Fuego** | 💾 | **Lanzallamas** | 🔥 **FUEGO** | 3 | **2.0x ATQ** | Inflige daño pesado de Fuego y aplica `MARCA_FUEGO` por 3 turnos. Prepara *Tormenta Ígnea* o detona *Vaporización*. |
-| **Chip de Agua** | 💾 | **Geyser** | 💦 **AGUA** | 3 | **2.0x ATQ** | Chorro de alta presión que aplica `MARCA_AGUA` por 3 turnos. Abre paso a *Vaporización* o *Lodo*. |
-| **Chip de Tierra** | 💾 | **Fisura** | 🪨 **TIERRA** | 3 | **2.0x ATQ** | Quiebre sísmico que inflige daño contundente y aplica `MARCA_TIERRA` por 3 turnos. |
-| **Chip de Aire** | 💾 | **Tornado** | 💨 **AIRE** | 3 | **2.0x ATQ** | Vórtice cortante de viento que aplica `MARCA_AIRE` por 3 turnos. |
+| **Chip de Fuego** | 💾 | **Lanzallamas** | 🔥 **FUEGO** | 3 | **2.0x ATQ** | Inflige daño pesado de Fuego y aplica **Marca de Fuego** por 3 turnos. Prepara *Tormenta Ígnea* o detona *Vaporización*. |
+| **Chip de Agua** | 💾 | **Geyser** | 💦 **AGUA** | 3 | **2.0x ATQ** | Chorro de alta presión que aplica **Marca de Agua** por 3 turnos. Abre paso a *Vaporización* o *Lodo*. |
+| **Chip de Tierra** | 💾 | **Fisura** | 🪨 **TIERRA** | 3 | **2.0x ATQ** | Quiebre sísmico que inflige daño contundente y aplica **Marca de Tierra** por 3 turnos. Prepara *Cristalización*. |
+| **Chip de Aire** | 💾 | **Tornado** | 💨 **AIRE** | 3 | **2.0x ATQ** | Vórtice cortante de viento que aplica **Marca de Aire** por 3 turnos. Prepara *Deflagración*. |
 
 ---
 
