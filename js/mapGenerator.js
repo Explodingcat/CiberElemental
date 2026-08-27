@@ -296,3 +296,25 @@ function handleNodeSelection(node) {
             break;
     }
 }
+
+// Redibujar conexiones SVG automáticamente cuando cambia el tamaño de la ventana o la orientación del móvil
+let mapResizeTimeout = null;
+window.addEventListener('resize', () => {
+    clearTimeout(mapResizeTimeout);
+    mapResizeTimeout = setTimeout(() => {
+        const mapScreen = document.getElementById('screen-map');
+        if (mapScreen && mapScreen.classList.contains('active')) {
+            drawLines();
+        }
+    }, 100);
+});
+
+window.addEventListener('orientationchange', () => {
+    setTimeout(() => {
+        const mapScreen = document.getElementById('screen-map');
+        if (mapScreen && mapScreen.classList.contains('active')) {
+            drawLines();
+        }
+    }, 200);
+});
+

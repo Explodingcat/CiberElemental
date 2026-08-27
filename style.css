@@ -88,8 +88,19 @@ span.elem-NEUTRO,
     filter: none !important;
 }
 
-body {
+html, body {
     margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+}
+
+body {
     font-family: 'Rajdhani', sans-serif;
     font-size: 18px;
     background-color: var(--bg-color);
@@ -98,6 +109,8 @@ body {
     justify-content: center;
     align-items: center;
     min-height: 100vh;
+    min-height: 100dvh;
+    box-sizing: border-box;
 }
 
 #game-container {
@@ -105,14 +118,15 @@ body {
     max-width: 1200px;
     height: 90vh;
     max-height: 850px;
-    min-width: 800px;
-    min-height: 600px;
     border: 1px solid var(--secondary-accent);
     border-radius: 12px;
     position: relative;
     overflow: hidden;
     background-color: var(--container-bg);
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8), 0 0 20px rgba(69, 162, 158, 0.15);
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
 }
 
 button {
@@ -129,6 +143,9 @@ button {
     text-transform: uppercase;
     letter-spacing: 1px;
     transition: all 0.2s ease-in-out;
+    touch-action: manipulation;
+    user-select: none;
+    -webkit-user-select: none;
 }
 
 button:hover:not(:disabled) {
@@ -147,11 +164,13 @@ button:disabled {
 
 .screen {
     display: none;
-    padding: 70px 30px 30px 30px;
+    padding: 65px 25px 25px 25px;
     height: 100%;
+    width: 100%;
     box-sizing: border-box;
     text-align: center;
     overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
 }
 
 /* Pantalla de Inicio Cyberpunk */
@@ -931,6 +950,59 @@ button:disabled {
     100% { opacity: 0; transform: scale(1.2); }
 }
 
+/* ==========================================================================
+   Pantalla de Evento / Nodo
+   ========================================================================== */
+
+#screen-event {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    padding-top: 65px;
+    padding-bottom: 25px;
+}
+
+#screen-event.active {
+    display: flex;
+}
+
+#event-title {
+    font-size: clamp(22px, 5vw, 30px);
+    font-weight: 800;
+    letter-spacing: 2px;
+    color: #fff;
+    margin: 4px 0 10px 0;
+    text-shadow: 0 0 15px rgba(102, 252, 241, 0.4);
+}
+
+.emoji-graphic {
+    font-size: clamp(48px, 12vw, 70px);
+    margin: 10px 0;
+    line-height: 1;
+    filter: drop-shadow(0 0 16px rgba(255, 255, 255, 0.35));
+    animation: heroFloat 3s ease-in-out infinite;
+}
+
+#event-description {
+    font-size: clamp(14px, 3.5vw, 17px);
+    color: #c5c6c7;
+    max-width: 600px;
+    line-height: 1.4;
+    margin: 6px 0 16px 0;
+}
+
+.actions-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin: 10px auto 16px auto;
+    width: 100%;
+    max-width: 700px;
+    box-sizing: border-box;
+}
 
 /* ==========================================================================
    Pantalla Post-Batalla y Tarjetas de Escuadrón
@@ -3468,3 +3540,1022 @@ progress::-webkit-progress-value {
     box-shadow: 0 0 20px rgba(0, 210, 211, 0.6);
     transform: translateY(-2px);
 }
+
+/* ==========================================================================
+   RESPONSIVE DESIGN & MEDIA QUERIES (TABLETS, MÓVILES Y LANDSCAPE)
+   ========================================================================== */
+
+/* 1. Tablets y Laptops Pequeñas (≤ 1024px) */
+@media (max-width: 1024px) {
+    #game-container {
+        width: 98vw;
+        height: 96vh;
+        max-height: 900px;
+    }
+    
+    .selector-container {
+        gap: 16px;
+        max-width: 100%;
+    }
+    
+    .map-floor-row {
+        width: 96%;
+        gap: 14px;
+        padding: 8px 14px;
+    }
+    
+    .nodes-container {
+        gap: 20px;
+    }
+    
+    .combat-arena {
+        width: 100%;
+        padding: 16px 18px;
+    }
+
+    .combat-player-team {
+        flex: 1;
+        max-width: 580px;
+        gap: 6px;
+    }
+
+    .combat-ally-unit {
+        min-width: 100px;
+        max-width: 175px;
+    }
+
+    .combat-enemy-container {
+        min-width: 180px;
+        max-width: 230px;
+    }
+    
+    .combat-bottom-panel {
+        width: 100%;
+    }
+
+    .shop-cards-grid {
+        gap: 10px;
+    }
+
+    .inventory-modal-box {
+        max-width: 92%;
+    }
+}
+
+/* 2. Tablets en Vertical y Teléfonos Móviles (≤ 768px) */
+@media (max-width: 768px) {
+    body {
+        padding: 0;
+        align-items: stretch;
+    }
+
+    #game-container {
+        width: 100vw;
+        height: 100vh;
+        height: 100dvh;
+        max-height: 100dvh;
+        border: none;
+        border-radius: 0;
+        box-shadow: none;
+        margin: 0;
+    }
+
+    /* Barra Superior */
+    #top-bar {
+        padding: 8px 12px;
+    }
+
+    #scrap-display {
+        font-size: 14px;
+        margin-right: 6px;
+    }
+
+    .inventory-btn {
+        padding: 5px 12px;
+        font-size: 13px;
+    }
+
+    /* Pantallas base */
+    .screen {
+        padding: 54px 10px 14px 10px;
+    }
+
+    /* Pantalla de Inicio */
+    #screen-start {
+        padding: 14px 10px;
+        justify-content: flex-start;
+        overflow-y: auto;
+        gap: 8px;
+    }
+
+    .start-header {
+        margin-bottom: 2px;
+    }
+
+    .game-title {
+        font-size: clamp(24px, 7vw, 34px);
+        letter-spacing: 2px;
+    }
+
+    .sub-header-badge {
+        font-size: 9px;
+        letter-spacing: 1.5px;
+        padding: 2px 10px;
+    }
+
+    .start-instruction {
+        font-size: 12px;
+        margin-top: 1px;
+    }
+
+    .selector-container {
+        flex-direction: column;
+        align-items: center;
+        gap: 10px;
+        margin: 4px 0;
+        width: 100%;
+    }
+
+    .selector-box {
+        max-width: 100%;
+        width: 100%;
+        padding: 10px 12px;
+        box-sizing: border-box;
+    }
+
+    .preview-area {
+        min-height: auto;
+    }
+
+    .holo-platform {
+        width: 58px;
+        height: 58px;
+        margin-bottom: 4px;
+    }
+
+    .avatar-emoji {
+        font-size: 38px;
+    }
+
+    .hero-name {
+        font-size: 18px;
+    }
+
+    .stats-grid {
+        gap: 4px;
+        margin-bottom: 4px;
+    }
+
+    .stat-pill {
+        padding: 3px 6px;
+        font-size: 11px;
+    }
+
+    .special-skill-box, .weapon-passive-card, .synergy-box {
+        padding: 5px 8px;
+        margin-top: 4px;
+    }
+
+    .skill-header, .passive-header, .synergy-header {
+        font-size: 9.5px;
+        margin-bottom: 2px;
+    }
+
+    .skill-body, .passive-body, .synergy-body {
+        font-size: 11px;
+        line-height: 1.2;
+    }
+
+    .start-footer {
+        max-width: 100%;
+        margin-top: 4px;
+        margin-bottom: 6px;
+    }
+
+    .btn-start-game {
+        padding: 10px 18px;
+        font-size: 16px;
+        width: 100%;
+    }
+
+    /* Pantalla del Mapa */
+    #screen-map {
+        padding: 50px 6px 10px 6px;
+    }
+
+    .map-header-panel {
+        padding: 8px 10px;
+        border-radius: 10px;
+        margin-bottom: 6px;
+    }
+
+    .map-header-badge {
+        font-size: 9px;
+        letter-spacing: 1px;
+        padding: 2px 8px;
+    }
+
+    .map-main-title {
+        font-size: 18px;
+        letter-spacing: 1px;
+    }
+
+    .map-floor-pill {
+        padding: 2px 8px;
+        font-size: 10px;
+    }
+
+    .map-floor-pill .pill-val {
+        font-size: 14px;
+    }
+
+    .map-legend-bar {
+        gap: 6px 10px;
+        font-size: 10px;
+        padding: 4px 6px;
+    }
+
+    .legend-icon {
+        font-size: 11px;
+    }
+
+    #map-container {
+        padding: 8px 4px 30px 4px;
+        gap: 8px;
+    }
+
+    .map-floor-row {
+        width: 100%;
+        padding: 8px 6px;
+        gap: 8px;
+        border-radius: 8px;
+    }
+
+    .floor-label-box {
+        min-width: 65px;
+    }
+
+    .floor-badge-boss, .floor-badge-current {
+        font-size: 11.5px;
+    }
+
+    .floor-badge-passed, .floor-badge-future {
+        font-size: 11px;
+    }
+
+    .floor-sub-label {
+        font-size: 8px;
+        letter-spacing: 0.5px;
+    }
+
+    .nodes-container {
+        gap: 8px;
+        justify-content: space-evenly;
+    }
+
+    .map-node {
+        min-width: 50px;
+        padding: 6px 6px;
+        border-radius: 8px;
+        gap: 2px;
+    }
+
+    .node-emoji {
+        font-size: 20px;
+    }
+
+    .node-name {
+        font-size: 9px;
+        letter-spacing: 0;
+    }
+
+    .node-visited-check {
+        top: -4px;
+        right: -4px;
+        width: 12px;
+        height: 12px;
+        font-size: 8px;
+    }
+
+    /* Pantalla de Combate */
+    #screen-combat {
+        padding-top: 48px;
+        padding-bottom: 8px;
+        gap: 6px;
+        justify-content: flex-start;
+    }
+
+    .combat-arena {
+        min-height: 230px;
+        height: auto;
+        padding: 10px 8px 8px 8px;
+        margin-bottom: 4px;
+        width: 100%;
+        border-radius: 10px;
+    }
+
+    .combat-turn-queue {
+        top: 4px;
+        padding: 2px 8px;
+        max-width: 96%;
+        gap: 4px;
+    }
+
+    .turn-queue-label {
+        font-size: 8.5px;
+    }
+
+    .turn-queue-item {
+        font-size: 9.5px;
+        padding: 1px 5px;
+    }
+
+    .turn-queue-spd {
+        font-size: 8.5px;
+    }
+
+    .combat-player-team {
+        max-width: 62%;
+        gap: 4px;
+    }
+
+    .combat-ally-unit {
+        min-width: 0;
+        max-width: 140px;
+    }
+
+    .combat-enemy-container {
+        min-width: 0;
+        max-width: 38%;
+        width: 120px;
+    }
+
+    .combat-avatar-emoji {
+        font-size: 46px;
+    }
+
+    .team-count-1 .combat-avatar-emoji { font-size: 52px; }
+    .team-count-2 .combat-avatar-emoji { font-size: 40px; }
+    .team-count-3 .combat-avatar-emoji { font-size: 32px; }
+    .combat-enemy-container .combat-avatar-emoji { font-size: 50px; }
+
+    .combat-holo-platform {
+        width: 70px;
+        height: 18px;
+        bottom: -3px;
+    }
+
+    .team-count-1 .player-platform { width: 75px; height: 18px; }
+    .team-count-2 .player-platform { width: 60px; height: 16px; }
+    .team-count-3 .player-platform { width: 48px; height: 14px; }
+    .enemy-platform { width: 75px; height: 18px; }
+
+    .combat-hud-card {
+        padding: 4px 6px;
+        border-radius: 6px;
+        margin-top: 4px;
+    }
+
+    .hud-name-row {
+        margin-bottom: 2px;
+    }
+
+    .hud-robot-name {
+        font-size: 11.5px;
+        letter-spacing: 0;
+    }
+
+    .hud-weapon-icon {
+        font-size: 12px;
+    }
+
+    .hud-element-badge {
+        font-size: 8.5px;
+        padding: 0 4px;
+    }
+
+    .hud-hp-row {
+        font-size: 9.5px;
+        margin-bottom: 2px;
+    }
+
+    .hud-hp-val {
+        font-size: 10px;
+    }
+
+    progress {
+        height: 7px;
+        border-radius: 4px;
+    }
+
+    .status-bars {
+        top: -36px;
+        gap: 2px;
+    }
+
+    .status-pill {
+        font-size: 9px;
+        padding: 1px 4px;
+        border-radius: 4px;
+    }
+
+    .combat-actions-bar {
+        gap: 5px;
+        margin: 2px 0 6px 0;
+        width: 100%;
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+
+    .btn-combat-skill, .btn-special-skill, .btn-combat-defend, .btn-combat-swap, .btn-combat-item {
+        padding: 7px 10px;
+        font-size: 12px;
+        letter-spacing: 0.5px;
+        border-radius: 6px;
+        flex: 1 1 calc(50% - 6px);
+        min-width: 115px;
+        max-width: 220px;
+        text-align: center;
+        justify-content: center;
+        margin: 0;
+        box-sizing: border-box;
+    }
+
+    .btn-cd-tag {
+        font-size: 8.5px;
+        padding: 1px 3px;
+    }
+
+    .combat-bottom-panel {
+        width: 100%;
+        gap: 6px;
+        margin-bottom: 2px;
+    }
+
+    .combat-log-container {
+        border-radius: 6px;
+    }
+
+    .combat-log-header {
+        font-size: 9.5px;
+        padding: 3px 8px;
+    }
+
+    .log-box-styled {
+        height: 54px;
+        font-size: 11.5px;
+        padding: 4px 8px;
+        line-height: 1.25;
+    }
+
+    .btn-history-styled {
+        width: 75px;
+        padding: 4px;
+        font-size: 10px;
+        border-radius: 6px;
+    }
+
+    .btn-history-styled .history-icon {
+        font-size: 16px;
+    }
+
+    /* Pantalla de Tienda / Mercado Negro */
+    .shop-container {
+        width: 100%;
+    }
+
+    .shop-header-panel {
+        margin-bottom: 8px;
+    }
+
+    .shop-header-badge {
+        font-size: 9.5px;
+        letter-spacing: 1.5px;
+        padding: 2px 10px;
+    }
+
+    .shop-main-title {
+        font-size: 24px;
+        letter-spacing: 2px;
+        margin: 2px 0;
+    }
+
+    .shop-subtitle-row {
+        flex-direction: column;
+        align-items: center;
+        gap: 6px;
+        text-align: center;
+        margin-bottom: 8px;
+    }
+
+    .shop-subtitle {
+        text-align: center;
+        font-size: 12px;
+    }
+
+    .shop-scrap-pill {
+        padding: 4px 10px;
+    }
+
+    .scrap-pill-label {
+        font-size: 10px;
+    }
+
+    .scrap-pill-val {
+        font-size: 14px;
+    }
+
+    .shop-cards-grid {
+        grid-template-columns: 1fr;
+        gap: 10px;
+        margin-bottom: 10px;
+    }
+
+    .shop-item-card {
+        padding: 10px 12px;
+        border-radius: 10px;
+    }
+
+    .shop-card-name {
+        font-size: 15px;
+    }
+
+    .shop-card-desc {
+        font-size: 11.5px;
+        min-height: auto;
+        padding: 4px 6px;
+        margin-bottom: 6px;
+    }
+
+    .btn-shop-buy {
+        padding: 8px 10px;
+        font-size: 12px;
+    }
+
+    .shop-bottom-actions {
+        flex-direction: column;
+        gap: 8px;
+        margin-top: 4px;
+        margin-bottom: 10px;
+    }
+
+    .btn-shop-buy-all, .btn-shop-exit {
+        width: 100%;
+        justify-content: center;
+        padding: 10px 16px;
+        box-sizing: border-box;
+    }
+
+    /* Pantalla Post-Batalla */
+    #screen-post-battle {
+        padding: 52px 10px 14px 10px;
+    }
+
+    .post-header-badge {
+        font-size: 9.5px;
+        padding: 2px 10px;
+    }
+
+    .post-battle-title {
+        font-size: 22px;
+        margin-bottom: 8px;
+    }
+
+    .post-summary-card {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        gap: 10px;
+        padding: 12px 14px;
+        margin-bottom: 10px;
+    }
+
+    .defeated-hero-box {
+        min-width: 80px;
+        padding: 6px;
+    }
+
+    .defeated-avatar {
+        font-size: 40px;
+    }
+
+    .defeated-holo-platform {
+        width: 60px;
+        height: 16px;
+        bottom: 16px;
+    }
+
+    .post-rewards-content {
+        text-align: center;
+        align-items: center;
+        width: 100%;
+    }
+
+    .rewards-badges-row {
+        justify-content: center;
+        gap: 6px;
+    }
+
+    .reward-pill {
+        font-size: 11.5px;
+        padding: 3px 10px;
+    }
+
+    .post-battle-log {
+        font-size: 11.5px;
+        width: 100%;
+    }
+
+    .post-actions-row {
+        flex-direction: column;
+        width: 100%;
+        gap: 8px;
+        margin-bottom: 12px;
+    }
+
+    .btn-post-action {
+        width: 100%;
+        justify-content: center;
+        padding: 10px 14px;
+        font-size: 13px;
+        box-sizing: border-box;
+    }
+
+    .team-section-container {
+        padding-top: 10px;
+    }
+
+    .team-section-header {
+        font-size: 11px;
+        margin-bottom: 8px;
+    }
+
+    .team-status-grid {
+        gap: 8px;
+    }
+
+    .team-member-card {
+        width: calc(50% - 6px);
+        min-width: 135px;
+        padding: 8px;
+    }
+
+    .team-member-name {
+        font-size: 13px;
+        margin: 2px 0 4px 0;
+    }
+
+    .member-emoji {
+        font-size: 34px;
+    }
+
+    .team-weapon-pill {
+        font-size: 9.5px;
+        padding: 2px 4px;
+    }
+
+    .chip-mini-badge {
+        font-size: 8px;
+        padding: 1px 3px;
+    }
+
+    /* Pantallas Finales (Game Over / Victoria) */
+    #screen-game-over, #screen-victory {
+        padding: 14px 10px;
+    }
+
+    .endgame-container {
+        padding: 20px 14px;
+        width: 95%;
+        border-radius: 12px;
+    }
+
+    .endgame-title {
+        font-size: 26px;
+        letter-spacing: 1.5px;
+        margin: 2px 0 6px 0;
+    }
+
+    .endgame-subtitle {
+        font-size: 12px;
+        margin-bottom: 10px;
+    }
+
+    .endgame-stats-card {
+        padding: 8px 6px;
+        margin: 8px 0 12px 0;
+    }
+
+    .endgame-stat-val {
+        font-size: 15px;
+    }
+
+    .endgame-stat-label {
+        font-size: 9px;
+    }
+
+    .btn-endgame-cta {
+        padding: 10px 14px;
+        font-size: 14px;
+    }
+
+    /* Modal de Inventario */
+    .modal-content {
+        padding: 18px 12px;
+        width: 95%;
+        max-height: 92vh;
+        border-radius: 12px;
+    }
+
+    .inventory-modal-box {
+        padding: 16px 10px;
+        width: 96%;
+    }
+
+    .inv-header-badge {
+        font-size: 9.5px;
+        padding: 2px 8px;
+    }
+
+    .inv-modal-title {
+        font-size: 18px;
+        margin-top: 4px;
+    }
+
+    .inv-section-title-row {
+        font-size: 11.5px;
+        margin-bottom: 6px;
+    }
+
+    .inventory-team-grid {
+        gap: 8px;
+    }
+
+    .inv-unit-card {
+        min-width: 100%;
+        max-width: 100%;
+        padding: 8px 10px;
+    }
+
+    .inv-unit-avatar-box .member-emoji {
+        font-size: 36px;
+    }
+
+    .inv-category-block {
+        padding: 8px 10px;
+        border-radius: 8px;
+    }
+
+    .inv-cat-header {
+        font-size: 11px;
+        margin-bottom: 6px;
+    }
+
+    .inv-cards-grid {
+        grid-template-columns: 1fr;
+        gap: 6px;
+    }
+
+    .inv-item-card {
+        padding: 6px 8px;
+    }
+
+    .inv-item-emoji {
+        font-size: 20px;
+    }
+
+    .inv-item-title {
+        font-size: 12px;
+    }
+
+    .inv-item-desc {
+        font-size: 10px;
+    }
+
+    .inv-card-actions {
+        margin-top: 4px;
+        padding-top: 4px;
+    }
+
+    .btn-inv-action {
+        padding: 5px 8px;
+        font-size: 10.5px;
+    }
+
+    .close-btn {
+        top: 10px;
+        right: 10px;
+        width: 28px;
+        height: 28px;
+        font-size: 20px;
+    }
+}
+
+/* 3. Smartphones Compactos (≤ 480px) */
+@media (max-width: 480px) {
+    .game-title {
+        font-size: 22px;
+        letter-spacing: 1px;
+    }
+
+    .map-floor-row {
+        padding: 6px 3px;
+        gap: 4px;
+    }
+
+    .floor-label-box {
+        min-width: 48px;
+    }
+
+    .floor-badge-boss, .floor-badge-current, .floor-badge-passed, .floor-badge-future {
+        font-size: 9.5px;
+    }
+
+    .floor-sub-label {
+        font-size: 7.5px;
+    }
+
+    .nodes-container {
+        gap: 4px;
+    }
+
+    .map-node {
+        min-width: 42px;
+        padding: 4px 4px;
+        border-radius: 6px;
+    }
+
+    .node-emoji {
+        font-size: 17px;
+    }
+
+    .node-name {
+        font-size: 8px;
+    }
+
+    .combat-player-team {
+        max-width: 58%;
+        gap: 2px;
+    }
+
+    .team-count-3 .combat-avatar-emoji {
+        font-size: 26px;
+    }
+
+    .combat-enemy-container .combat-avatar-emoji {
+        font-size: 44px;
+    }
+
+    .combat-enemy-container {
+        max-width: 42%;
+        width: 95px;
+    }
+
+    .hud-robot-name {
+        font-size: 10px;
+    }
+
+    .hud-hp-val {
+        font-size: 9px;
+    }
+
+    .combat-actions-bar {
+        gap: 3px;
+    }
+
+    .btn-combat-skill, .btn-special-skill, .btn-combat-defend, .btn-combat-swap, .btn-combat-item {
+        font-size: 10.5px;
+        padding: 6px 4px;
+        flex: 1 1 calc(50% - 3px);
+        min-width: 95px;
+    }
+
+    .team-member-card {
+        width: 100%;
+    }
+
+    .endgame-stats-card {
+        flex-direction: column;
+        gap: 6px;
+        align-items: center;
+    }
+}
+
+/* 4. Dispositivos Móviles en Modo Paisaje / Baja Altura (≤ 650px de alto) */
+@media (max-height: 650px) {
+    .screen {
+        padding: 44px 10px 8px 10px;
+    }
+
+    #top-bar {
+        padding: 4px 10px;
+    }
+
+    #scrap-display {
+        font-size: 13px;
+    }
+
+    .inventory-btn {
+        padding: 3px 8px;
+        font-size: 12px;
+    }
+
+    #screen-start {
+        padding: 6px 10px;
+        gap: 4px;
+    }
+
+    .game-title {
+        font-size: 20px;
+        letter-spacing: 1px;
+    }
+
+    .start-instruction {
+        display: none;
+    }
+
+    .selector-container {
+        flex-direction: row;
+        gap: 8px;
+        margin: 2px 0;
+    }
+
+    .selector-box {
+        padding: 6px 10px;
+    }
+
+    .preview-area {
+        min-height: 110px;
+    }
+
+    .holo-platform {
+        width: 40px;
+        height: 40px;
+        margin-bottom: 2px;
+    }
+
+    .avatar-emoji {
+        font-size: 26px;
+    }
+
+    .hero-name {
+        font-size: 14px;
+    }
+
+    .special-skill-box, .weapon-passive-card, .synergy-box {
+        display: none;
+    }
+
+    .btn-start-game {
+        padding: 6px 14px;
+        font-size: 14px;
+    }
+
+    .combat-arena {
+        min-height: 160px;
+        height: 160px;
+        padding: 4px 8px;
+        margin-bottom: 2px;
+    }
+
+    .combat-avatar-emoji {
+        font-size: 28px !important;
+    }
+
+    .combat-holo-platform {
+        height: 10px;
+        width: 45px;
+    }
+
+    .combat-actions-bar {
+        margin: 2px 0;
+        gap: 3px;
+    }
+
+    .btn-combat-skill, .btn-special-skill, .btn-combat-defend, .btn-combat-swap, .btn-combat-item {
+        padding: 4px 8px;
+        font-size: 11px;
+    }
+
+    .log-box-styled {
+        height: 38px;
+        font-size: 10.5px;
+    }
+
+    .btn-history-styled {
+        width: 60px;
+        padding: 2px;
+        font-size: 9px;
+    }
+
+    .btn-history-styled .history-icon {
+        font-size: 14px;
+    }
+
+    .modal-content {
+        max-height: 96vh;
+        padding: 12px 10px;
+    }
+}
+
