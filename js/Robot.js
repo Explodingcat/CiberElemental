@@ -16,6 +16,7 @@ class Robot {
         this.spd = 0;
         this.dodge = 0;
         this.acc = 0;
+        this.critChance = 0;
         this.maxHp = 0;
         this.atk = 0;
         this.hp = template.hp; // se inicializará en recalculateStats si está undefined
@@ -78,6 +79,7 @@ class Robot {
         this.spd = elStats.spd;
         this.dodge = elStats.dodge;
         this.acc = elStats.acc;
+        this.critChance = elStats.critChance || 5;
         
         // Restaurar a base
         this.maxHp = this.baseMaxHp;
@@ -89,9 +91,10 @@ class Robot {
                 this.maxHp = Math.floor(this.maxHp * 1.2);
                 this.atk = Math.floor(this.atk * 1.2);
             }
-            // Espada +15% de daño base pasivo (+30% si está mejorada)
+            // Espada +15% de daño base pasivo (+30% si está mejorada) y +10% de Crítico en básicos (+20% con +1)
             if (this.equippedWeapon.type === WEAPON_TYPES.ESPADA) {
                 this.atk = Math.floor(this.atk * (this.equippedWeapon.isUpgraded ? 1.30 : 1.15));
+                this.critChance += (this.equippedWeapon.isUpgraded ? 20 : 10);
             }
         }
         

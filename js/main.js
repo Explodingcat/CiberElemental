@@ -102,7 +102,8 @@ function initGame() {
                 <div class="stat-pill"><span class="stat-icon">⚔️</span> <span class="stat-label">ATQ</span> <span class="stat-val">${elStats.atk}</span></div>
                 <div class="stat-pill"><span class="stat-icon">⚡</span> <span class="stat-label">VEL</span> <span class="stat-val">${elStats.spd}</span></div>
                 <div class="stat-pill"><span class="stat-icon">💨</span> <span class="stat-label">ESQ</span> <span class="stat-val">${elStats.dodge}%</span></div>
-                <div class="stat-pill full-width"><span class="stat-icon">🎯</span> <span class="stat-label">PRECISIÓN</span> <span class="stat-val">${elStats.acc}%</span></div>
+                <div class="stat-pill"><span class="stat-icon">🎯</span> <span class="stat-label">PREC</span> <span class="stat-val">${elStats.acc}%</span></div>
+                <div class="stat-pill"><span class="stat-icon">💥</span> <span class="stat-label">CRÍT</span> <span class="stat-val">${elStats.critChance || 5}%</span></div>
             </div>
 
             ${specialSkillHtml}
@@ -125,7 +126,7 @@ function initGame() {
         if (wKey === 'DAGA') { wName = 'Daga'; desc = '25% prob. de doble ataque consecutivo (40% con +1).'; }
         if (wKey === 'HACHA') { wName = 'Hacha'; desc = 'Perfora el 50% de las defensas y barreras enemigas (75% con +1).'; }
         if (wKey === 'BACULO') { wName = 'Báculo'; desc = 'Regenera un 3% del HP máximo al finalizar cada turno (5% con +1).'; }
-        if (wKey === 'ESPADA') { wName = 'Espada'; desc = '+15% de daño base pasivo + 5% Crítico (+30% daño con +1).'; }
+        if (wKey === 'ESPADA') { wName = 'Espada'; desc = '+15% de daño base pasivo + 10% Crítico en Básicos (+30% daño y +20% Crítico con +1).'; }
         
         weaponPreview.innerHTML = `
             <div class="preview-hero">
@@ -217,7 +218,7 @@ function initGame() {
         if (weapon.type === WEAPON_TYPES.DAGA) weapon.desc = '25% prob. doble ataque (40% con +1)';
         if (weapon.type === WEAPON_TYPES.HACHA) weapon.desc = 'Perfora 50% de barreras y defensas (75% con +1)';
         if (weapon.type === WEAPON_TYPES.BACULO) weapon.desc = 'Cura 3% HP al final del turno (5% con +1)';
-        if (weapon.type === WEAPON_TYPES.ESPADA) weapon.desc = '+15% Daño + 5% Crítico (+30% Daño con +1)';
+        if (weapon.type === WEAPON_TYPES.ESPADA) weapon.desc = '+15% Daño + 10% Crítico en Básicos (+30% Daño y +20% Crítico con +1)';
         
         playerRobot.equipWeapon(weapon);
         

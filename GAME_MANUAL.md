@@ -19,17 +19,18 @@ El juego opera bajo una rueda de afinidades elemental táctica:
 > * **Desventaja Elemental:** Inflige **0.5x (50%)** del daño base.
 > * **Neutral / Mismo Elemento:** Inflige **1.0x (100%)** del daño base.
 
----
-
 ### Estadísticas Base y Habilidades Iniciales (Nivel 1)
 
-| Elemento | Robot Base | HP Máx | ATQ | Vel | Esq | Prec | Habilidades Iniciales |
-| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| 🔥 **FUEGO** | **Ignis** | 90 | 28 | 11 | 5% | 100% | **Ataque Básico:** 1.0x Daño.<br>**Ignición (CD 3):** Inflige 1.2x daño directo + Quemadura (8% HP/turno por 2 turnos). |
-| 💦 **AGUA** | **Aqua** | 130 | 14 | 9 | 5% | 95% | **Ataque Básico:** 1.0x Daño.<br>**Barrera Plasma (CD 4):** Bloquea 100% del próximo golpe recibido y aplica 1 Marca de Agua al atacante. |
-| 🪨 **TIERRA** | **Terra** | 175 | 12 | 4 | 0% | 85% | **Ataque Básico:** 1.0x Daño.<br>**Terremoto (CD 4):** Inflige 1.3x daño + 60% prob. de Aturdimiento (100% garantizado con Marca previa). |
-| 💨 **AIRE** | **Zephyr** | 80 | 22 | 16 | 25% | 95% | **Ataque Básico:** 1.0x Daño.<br>**Ráfaga Cortante (CD 2):** Inflige 1.4x daño (garantiza actuar primero en el turno de uso). |
-| ⚙️ **NEUTRO** | **TITAN-X** *(Jefe)* | 200 | 30 | 12 | 10% | 100% | **Golpe Titánico:** 1.5x Daño.<br>**Protocolo Exterminio (CD 4):** 3.0x Daño masivo. |
+| Elemento | Robot Base | HP Máx | ATQ | Vel | Esq | Prec | Crít | Habilidades Iniciales |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| 🔥 **FUEGO** | **Ignis** | 90 | 28 | 11 | 5% | 100% | 10% | **Ataque Básico:** 1.0x Daño.<br>**Ignición (CD 3):** Inflige 1.2x daño directo + Quemadura (8% HP/turno por 2 turnos). |
+| 💦 **AGUA** | **Aqua** | 130 | 14 | 9 | 5% | 95% | 5% | **Ataque Básico:** 1.0x Daño.<br>**Barrera Plasma (CD 4):** Bloquea 100% del próximo golpe recibido y aplica 1 Marca de Agua al atacante. |
+| 🪨 **TIERRA** | **Terra** | 175 | 12 | 4 | 0% | 85% | 5% | **Ataque Básico:** 1.0x Daño.<br>**Terremoto (CD 4):** Inflige 1.3x daño + 60% prob. de Aturdimiento (100% garantizado con Marca previa). |
+| 💨 **AIRE** | **Zephyr** | 80 | 22 | 16 | 25% | 95% | 15% | **Ataque Básico:** 1.0x Daño.<br>**Ráfaga Cortante (CD 2):** Inflige 1.4x daño (garantiza actuar primero en el turno de uso). |
+| ⚙️ **NEUTRO** | **TITAN-X** *(Jefe)* | 200 | 30 | 12 | 10% | 100% | 10% | **Golpe Titánico:** 1.5x Daño.<br>**Protocolo Exterminio (CD 4):** 3.0x Daño masivo. |
+
+> [!NOTE]
+> **Sistema de Daño Crítico (1.5x / +50% Daño):** Ocurre de forma global exclusivamente en **Ataques Básicos** (las habilidades con Cooldown no pueden asestar golpes críticos).
 
 ### Crecimiento y Nivel del Robot
 * **Ganancia de Experiencia:** Vencer a un enemigo otorga `Nivel_Enemigo * 50 XP` a todos los robots operativos del escuadrón.
@@ -120,7 +121,7 @@ En los **Campamentos / Talleres (⛺)** puedes **Forjar** para subir un arma a *
 | **Daga** | 🗡️ | **25% de probabilidad** de asestar un segundo golpe consecutivo. | **40% de probabilidad** de doble ataque consecutivo. |
 | **Hacha** | 🪓 | **Perfora el 50%** de la reducción de daño por defensa y barreras. | **Perfora el 75%** de la reducción de daño por defensa y barreras. |
 | **Báculo** | 🪄 | Repara automáticamente un **3% del HP Máximo** al final de cada turno. | Repara un **5% del HP Máximo** al final de cada turno. |
-| **Espada** | ⚔️ | **+15% Daño base pasivo** + **5% de Golpe Crítico** (+50% daño). | **+30% Daño base pasivo** + **5% de Golpe Crítico** (+50% daño). |
+| **Espada** | ⚔️ | **+15% Daño base pasivo** + **10% de Golpe Crítico en Básicos**. | **+30% Daño base pasivo** + **20% de Golpe Crítico en Básicos**. |
 
 > [!NOTE]
 > Cualquier arma no deseada en el inventario puede ser **Desmantelada** por **+20 Chatarra (⚙️)**.
@@ -178,6 +179,7 @@ El mapa de cada sector consta de 10 pisos de bifurcaciones tácticas:
 ## 8. Decisiones Post-Combate
 
 Al neutralizar a un robot rival, el escuadrón debe elegir:
-* **🤖 Reclutar (50% HP):** Añade al robot derrotado como nuevo miembro del equipo (hasta un máximo de 3 integrantes en formación).
+* **🤖 Reclutar (Normal):** Si el enemigo es estándar, se une garantizado al equipo al 50% de HP (hasta un máximo de 3 miembros).
+* **⚠️ Reclutar Élite (Alto Riesgo):** Intentar reprogramar a un robot Élite tiene **50% de probabilidad de éxito**. Si falla (50%), su núcleo sufre una **autodestrucción violenta** que inflige **10% de daño de HP a todo tu escuadrón** (con riesgo de causar Game Over si la salud de las unidades es insuficiente).
 * **⚙️ Desmantelar:** Destruye el chasis enemigo a cambio de **+30 Chatarra** y una **reparación del 10% de HP** para todo el escuadrón.
 * **➔ Avanzar Incursión:** Continúa directamente hacia el siguiente sector sin interactuar con los restos.

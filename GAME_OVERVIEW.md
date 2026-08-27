@@ -58,7 +58,7 @@ Desde la ventana modal de **Mochila (`🎒`)** gestionas los recursos del escuad
    * **Daga 🗡️:** 25% (o 40% en +1) de asestar un segundo ataque consecutivo.
    * **Hacha 🪓:** Perfora el 50% (o 75% en +1) de las reducciones por defensa y barreras.
    * **Báculo 🪄:** Autocuración pasiva del 3% (o 5% en +1) del HP máx por turno.
-   * **Espada ⚔️:** +15% (o +30% en +1) de Daño base + 5% de Golpe Crítico (+50% daño).
+   * **Espada ⚔️:** +15% (o +30% en +1) de Daño base + 10% (o 20% en +1) de Golpe Crítico en Básicos (+50% daño).
    * **🌟 Afinidad Elemental:** Equipar un arma que coincida con el elemento del robot otorga **+20% de HP y +20% de ATQ**.
 3. **💾 Chips de Habilidad:** Permiten que un robot aprenda un ataque de otro elemento (*Lanzallamas, Geyser, Fisura, Tornado*) para detonar sus propios combos.
 4. **Desmantelamiento:** Cualquier arma no deseada se puede desmantelar por **+20 Chatarra (⚙️)**.
@@ -85,5 +85,5 @@ El avance por la torre consta de 10 pisos con diferentes nodos interactivos:
 ---
 
 ### 💀 Condición de Derrota (Fin de la Partida / Game Over)
-* **Caída Total del Escuadrón:** Si en cualquier enfrentamiento **todos los miembros vivos del escuadrón llegan a 0 HP**, la partida concluye inmediatamente con la pantalla de **Game Over**.
+* **Caída Total del Escuadrón:** Si en cualquier enfrentamiento o a causa de una **explosión por intento fallido de reclutamiento Élite**, **todos los miembros vivos del escuadrón llegan a 0 HP**, la partida concluye inmediatamente con la pantalla de **Game Over**.
 * Al ser un juego de estilo *roguelike*, la derrota reinicia la expedición desde el Piso 1, permitiendo elegir un nuevo robot inicial y explorar rutas distintas en el mapa.

@@ -45,7 +45,7 @@ function initPostBattle(enemy) {
             if (droppedWeapon.type === WEAPON_TYPES.DAGA) droppedWeapon.desc = '40% prob. doble ataque';
             if (droppedWeapon.type === WEAPON_TYPES.HACHA) droppedWeapon.desc = 'Perfora 75% de barreras y defensas';
             if (droppedWeapon.type === WEAPON_TYPES.BACULO) droppedWeapon.desc = 'Cura 5% HP al final del turno';
-            if (droppedWeapon.type === WEAPON_TYPES.ESPADA) droppedWeapon.desc = '+30% Daño + 5% Crítico';
+            if (droppedWeapon.type === WEAPON_TYPES.ESPADA) droppedWeapon.desc = '+30% Daño + 20% Crítico en Básicos';
         } else {
             let chipKeys = Object.keys(ITEM_TYPES).filter(k => k.includes('CHIP'));
             let randomChipType = ITEM_TYPES[chipKeys[Math.floor(Math.random() * chipKeys.length)]];
@@ -110,11 +110,17 @@ function initPostBattle(enemy) {
     
     // Botón Reclutar
     const btnRecruit = document.createElement('button');
-    btnRecruit.className = 'btn-post-action btn-post-recruit';
     if (GAME_STATE.team.length >= 3) {
+        btnRecruit.className = 'btn-post-action btn-post-recruit';
         btnRecruit.disabled = true;
         btnRecruit.innerHTML = `<span>🤖 Reclutar (Equipo Completo 3/3)</span>`;
+    } else if (isElite) {
+        btnRecruit.className = 'btn-post-action btn-post-recruit-elite';
+        btnRecruit.innerHTML = `<span>⚠️ Reclutar Élite (50% Éxito / 50% 💥 Explosión -10% HP)</span>`;
+        btnRecruit.title = "50% prob. de éxito. Si falla, el robot explotará e infligirá un 10% de daño de HP a todo el escuadrón (puede ser letal).";
+        btnRecruit.onclick = () => handleRecruitElite(enemy, actionsContainer, desc);
     } else {
+        btnRecruit.className = 'btn-post-action btn-post-recruit';
         btnRecruit.innerHTML = `<span>🤖 Reclutar a ${enemy.name} (50% HP)</span>`;
         btnRecruit.onclick = () => {
             recruitRobot(enemy);
@@ -146,6 +152,81 @@ function initPostBattle(enemy) {
     actionsContainer.appendChild(btnIgnore);
     
     updateTeamUI();
+}
+
+function handleRecruitElite(enemy, actionsContainer, desc) {
+    // Desactivar todos los botones para evitar clicks múltiples
+    actionsContainer.querySelectorAll('button').forEach(btn => btn.disabled = true);
+    
+    const postContainer = document.querySelector('.post-battle-container') || document.getElementById('screen-post-battle');
+    
+    // 50% éxito de reclutamiento, 50% de explosión
+    let isSuccess = Math.random() < 0.5;
+    
+    if (isSuccess) {
+        if (desc) {
+            desc.innerHTML += `<div class="post-log-item log-lvl-up">🎉 ¡Reprogramación Exitosa! El robot <strong>${enemy.name}</strong> ha sido integrado a tu escuadrón operativo.</div>`;
+            desc.scrollTop = desc.scrollHeight;
+        }
+        recruitRobot(enemy);
+        setTimeout(() => {
+            advanceFloor();
+        }, 1300);
+    } else {
+        // Explosión del núcleo Élite
+        if (postContainer) {
+            postContainer.classList.remove('anim-explosion-shake');
+            void postContainer.offsetWidth;
+            postContainer.classList.add('anim-explosion-shake');
+        }
+        
+        const defeatedEmoji = document.getElementById('defeated-emoji');
+        if (defeatedEmoji) {
+            defeatedEmoji.innerHTML = '💥';
+        }
+        
+        // Dañar 10% de HP máximo a todo el escuadrón
+        GAME_STATE.team.forEach(r => {
+            if (!r.isOffline && r.hp > 0) {
+                let dmg = Math.max(1, Math.floor(r.maxHp * 0.10));
+                r.hp = Math.max(0, r.hp - dmg);
+                if (r.hp === 0) {
+                    r.isOffline = true;
+                    r.statuses = [];
+                }
+            }
+        });
+        
+        updateTeamUI();
+        
+        if (desc) {
+            desc.innerHTML += `<div class="post-log-item log-explosion">💥 ¡SOBRECARGA Y AUTODESTRUCCIÓN! El núcleo de <strong>${enemy.name}</strong> estalló en pedazos. Todo el escuadrón recibe 10% de daño estructural.</div>`;
+            desc.scrollTop = desc.scrollHeight;
+        }
+        
+        // Verificar si murieron todos los miembros del escuadrón
+        let allDead = GAME_STATE.team.every(r => r.isOffline || r.hp <= 0);
+        
+        if (allDead) {
+            if (desc) {
+                desc.innerHTML += `<div class="post-log-item log-game-over">💀 ¡CATÁSTROFE! Todo el escuadrón fue destruido por la detonación. Fin de la incursión.</div>`;
+                desc.scrollTop = desc.scrollHeight;
+            }
+            setTimeout(() => {
+                showScreen('screen-game-over');
+            }, 1800);
+        } else {
+            // El escuadrón sobrevivió a la explosión
+            setTimeout(() => {
+                actionsContainer.innerHTML = '';
+                const btnContinue = document.createElement('button');
+                btnContinue.className = 'btn-post-action btn-post-advance';
+                btnContinue.innerHTML = `<span>Sobrevivieron a la detonación. Continuar Incursión ➔</span>`;
+                btnContinue.onclick = () => advanceFloor();
+                actionsContainer.appendChild(btnContinue);
+            }, 1000);
+        }
+    }
 }
 
 function advanceFloor() {

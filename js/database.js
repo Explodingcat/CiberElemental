@@ -123,7 +123,7 @@ function generateRandomWeapon(forcedElement = null) {
             break;
         case WEAPON_TYPES.ESPADA:
             name = 'Espada';
-            abilityDesc = '+15% Daño + 5% Crítico (+30% Daño con +1)';
+            abilityDesc = '+15% Daño + 10% Crítico en Básicos (+30% Daño y +20% Crítico con +1)';
             break;
     }
     

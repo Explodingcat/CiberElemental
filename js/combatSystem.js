@@ -614,13 +614,13 @@ function showComboPopup(reaction, isTargetEnemy, targetIndex = 0) {
     setTimeout(() => popup.remove(), 1200);
 }
 
-function showDamagePopup(amount, isTargetEnemy, targetIndex = 0, isCrit = false) {
+function showDamagePopup(amount, isTargetEnemy, targetIndex = 0, isRed = false, isCrit = false) {
     let containerId = isTargetEnemy ? 'enemy-hit-container' : `player-hit-container-${targetIndex}`;
     const container = document.getElementById(containerId);
     if (!container) return;
     
     const popup = document.createElement('div');
-    popup.className = 'damage-popup-banner' + (isCrit ? ' damage-popup-crit' : '');
+    popup.className = 'damage-popup-banner' + (isRed ? ' damage-popup-red' : '');
     
     const valText = amount > 0 ? `-${amount}` : (amount === 0 ? `🛡️ 0` : `${amount}`);
     
@@ -739,13 +739,17 @@ function executeTurn(attacker, skill, defender, isAttackerAlly, allyIndex = 0) {
             
             let mult = getMultiplier(attackElement, defender.element);
             let baseDmg = Math.floor(attacker.atk * skill.power * mult);
+            const isBasicAttack = (skill.cd === 0);
             let isCrit = false;
             
-            // Espada: 5% Probabilidad de Golpe Crítico (+50% Daño)
-            if (attacker.equippedWeapon && attacker.equippedWeapon.type === WEAPON_TYPES.ESPADA && Math.random() < 0.05) {
-                baseDmg = Math.floor(baseDmg * 1.5);
-                isCrit = true;
-                logCombat(`🗡️💥 ¡Impacto Crítico de Espada (+50% Daño)!`);
+            // Daño Crítico Global: Exclusivo de ataques básicos (skill.cd === 0)
+            if (isBasicAttack) {
+                let critRate = attacker.critChance || 5;
+                if (Math.random() * 100 < critRate) {
+                    baseDmg = Math.floor(baseDmg * 1.5);
+                    isCrit = true;
+                    logCombat(`⚡💥 ¡Impacto Crítico de [${attacker.name}] (+50% Daño)!`);
+                }
             }
             
             // Evaluar Sinergias y Reacciones Elementales
@@ -766,8 +770,9 @@ function executeTurn(attacker, skill, defender, isAttackerAlly, allyIndex = 0) {
             let multMsg = mult > 1 ? " ¡Súper efectivo!" : (mult < 1 ? " Poco efectivo..." : "");
             logCombat(`- Inflige ${dmgDealt} de daño a ${defender.name}.${multMsg}`);
             
-            // Mostrar número de daño acentuado en amarillo
-            showDamagePopup(dmgDealt, isAttackerAlly, allyIndex, isCrit);
+            // Mostrar número de daño (Rojo si es crítico o reacción elemental de marcas, Amarillo si es estándar)
+            let isRedDamage = isCrit || (reaction !== null);
+            showDamagePopup(dmgDealt, isAttackerAlly, allyIndex, isRedDamage, isCrit);
             
             // Mutador Élite Espinas
             if (defender.mutator && defender.mutator.type === 'ESPINAS' && dmgDealt > 0) {
@@ -797,11 +802,18 @@ function executeTurn(attacker, skill, defender, isAttackerAlly, allyIndex = 0) {
                     if (Math.random() * 100 > hitChance2) {
                         logCombat(`¡${defender.name} esquivó el segundo golpe!`);
                     } else {
-                        let dmgDealt2 = defender.takeDamage(baseDmg, penetrationRatio, false, attacker);
+                        let daggerBaseDmg = baseDmg;
+                        let isDaggerCrit = false;
+                        if (isBasicAttack && Math.random() * 100 < (attacker.critChance || 5)) {
+                            daggerBaseDmg = Math.floor(daggerBaseDmg * 1.5);
+                            isDaggerCrit = true;
+                            logCombat(`⚡💥 ¡Segundo Golpe Crítico (+50% Daño)!`);
+                        }
+                        let dmgDealt2 = defender.takeDamage(daggerBaseDmg, penetrationRatio, false, attacker);
                         logCombat(`- Inflige ${dmgDealt2} de daño extra a ${defender.name}.`);
                         setTimeout(() => {
                             showHitAnimation(attackElement, isAttackerAlly, allyIndex);
-                            showDamagePopup(dmgDealt2, isAttackerAlly, allyIndex, false);
+                            showDamagePopup(dmgDealt2, isAttackerAlly, allyIndex, isDaggerCrit, isDaggerCrit);
                         }, 200);
                     }
                 }

@@ -8,6 +8,10 @@ function startEvent(type) {
     const desc = document.getElementById('event-description');
     const actions = document.getElementById('event-actions');
     
+    if (title) title.style.display = 'block';
+    if (content) content.style.display = 'block';
+    if (desc) desc.style.display = 'block';
+    
     content.innerHTML = NODE_EMOJIS[type];
     actions.innerHTML = '';
     
@@ -25,7 +29,7 @@ function startEvent(type) {
             if (weapon.type === WEAPON_TYPES.DAGA) weapon.desc = '40% prob. doble ataque';
             if (weapon.type === WEAPON_TYPES.HACHA) weapon.desc = 'Perfora 75% de barreras y defensas';
             if (weapon.type === WEAPON_TYPES.BACULO) weapon.desc = 'Cura 5% HP al final del turno';
-            if (weapon.type === WEAPON_TYPES.ESPADA) weapon.desc = '+30% Daño + 5% Crítico';
+            if (weapon.type === WEAPON_TYPES.ESPADA) weapon.desc = '+30% Daño + 20% Crítico en Básicos';
             desc.innerText = `Encontraste un arma rara: ${weapon.name} ${WEAPON_EMOJIS[weapon.type]}\nHa sido guardada en tu inventario.`;
             GAME_STATE.inventory.weapons.push(weapon);
         } else {
@@ -104,7 +108,7 @@ function startEvent(type) {
                         if (r.equippedWeapon.type === WEAPON_TYPES.DAGA) r.equippedWeapon.desc = '40% prob. doble ataque';
                         if (r.equippedWeapon.type === WEAPON_TYPES.HACHA) r.equippedWeapon.desc = 'Perfora 75% de barreras y defensas';
                         if (r.equippedWeapon.type === WEAPON_TYPES.BACULO) r.equippedWeapon.desc = 'Cura 5% HP al final del turno';
-                        if (r.equippedWeapon.type === WEAPON_TYPES.ESPADA) r.equippedWeapon.desc = '+30% Daño + 5% Crítico';
+                        if (r.equippedWeapon.type === WEAPON_TYPES.ESPADA) r.equippedWeapon.desc = '+30% Daño + 20% Crítico en Básicos';
                         r.recalculateStats();
                         advanceFloor();
                     };
@@ -114,63 +118,7 @@ function startEvent(type) {
         };
         actions.appendChild(btnForge);
     } else if (type === NODE_TYPES.SHOP) {
-        title.innerText = "Mercado Negro";
-        desc.innerText = "Gasta tu chatarra en nuevo equipamiento.";
-        
-        // Generar 2 armas y 2 objetos a la venta
-        for(let i = 0; i < 2; i++) {
-            let w = generateRandomWeapon();
-            let cost = Math.floor(Math.random() * 20) + 30; // 30-50 chatarra
-            
-            const btn = document.createElement('button');
-            btn.innerHTML = `${w.name} ${WEAPON_EMOJIS[w.type]} (${cost} ⚙️)<br><small>${w.desc}</small>`;
-            btn.onclick = () => {
-                if (GAME_STATE.scrap >= cost) {
-                    addScrap(-cost);
-                    GAME_STATE.inventory.weapons.push(w);
-                    actions.innerHTML = '';
-                    desc.innerText = `Has comprado ${w.name} ${WEAPON_EMOJIS[w.type]}. Se ha guardado en tu inventario.`;
-                    
-                    const btnLeave = document.createElement('button');
-                    btnLeave.innerText = `Salir del Mercado`;
-                    btnLeave.onclick = () => advanceFloor();
-                    actions.appendChild(btnLeave);
-                } else {
-                    alert("No tienes suficiente chatarra.");
-                }
-            };
-            actions.appendChild(btn);
-        }
-
-        for(let i = 0; i < 2; i++) {
-            let item = generateRandomItem();
-            let cost = 25; // Precio fijo para consumibles por ahora
-            
-            const btn = document.createElement('button');
-            btn.innerHTML = `${item.name} ${item.emoji} (${cost} ⚙️)<br><small>${item.desc}</small>`;
-            btn.onclick = () => {
-                if (GAME_STATE.scrap >= cost) {
-                    addScrap(-cost);
-                    GAME_STATE.inventory.items.push(item);
-                    actions.innerHTML = '';
-                    desc.innerText = `Has comprado ${item.name} ${item.emoji}. Se ha guardado en tu inventario.`;
-                    
-                    const btnLeave = document.createElement('button');
-                    btnLeave.innerText = `Salir del Mercado`;
-                    btnLeave.onclick = () => advanceFloor();
-                    actions.appendChild(btnLeave);
-                } else {
-                    alert("No tienes suficiente chatarra.");
-                }
-            };
-            actions.appendChild(btn);
-        }
-
-        const btnLeave = document.createElement('button');
-        btnLeave.innerText = `Salir`;
-        btnLeave.onclick = () => advanceFloor();
-        actions.appendChild(btnLeave);
-
+        initShopEvent();
     } else if (type === NODE_TYPES.MYSTERY) {
         let event = MYSTERY_EVENTS[Math.floor(Math.random() * MYSTERY_EVENTS.length)];
         title.innerText = event.title;
@@ -205,5 +153,212 @@ function startEvent(type) {
         btn.innerText = `Avanzar`;
         btn.onclick = () => advanceFloor();
         actions.appendChild(btn);
+    }
+}
+
+let currentShopItems = [];
+
+function initShopEvent() {
+    const title = document.getElementById('event-title');
+    const content = document.getElementById('event-content');
+    const desc = document.getElementById('event-description');
+    
+    if (title) title.style.display = 'none';
+    if (content) content.style.display = 'none';
+    if (desc) desc.style.display = 'none';
+    
+    currentShopItems = [];
+    
+    // 2 Armas con elemento aleatorio (1 unidad disponible de cada una)
+    for (let i = 0; i < 2; i++) {
+        let w = generateRandomWeapon();
+        let cost = Math.floor(Math.random() * 15) + 35; // 35 - 49 chatarra
+        currentShopItems.push({
+            id: 'shop_weapon_' + i,
+            category: 'WEAPON',
+            data: w,
+            name: w.name,
+            element: w.element,
+            icon: WEAPON_EMOJIS[w.type],
+            desc: w.desc,
+            cost: cost,
+            bought: false
+        });
+    }
+    
+    // 2 Items (Chips o Consumibles, 1 unidad disponible de cada uno)
+    for (let i = 0; i < 2; i++) {
+        let item = generateRandomItem();
+        let isChip = item.type.includes('CHIP');
+        let cost = isChip ? 30 : 25;
+        let element = isChip ? item.type.replace('CHIP_', '') : null;
+        currentShopItems.push({
+            id: 'shop_item_' + i,
+            category: isChip ? 'CHIP' : 'ITEM',
+            data: item,
+            name: item.name,
+            element: element,
+            icon: item.emoji,
+            desc: item.desc,
+            cost: cost,
+            bought: false
+        });
+    }
+    
+    renderShopUI();
+}
+
+function renderShopUI(feedbackMessage = '') {
+    const actions = document.getElementById('event-actions');
+    if (!actions) return;
+    
+    let feedbackHtml = '';
+    if (feedbackMessage) {
+        feedbackHtml = `<div class="shop-feedback-toast">${feedbackMessage}</div>`;
+    }
+    
+    let cardsHtml = currentShopItems.map((item, idx) => {
+        const canAfford = GAME_STATE.scrap >= item.cost;
+        const elemClass = item.element ? `elem-${item.element}` : '';
+        const elemBadgeClass = item.element ? `elem-badge-${item.element}` : 'badge-neutral';
+        
+        let tagText = 'ITEM';
+        if (item.category === 'WEAPON') tagText = `⚔️ ARMA (${item.element})`;
+        else if (item.category === 'CHIP') tagText = `💾 CHIP (${item.element})`;
+        else tagText = `🧪 CONSUMIBLE`;
+        
+        let buttonHtml = '';
+        if (item.bought) {
+            buttonHtml = `<button class="btn-shop-buy is-bought" disabled><span class="shop-btn-icon">✓</span> ADQUIRIDO (Agotado)</button>`;
+        } else if (canAfford) {
+            buttonHtml = `
+                <button class="btn-shop-buy can-afford" onclick="buyShopItem(${idx})">
+                    <span class="shop-btn-icon">🛒</span> COMPRAR <span class="shop-btn-price">(${item.cost} ⚙️)</span>
+                </button>
+            `;
+        } else {
+            buttonHtml = `
+                <button class="btn-shop-buy cannot-afford" disabled>
+                    <span class="shop-btn-icon">🔒</span> CHATARRA INSUFICIENTE <span class="shop-btn-price">(${item.cost} ⚙️)</span>
+                </button>
+            `;
+        }
+        
+        return `
+            <div class="shop-item-card ${item.bought ? 'item-bought' : ''} ${item.element ? 'card-elem-' + item.element : ''}">
+                <div class="shop-card-top">
+                    <span class="shop-tag-badge ${elemBadgeClass}">${tagText}</span>
+                    <div class="shop-price-tag ${canAfford || item.bought ? 'price-ok' : 'price-no'}">
+                        <span class="price-gear">⚙️</span> ${item.cost}
+                    </div>
+                </div>
+                
+                <div class="shop-card-hero">
+                    <div class="shop-holo-pedestal ${item.element ? 'platform-' + item.element : ''}">
+                        <div class="shop-card-icon ${elemClass}">${item.icon}</div>
+                    </div>
+                    <div class="shop-card-name ${elemClass}">${item.name}</div>
+                </div>
+                
+                <div class="shop-card-desc">
+                    ${item.desc}
+                </div>
+                
+                <div class="shop-card-footer">
+                    ${buttonHtml}
+                </div>
+            </div>
+        `;
+    }).join('');
+    
+    // Calcular costo de comprar todo lo disponible en el catálogo
+    const unboughtItems = currentShopItems.filter(it => !it.bought);
+    const totalCostAll = unboughtItems.reduce((acc, it) => acc + it.cost, 0);
+    const canBuyAll = unboughtItems.length > 1 && GAME_STATE.scrap >= totalCostAll;
+    
+    let buyAllBtnHtml = '';
+    if (canBuyAll) {
+        buyAllBtnHtml = `
+            <button class="btn-shop-buy-all" onclick="buyAllAvailableShopItems()">
+                <span class="buy-all-icon">⚡</span> COMPRAR TODO EL CATÁLOGO DISPONIBLE (${totalCostAll} ⚙️)
+            </button>
+        `;
+    }
+    
+    actions.innerHTML = `
+        <div class="shop-container">
+            <div class="shop-header-panel">
+                <div class="shop-header-badge">🛒 MERCADO NEGRO // RED DE CONTRABANDO</div>
+                <h1 class="shop-main-title">MERCADO NEGRO</h1>
+                <div class="shop-subtitle-row">
+                    <p class="shop-subtitle">Existencias limitadas (1 unidad por artículo). Compra todo lo que tu chatarra te permita.</p>
+                    <div class="shop-scrap-pill">
+                        <span class="scrap-pill-label">TU SALDO:</span>
+                        <span class="scrap-pill-val">${GAME_STATE.scrap} ⚙️</span>
+                    </div>
+                </div>
+            </div>
+            
+            ${feedbackHtml}
+            
+            <div class="shop-cards-grid">
+                ${cardsHtml}
+            </div>
+            
+            <div class="shop-bottom-actions">
+                ${buyAllBtnHtml}
+                <button class="btn-shop-exit" onclick="advanceFloor()">
+                    <span class="exit-icon">🚪</span> SALIR DEL MERCADO <span class="exit-arrow">➔</span>
+                </button>
+            </div>
+        </div>
+    `;
+    
+    updateTeamUI();
+}
+
+function buyShopItem(idx) {
+    const item = currentShopItems[idx];
+    if (!item || item.bought) return;
+    
+    if (GAME_STATE.scrap < item.cost) {
+        return;
+    }
+    
+    // Descontar chatarra
+    addScrap(-item.cost);
+    item.bought = true;
+    
+    // Añadir copia al inventario
+    const clonedData = JSON.parse(JSON.stringify(item.data));
+    if (item.category === 'WEAPON') {
+        GAME_STATE.inventory.weapons.push(clonedData);
+    } else {
+        GAME_STATE.inventory.items.push(clonedData);
+    }
+    
+    let msg = `✓ ¡Adquiriste <strong>${item.name}</strong> por ${item.cost} ⚙️! Guardado en tu inventario.`;
+    renderShopUI(msg);
+}
+
+function buyAllAvailableShopItems() {
+    let purchasedNames = [];
+    currentShopItems.forEach(item => {
+        if (!item.bought && GAME_STATE.scrap >= item.cost) {
+            addScrap(-item.cost);
+            item.bought = true;
+            const clonedData = JSON.parse(JSON.stringify(item.data));
+            if (item.category === 'WEAPON') {
+                GAME_STATE.inventory.weapons.push(clonedData);
+            } else {
+                GAME_STATE.inventory.items.push(clonedData);
+            }
+            purchasedNames.push(item.name);
+        }
+    });
+    
+    if (purchasedNames.length > 0) {
+        let msg = `⚡ ¡Compraste con éxito: <strong>${purchasedNames.join(', ')}</strong>! Guardados en tu inventario.`;
+        renderShopUI(msg);
     }
 }

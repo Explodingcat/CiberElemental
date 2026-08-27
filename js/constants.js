@@ -70,11 +70,11 @@ const WEAPON_EMOJIS = {
 };
 
 const ELEMENT_BASE_STATS = {
-    [ELEMENTS.FUEGO]: { maxHp: 90, atk: 28, spd: 11, dodge: 5, acc: 100 },
-    [ELEMENTS.AGUA]: { maxHp: 130, atk: 14, spd: 9, dodge: 5, acc: 95 },
-    [ELEMENTS.TIERRA]: { maxHp: 175, atk: 12, spd: 4, dodge: 0, acc: 85 },
-    [ELEMENTS.AIRE]: { maxHp: 80, atk: 22, spd: 16, dodge: 25, acc: 95 },
-    [ELEMENTS.NEUTRO]: { maxHp: 200, atk: 30, spd: 12, dodge: 10, acc: 100 } // Boss
+    [ELEMENTS.FUEGO]: { maxHp: 90, atk: 28, spd: 11, dodge: 5, acc: 100, critChance: 10 },
+    [ELEMENTS.AGUA]: { maxHp: 130, atk: 14, spd: 9, dodge: 5, acc: 95, critChance: 5 },
+    [ELEMENTS.TIERRA]: { maxHp: 175, atk: 12, spd: 4, dodge: 0, acc: 85, critChance: 5 },
+    [ELEMENTS.AIRE]: { maxHp: 80, atk: 22, spd: 16, dodge: 25, acc: 95, critChance: 15 },
+    [ELEMENTS.NEUTRO]: { maxHp: 200, atk: 30, spd: 12, dodge: 10, acc: 100, critChance: 10 } // Boss
 };
 
 const ITEM_TYPES = {
