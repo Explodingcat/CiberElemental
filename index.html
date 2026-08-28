@@ -54,7 +54,10 @@
 
             <div class="start-footer">
                 <button id="btn-account-start" class="btn-account-cta" onclick="openAccountModal('tab-account')">
-                    <span class="btn-icon">👤</span> CUENTA / HISTORIAL
+                    <span class="btn-icon">👤</span> CUENTA
+                </button>
+                <button id="btn-leaderboard-start" class="btn-leaderboard-cta" onclick="openAccountModal('tab-leaderboard')">
+                    <span class="btn-icon">🏆</span> TOP 10
                 </button>
                 <button id="btn-start" class="btn-start-game">
                     <span class="btn-icon">⚡</span> COMENZAR INCURSIÓN <span class="btn-arrow">➔</span>
@@ -333,7 +336,10 @@
                         <span>👤</span> CUENTA Y ACCESO
                     </button>
                     <button id="btn-tab-history" class="account-tab-btn" onclick="AuthManager.switchTab('tab-history')">
-                        <span>📜</span> HISTORIAL DE INCURSIONES
+                        <span>📜</span> HISTORIAL
+                    </button>
+                    <button id="btn-tab-leaderboard" class="account-tab-btn" onclick="AuthManager.switchTab('tab-leaderboard')">
+                        <span>🏆</span> TOP 10 SPEEDRUN
                     </button>
                 </div>
 
@@ -388,7 +394,10 @@
 
                         <div class="auth-logged-actions">
                             <button class="btn-view-history" onclick="AuthManager.switchTab('tab-history')">
-                                <span>📜 VER REGISTROS DE PARTIDAS</span>
+                                <span>📜 VER MIS PARTIDAS</span>
+                            </button>
+                            <button class="btn-view-leaderboard" onclick="AuthManager.switchTab('tab-leaderboard')">
+                                <span>🏆 TOP 10 SPEEDRUN</span>
                             </button>
                             <button class="btn-logout" onclick="AuthManager.signOut()">
                                 <span>🚪 CERRAR SESIÓN</span>
@@ -406,6 +415,22 @@
                         </button>
                     </div>
                     <div id="history-runs-list" class="history-runs-container">
+                        <!-- Generado dinámicamente -->
+                    </div>
+                </div>
+
+                <!-- Contenedor Pestaña 3: Clasificación Top 10 Speedrunners -->
+                <div id="tab-leaderboard" class="account-tab-panel">
+                    <div class="history-controls-row">
+                        <div class="leaderboard-title-group">
+                            <span class="history-section-title">⚡ CUADRO DE HONOR // TOP 10 SPEEDRUNNERS</span>
+                            <span class="leaderboard-subtitle">Partidas ganadas en menor tiempo por pilotos con cuenta</span>
+                        </div>
+                        <button class="btn-refresh-history" onclick="AuthManager.loadAndRenderLeaderboard()" title="Actualizar clasificación">
+                            🔄 Actualizar
+                        </button>
+                    </div>
+                    <div id="leaderboard-runs-list" class="leaderboard-runs-container">
                         <!-- Generado dinámicamente -->
                     </div>
                 </div>

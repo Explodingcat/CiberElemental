@@ -1,4 +1,4 @@
-﻿// authManager.js
+// authManager.js
 // Manejo de autenticación, perfil de usuario y persistencia de partidas en Supabase / localStorage
 
 const LOCAL_STORAGE_HISTORY_KEY = 'cyber_elemental_runs_history';
@@ -131,10 +131,14 @@ const AuthManager = {
         // 2. Si el usuario está autenticado en Supabase, guardar en la nube
         if (this.currentUser && isSupabaseConfigured() && supabaseClient) {
             try {
+                const playerName = this.currentUser.user_metadata?.nickname 
+                    || this.currentUser.email.split('@')[0];
+
                 const { error } = await supabaseClient
                     .from('match_runs')
                     .insert([{
                         user_id: this.currentUser.id,
+                        player_name: playerName,
                         won: runData.won,
                         floor_reached: runData.floor_reached,
                         duration_seconds: runData.duration_seconds,
@@ -273,6 +277,142 @@ const AuthManager = {
         `;
     },
 
+    async getTop10Speedruns() {
+        if (!isSupabaseConfigured() || !supabaseClient) {
+            return [];
+        }
+
+        try {
+            const { data, error } = await supabaseClient
+                .from('match_runs')
+                .select('*')
+                .eq('won', true)
+                .order('duration_seconds', { ascending: true })
+                .limit(10);
+
+            if (error) {
+                console.warn('[Supabase] Error al obtener Top 10:', error);
+                return [];
+            }
+            return data || [];
+        } catch (err) {
+            console.error('[Supabase] Excepción al obtener Top 10:', err);
+            return [];
+        }
+    },
+
+    async loadAndRenderLeaderboard() {
+        const container = document.getElementById('leaderboard-runs-list');
+        if (!container) return;
+
+        container.innerHTML = `
+            <div class="history-loading">
+                <span class="loading-spinner">⚡</span> Escaneando registros de los mejores comandantes...
+            </div>
+        `;
+
+        if (!isSupabaseConfigured() || !supabaseClient) {
+            container.innerHTML = `
+                <div class="history-empty-state">
+                    <div class="empty-icon">☁️</div>
+                    <div class="empty-title">CLASIFICACIÓN EN LA NUBE OFFLINE</div>
+                    <div class="empty-desc">Conecta Supabase para sincronizar y visualizar el Top 10 global de speedrunners.</div>
+                </div>
+            `;
+            return;
+        }
+
+        const runs = await this.getTop10Speedruns();
+
+        if (!runs || runs.length === 0) {
+            container.innerHTML = `
+                <div class="history-empty-state">
+                    <div class="empty-icon">👑</div>
+                    <div class="empty-title">SALÓN DE LA FAMA VACÍO</div>
+                    <div class="empty-desc">Aún ningún comandante ha registrado una victoria sobre TITAN-X con su cuenta. ¡Sé el primero en derrotarlo!</div>
+                </div>
+            `;
+            return;
+        }
+
+        container.innerHTML = runs.map((run, index) => this.renderLeaderboardCard(run, index + 1)).join('');
+    },
+
+    renderLeaderboardCard(run, rank) {
+        let tierClass = 'tier-silver';
+        let tierBadgeIcon = '🥈';
+        let tierName = 'PLATEADO';
+
+        if (rank <= 3) {
+            tierClass = 'tier-diamond';
+            tierBadgeIcon = '💎';
+            tierName = 'DIAMANTE';
+        } else if (rank <= 6) {
+            tierClass = 'tier-gold';
+            tierBadgeIcon = '👑';
+            tierName = 'DORADO';
+        }
+
+        const minutes = Math.floor((run.duration_seconds || 0) / 60);
+        const seconds = (run.duration_seconds || 0) % 60;
+        const durationFormatted = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        
+        let dateFormatted = 'Reciente';
+        if (run.created_at) {
+            try {
+                const d = new Date(run.created_at);
+                dateFormatted = d.toLocaleDateString('es-ES', { day: '2-digit', month: 'short' });
+            } catch (e) {}
+        }
+
+        const commanderName = run.player_name || 'Comandante Anónimo';
+
+        const squad = Array.isArray(run.squad) ? run.squad : [];
+        const squadHtml = squad.map(r => {
+            const elemEmoji = (typeof ELEMENT_EMOJIS !== 'undefined' && ELEMENT_EMOJIS[r.element]) ? ELEMENT_EMOJIS[r.element] : '🤖';
+            const weaponName = r.equippedWeapon ? `${r.equippedWeapon.name || 'Arma'}` : '';
+            return `
+                <span class="leaderboard-squad-member elem-${r.element || 'NEUTRO'}" title="${r.name} (Nv.${r.level || 1}) - ${weaponName}">
+                    ${elemEmoji} <span class="squad-robot-name">${r.name}</span>
+                </span>
+            `;
+        }).join('');
+
+        return `
+            <div class="leaderboard-card ${tierClass}">
+                <div class="leaderboard-rank-col">
+                    <div class="leaderboard-rank-badge">
+                        <span class="rank-icon">${tierBadgeIcon}</span>
+                        <span class="rank-num">#${rank}</span>
+                    </div>
+                    <span class="rank-tier-label">${tierName}</span>
+                </div>
+
+                <div class="leaderboard-main-col">
+                    <div class="leaderboard-pilot-row">
+                        <span class="leaderboard-pilot-name">👨‍💻 ${commanderName}</span>
+                        <span class="leaderboard-date">${dateFormatted}</span>
+                    </div>
+
+                    <div class="leaderboard-squad-row">
+                        <span class="squad-label">ESCUADRÓN:</span>
+                        <div class="squad-chips-wrap">${squadHtml}</div>
+                    </div>
+                </div>
+
+                <div class="leaderboard-time-col">
+                    <div class="leaderboard-time-display">
+                        <span class="time-label">⏱️ TIEMPO</span>
+                        <span class="time-value">${durationFormatted}</span>
+                    </div>
+                    <div class="leaderboard-scrap-info">
+                        <span>⚙️ ${run.scrap_collected || 0}</span>
+                    </div>
+                </div>
+            </div>
+        `;
+    },
+
     updateAuthUI() {
         const topBarBtn = document.getElementById('btn-account-top');
         const startScreenBtn = document.getElementById('btn-account-start');
@@ -338,6 +478,8 @@ const AuthManager = {
         this.clearAuthMessage();
         if (tabId === 'tab-history') {
             this.loadAndRenderHistory();
+        } else if (tabId === 'tab-leaderboard') {
+            this.loadAndRenderLeaderboard();
         }
     }
 };
