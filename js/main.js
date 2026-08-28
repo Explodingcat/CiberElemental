@@ -1,4 +1,24 @@
-// main.js
+function extractSquadData() {
+    if (!GAME_STATE || !GAME_STATE.team) return [];
+    return GAME_STATE.team.map(r => {
+        const chips = (r.skills && r.skills.length > 2)
+            ? r.skills.slice(2).map(s => s.name)
+            : [];
+        return {
+            name: r.name,
+            element: r.element,
+            level: r.level || 1,
+            isOffline: !!r.isOffline,
+            equippedWeapon: r.equippedWeapon ? {
+                name: r.equippedWeapon.name,
+                type: r.equippedWeapon.type,
+                element: r.equippedWeapon.element,
+                isPlusOne: !!r.equippedWeapon.isPlusOne
+            } : null,
+            chips: chips
+        };
+    });
+}
 
 function showScreen(screenId) {
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
@@ -17,7 +37,7 @@ function showScreen(screenId) {
         }
     }
 
-    // Actualizar datos de Game Over
+    // Actualizar datos de Game Over y guardar run
     if (screenId === 'screen-game-over' && typeof GAME_STATE !== 'undefined') {
         const floorEl = document.getElementById('gameover-floor');
         const scrapEl = document.getElementById('gameover-scrap');
@@ -25,9 +45,21 @@ function showScreen(screenId) {
         if (floorEl) floorEl.innerText = `Piso ${GAME_STATE.floor}`;
         if (scrapEl) scrapEl.innerText = `${GAME_STATE.scrap} ⚙️`;
         if (teamEl) teamEl.innerText = `${GAME_STATE.team ? GAME_STATE.team.length : 1} 💀`;
+
+        if (!GAME_STATE.runSaved && typeof AuthManager !== 'undefined') {
+            GAME_STATE.runSaved = true;
+            const duration = GAME_STATE.startTime ? Math.max(1, Math.round((Date.now() - GAME_STATE.startTime) / 1000)) : 0;
+            AuthManager.saveMatchRun({
+                won: false,
+                floor_reached: GAME_STATE.floor || 1,
+                duration_seconds: duration,
+                scrap_collected: GAME_STATE.scrap || 0,
+                squad: extractSquadData()
+            });
+        }
     }
 
-    // Actualizar datos de Victoria Final
+    // Actualizar datos de Victoria Final y guardar run
     if (screenId === 'screen-victory' && typeof GAME_STATE !== 'undefined') {
         const scrapEl = document.getElementById('victory-scrap');
         const teamEl = document.getElementById('victory-team-count');
@@ -44,6 +76,18 @@ function showScreen(screenId) {
                     <span class="victory-lvl">NV.${r.level}</span>
                 </div>
             `).join('');
+        }
+
+        if (!GAME_STATE.runSaved && typeof AuthManager !== 'undefined') {
+            GAME_STATE.runSaved = true;
+            const duration = GAME_STATE.startTime ? Math.max(1, Math.round((Date.now() - GAME_STATE.startTime) / 1000)) : 0;
+            AuthManager.saveMatchRun({
+                won: true,
+                floor_reached: 10,
+                duration_seconds: duration,
+                scrap_collected: GAME_STATE.scrap || 0,
+                squad: extractSquadData()
+            });
         }
     }
 }
@@ -223,6 +267,9 @@ function initGame() {
         playerRobot.equipWeapon(weapon);
         
         GAME_STATE.floor = 1;
+        GAME_STATE.startTime = Date.now();
+        GAME_STATE.runSaved = false;
+
         generateFullMap();
         renderMap();
         showScreen('screen-map');

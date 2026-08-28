@@ -12,6 +12,7 @@
         <!-- Barra superior genérica -->
         <div id="top-bar">
             <button id="btn-inventory" class="inventory-btn" onclick="openInventory()">🎒 Inventario</button>
+            <button id="btn-account-top" class="account-btn" onclick="openAccountModal('tab-account')">👤 Cuenta / Historial</button>
             <div id="scrap-display">Chatarra: 0 ⚙️</div>
         </div>
 
@@ -52,6 +53,9 @@
             </div>
 
             <div class="start-footer">
+                <button id="btn-account-start" class="btn-account-cta" onclick="openAccountModal('tab-account')">
+                    <span class="btn-icon">👤</span> CUENTA / HISTORIAL
+                </button>
                 <button id="btn-start" class="btn-start-game">
                     <span class="btn-icon">⚡</span> COMENZAR INCURSIÓN <span class="btn-arrow">➔</span>
                 </button>
@@ -312,9 +316,109 @@
                 </div>
             </div>
         </div>
+
+        <!-- Modal de Cuenta e Historial Táctico -->
+        <div id="account-modal" class="modal" style="display: none;">
+            <div class="modal-content account-modal-box">
+                <button class="close-btn" onclick="closeAccountModal()" title="Cerrar ventana">&times;</button>
+                
+                <div class="account-modal-header">
+                    <div class="account-header-badge">🌐 TERMINAL DE ENLACE NEURONAL // USUARIO</div>
+                    <h2 class="account-modal-title">CENTRAL DE MANDO Y DATOS</h2>
+                </div>
+
+                <!-- Pestañas del Modal -->
+                <div class="account-tabs-bar">
+                    <button id="btn-tab-account" class="account-tab-btn active" onclick="AuthManager.switchTab('tab-account')">
+                        <span>👤</span> CUENTA Y ACCESO
+                    </button>
+                    <button id="btn-tab-history" class="account-tab-btn" onclick="AuthManager.switchTab('tab-history')">
+                        <span>📜</span> HISTORIAL DE INCURSIONES
+                    </button>
+                </div>
+
+                <!-- Banner de Mensajes / Notificaciones -->
+                <div id="auth-message-box" class="auth-msg-banner" style="display: none;"></div>
+
+                <!-- Contenedor Pestaña 1: Cuenta / Autenticación -->
+                <div id="tab-account" class="account-tab-panel active">
+                    <div class="account-status-row">
+                        <div id="auth-cloud-status-badge" class="status-badge-offline">⚡ MODO INVITADO (LOCAL STORAGE)</div>
+                    </div>
+
+                    <!-- Vista: Usuario NO Autenticado -->
+                    <div id="auth-logged-out-view">
+                        <div class="auth-info-card">
+                            <p class="auth-card-lead">Guarda tus estadísticas, récords y composiciones de escuadrón en la nube.</p>
+                            <p class="auth-card-sub">Puedes jugar sin registrarte (modo invitado). Si deseas sincronizar entre dispositivos, crea una cuenta con tu correo.</p>
+                        </div>
+
+                        <form id="auth-form" onsubmit="event.preventDefault();" class="auth-form-styled">
+                            <div class="form-group">
+                                <label for="auth-email">Correo Electrónico:</label>
+                                <input type="email" id="auth-email" class="cyber-input" placeholder="comandante@sector.io" autocomplete="email" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="auth-password">Contraseña:</label>
+                                <input type="password" id="auth-password" class="cyber-input" placeholder="Mínimo 6 caracteres" autocomplete="current-password" required>
+                            </div>
+                            <div class="auth-buttons-row">
+                                <button type="button" class="btn-auth-action btn-auth-login" onclick="AuthManager.signIn(document.getElementById('auth-email').value, document.getElementById('auth-password').value)">
+                                    <span>🔑 INICIAR SESIÓN</span>
+                                </button>
+                                <button type="button" class="btn-auth-action btn-auth-signup" onclick="AuthManager.signUp(document.getElementById('auth-email').value, document.getElementById('auth-password').value)">
+                                    <span>✨ REGISTRARSE (CONFIRMAR CORREO)</span>
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Vista: Usuario Autenticado -->
+                    <div id="auth-logged-in-view" style="display: none;">
+                        <div class="profile-card">
+                            <div class="profile-avatar-box">
+                                <div class="profile-avatar">👨‍💻</div>
+                            </div>
+                            <div class="profile-details">
+                                <div class="profile-badge">COMANDANTE AUTORIZADO</div>
+                                <div id="account-user-email" class="profile-email">usuario@correo.com</div>
+                                <div class="profile-sync-note">🟢 Sincronización en la nube activa con Supabase</div>
+                            </div>
+                        </div>
+
+                        <div class="auth-logged-actions">
+                            <button class="btn-view-history" onclick="AuthManager.switchTab('tab-history')">
+                                <span>📜 VER REGISTROS DE PARTIDAS</span>
+                            </button>
+                            <button class="btn-logout" onclick="AuthManager.signOut()">
+                                <span>🚪 CERRAR SESIÓN</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Contenedor Pestaña 2: Historial de Partidas -->
+                <div id="tab-history" class="account-tab-panel">
+                    <div class="history-controls-row">
+                        <span class="history-section-title">REGISTRO DE OPERACIONES TÁCTICAS</span>
+                        <button class="btn-refresh-history" onclick="AuthManager.loadAndRenderHistory()" title="Actualizar registros">
+                            🔄 Actualizar
+                        </button>
+                    </div>
+                    <div id="history-runs-list" class="history-runs-container">
+                        <!-- Generado dinámicamente -->
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
-    <!-- Scripts -->
+    <!-- SDK Supabase vía CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/supabaseClient.js"></script>
+    <script src="js/authManager.js"></script>
+
+    <!-- Scripts del Juego -->
     <script src="js/constants.js"></script>
     <script src="js/database.js"></script>
     <script src="js/eventsDatabase.js"></script>

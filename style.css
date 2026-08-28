@@ -514,13 +514,38 @@ button:disabled {
     line-height: 1.25;
 }
 
-/* Start Game Action Button */
 .start-footer {
     width: 100%;
-    max-width: 440px;
+    max-width: 520px;
     display: flex;
     justify-content: center;
+    gap: 12px;
     margin-top: 6px;
+}
+
+.btn-account-cta {
+    padding: 12px 18px;
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    background: rgba(102, 252, 241, 0.08);
+    border: 1px solid rgba(102, 252, 241, 0.4);
+    border-radius: 10px;
+    color: var(--accent-color);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: all 0.2s ease-in-out;
+    white-space: nowrap;
+}
+
+.btn-account-cta:hover {
+    background: rgba(102, 252, 241, 0.2);
+    border-color: var(--accent-color);
+    box-shadow: 0 0 15px rgba(102, 252, 241, 0.3);
+    transform: translateY(-2px);
 }
 
 .btn-start-game {
@@ -4558,4 +4583,635 @@ progress::-webkit-progress-value {
         padding: 12px 10px;
     }
 }
+
+/* ==========================================================================
+   Cuenta de Usuario e Historial de Incursiones (Supabase / Local)
+   ========================================================================== */
+
+.account-btn {
+    background-color: rgba(102, 252, 241, 0.1);
+    border: 1px solid var(--secondary-accent);
+    color: var(--accent-color);
+    padding: 6px 14px;
+    cursor: pointer;
+    border-radius: 4px;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s ease;
+}
+
+.account-btn:hover {
+    background-color: rgba(102, 252, 241, 0.25);
+    border-color: var(--accent-color);
+    box-shadow: 0 0 10px rgba(102, 252, 241, 0.3);
+}
+
+.account-modal-box {
+    max-width: 780px;
+    width: 92%;
+    background: rgba(13, 17, 23, 0.96);
+    border: 1px solid rgba(102, 252, 241, 0.4);
+    border-radius: 16px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.95), 0 0 35px rgba(102, 252, 241, 0.2);
+    padding: 24px 28px;
+    box-sizing: border-box;
+}
+
+.account-modal-header {
+    text-align: center;
+    margin-bottom: 16px;
+}
+
+.account-header-badge {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    color: #66fcf1;
+    background: rgba(102, 252, 241, 0.12);
+    border: 1px solid rgba(102, 252, 241, 0.35);
+    border-radius: 20px;
+    padding: 4px 14px;
+    text-transform: uppercase;
+    display: inline-block;
+}
+
+.account-modal-title {
+    font-size: 24px;
+    font-weight: 900;
+    letter-spacing: 2px;
+    color: #fff;
+    margin: 8px 0 0 0;
+    text-shadow: 0 0 15px rgba(102, 252, 241, 0.35);
+}
+
+/* Tabs */
+.account-tabs-bar {
+    display: flex;
+    gap: 8px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    margin-bottom: 18px;
+    padding-bottom: 2px;
+}
+
+.account-tab-btn {
+    flex: 1;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-bottom: none;
+    border-radius: 8px 8px 0 0;
+    color: var(--text-color);
+    padding: 10px 16px;
+    margin: 0;
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.account-tab-btn:hover {
+    color: var(--accent-color);
+    background: rgba(102, 252, 241, 0.08);
+}
+
+.account-tab-btn.active {
+    color: #0b0c10;
+    background: var(--accent-color);
+    border-color: var(--accent-color);
+    box-shadow: 0 -2px 10px rgba(102, 252, 241, 0.3);
+}
+
+.account-tab-panel {
+    display: none;
+}
+
+.account-tab-panel.active {
+    display: block;
+}
+
+/* Badges de Estado */
+.account-status-row {
+    margin-bottom: 14px;
+    display: flex;
+    justify-content: center;
+}
+
+.status-badge-offline, .status-badge-online, .status-badge-ready {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    padding: 4px 12px;
+    border-radius: 6px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.status-badge-offline {
+    color: #feca57;
+    background: rgba(254, 202, 87, 0.12);
+    border: 1px solid rgba(254, 202, 87, 0.3);
+}
+
+.status-badge-online {
+    color: #66fcf1;
+    background: rgba(102, 252, 241, 0.15);
+    border: 1px solid rgba(102, 252, 241, 0.4);
+    box-shadow: 0 0 10px rgba(102, 252, 241, 0.2);
+}
+
+.status-badge-ready {
+    color: #48dbfb;
+    background: rgba(72, 219, 251, 0.12);
+    border: 1px solid rgba(72, 219, 251, 0.3);
+}
+
+/* Banner de mensajes */
+.auth-msg-banner {
+    padding: 10px 14px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 14px;
+    line-height: 1.4;
+    text-align: center;
+}
+
+.auth-msg-info {
+    background: rgba(72, 219, 251, 0.12);
+    border: 1px solid rgba(72, 219, 251, 0.4);
+    color: #48dbfb;
+}
+
+.auth-msg-success {
+    background: rgba(102, 252, 241, 0.15);
+    border: 1px solid rgba(102, 252, 241, 0.5);
+    color: #66fcf1;
+}
+
+.auth-msg-warning {
+    background: rgba(254, 202, 87, 0.15);
+    border: 1px solid rgba(254, 202, 87, 0.5);
+    color: #feca57;
+}
+
+.auth-msg-error {
+    background: rgba(255, 107, 107, 0.15);
+    border: 1px solid rgba(255, 107, 107, 0.5);
+    color: #ff6b6b;
+}
+
+/* Formulario Auth */
+.auth-info-card {
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 10px;
+    padding: 12px 16px;
+    margin-bottom: 16px;
+    text-align: center;
+}
+
+.auth-card-lead {
+    font-size: 15px;
+    font-weight: 700;
+    color: #fff;
+    margin: 0 0 4px 0;
+}
+
+.auth-card-sub {
+    font-size: 13px;
+    color: var(--text-color);
+    margin: 0;
+}
+
+.auth-form-styled {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    text-align: left;
+}
+
+.form-group label {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--accent-color);
+    letter-spacing: 1px;
+}
+
+.cyber-input {
+    background: rgba(0, 0, 0, 0.5);
+    border: 1px solid rgba(102, 252, 241, 0.3);
+    border-radius: 8px;
+    padding: 10px 14px;
+    color: #fff;
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 16px;
+    outline: none;
+    transition: all 0.2s ease;
+}
+
+.cyber-input:focus {
+    border-color: var(--accent-color);
+    box-shadow: 0 0 12px rgba(102, 252, 241, 0.3);
+    background: rgba(0, 0, 0, 0.7);
+}
+
+.auth-buttons-row {
+    display: flex;
+    gap: 10px;
+    margin-top: 8px;
+}
+
+.btn-auth-action {
+    flex: 1;
+    padding: 11px 14px;
+    font-size: 14px;
+    font-weight: 700;
+    margin: 0;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-auth-login {
+    background: rgba(102, 252, 241, 0.15);
+    border: 1px solid var(--accent-color);
+    color: #fff;
+}
+
+.btn-auth-login:hover {
+    background: var(--accent-color);
+    color: #0b0c10;
+    box-shadow: 0 0 15px rgba(102, 252, 241, 0.4);
+}
+
+.btn-auth-signup {
+    background: rgba(69, 162, 158, 0.15);
+    border: 1px solid var(--secondary-accent);
+    color: var(--accent-color);
+}
+
+.btn-auth-signup:hover {
+    background: rgba(69, 162, 158, 0.35);
+    border-color: var(--accent-color);
+}
+
+/* Vista Logueada / Perfil */
+.profile-card {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(102, 252, 241, 0.25);
+    border-radius: 12px;
+    padding: 16px 20px;
+    margin-bottom: 18px;
+}
+
+.profile-avatar-box {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: rgba(102, 252, 241, 0.1);
+    border: 1px solid var(--accent-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+    box-shadow: 0 0 15px rgba(102, 252, 241, 0.2);
+}
+
+.profile-details {
+    text-align: left;
+    flex: 1;
+}
+
+.profile-badge {
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 1.5px;
+    color: #feca57;
+}
+
+.profile-email {
+    font-size: 18px;
+    font-weight: 700;
+    color: #fff;
+    margin: 2px 0;
+}
+
+.profile-sync-note {
+    font-size: 12px;
+    color: #66fcf1;
+}
+
+.auth-logged-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.btn-view-history {
+    flex: 2;
+    background: rgba(102, 252, 241, 0.15);
+    border: 1px solid var(--accent-color);
+    color: #fff;
+    padding: 11px;
+    margin: 0;
+    font-size: 14px;
+    border-radius: 8px;
+}
+
+.btn-view-history:hover {
+    background: var(--accent-color);
+    color: #0b0c10;
+}
+
+.btn-logout {
+    flex: 1;
+    background: rgba(255, 107, 107, 0.1);
+    border: 1px solid rgba(255, 107, 107, 0.4);
+    color: #ff6b6b;
+    padding: 11px;
+    margin: 0;
+    font-size: 14px;
+    border-radius: 8px;
+}
+
+.btn-logout:hover {
+    background: rgba(255, 107, 107, 0.25);
+    border-color: #ff6b6b;
+    box-shadow: 0 0 12px rgba(255, 107, 107, 0.3);
+}
+
+/* Pestaña Historial */
+.history-controls-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    padding-bottom: 8px;
+}
+
+.history-section-title {
+    font-size: 13px;
+    font-weight: 800;
+    letter-spacing: 1.5px;
+    color: var(--accent-color);
+    text-transform: uppercase;
+}
+
+.btn-refresh-history {
+    padding: 4px 10px;
+    font-size: 12px;
+    margin: 0;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 4px;
+    color: var(--text-color);
+    cursor: pointer;
+}
+
+.btn-refresh-history:hover {
+    color: #fff;
+    border-color: var(--accent-color);
+}
+
+.history-runs-container {
+    max-height: 52vh;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding-right: 4px;
+}
+
+.history-loading {
+    padding: 30px;
+    text-align: center;
+    color: var(--accent-color);
+    font-size: 15px;
+    font-weight: 600;
+}
+
+.history-empty-state {
+    padding: 35px 20px;
+    text-align: center;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px dashed rgba(255, 255, 255, 0.12);
+    border-radius: 12px;
+}
+
+.empty-icon {
+    font-size: 36px;
+    margin-bottom: 8px;
+    opacity: 0.7;
+}
+
+.empty-title {
+    font-size: 16px;
+    font-weight: 800;
+    letter-spacing: 1.5px;
+    color: #fff;
+    margin-bottom: 4px;
+}
+
+.empty-desc {
+    font-size: 13px;
+    color: var(--text-color);
+}
+
+/* Tarjeta de Partida */
+.run-history-card {
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 10px;
+    padding: 12px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    transition: transform 0.15s ease;
+}
+
+.run-history-card:hover {
+    transform: translateY(-2px);
+}
+
+.run-win {
+    border-left: 4px solid #66fcf1;
+    border-top: 1px solid rgba(102, 252, 241, 0.2);
+    border-right: 1px solid rgba(102, 252, 241, 0.1);
+    border-bottom: 1px solid rgba(102, 252, 241, 0.1);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+}
+
+.run-loss {
+    border-left: 4px solid #ff6b6b;
+    border-top: 1px solid rgba(255, 107, 107, 0.2);
+    border-right: 1px solid rgba(255, 107, 107, 0.1);
+    border-bottom: 1px solid rgba(255, 107, 107, 0.1);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+}
+
+.run-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.run-outcome-badge {
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 1px;
+    padding: 2px 8px;
+    border-radius: 4px;
+}
+
+.badge-win {
+    color: #66fcf1;
+    background: rgba(102, 252, 241, 0.12);
+}
+
+.badge-loss {
+    color: #ff6b6b;
+    background: rgba(255, 107, 107, 0.12);
+}
+
+.run-date {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.5);
+}
+
+.run-metrics-row {
+    display: flex;
+    gap: 18px;
+    background: rgba(0, 0, 0, 0.3);
+    padding: 6px 12px;
+    border-radius: 6px;
+}
+
+.run-metric {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+}
+
+.metric-lbl {
+    font-weight: 700;
+    color: var(--text-color);
+    opacity: 0.8;
+}
+
+.metric-val {
+    font-weight: 800;
+    color: #fff;
+}
+
+.val-win {
+    color: #66fcf1;
+}
+
+.run-squad-section {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.squad-title {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    color: #feca57;
+    opacity: 0.85;
+}
+
+.run-squad-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 6px;
+}
+
+.run-member-pill {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 6px;
+    padding: 6px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.member-info-top {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    font-weight: 700;
+    color: #fff;
+}
+
+.member-level {
+    font-size: 11px;
+    color: #66fcf1;
+    background: rgba(102, 252, 241, 0.1);
+    padding: 1px 4px;
+    border-radius: 3px;
+    margin-left: auto;
+}
+
+.member-gear-info {
+    font-size: 11px;
+    color: var(--text-color);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.gear-weapon {
+    color: #feca57;
+}
+
+.gear-chips {
+    color: #48dbfb;
+}
+
+/* Responsividad para móviles */
+@media (max-width: 600px) {
+    .start-footer {
+        flex-direction: column;
+        width: 90%;
+    }
+
+    .btn-account-cta {
+        width: 100%;
+        padding: 10px;
+        font-size: 14px;
+    }
+
+    .account-modal-box {
+        padding: 16px 14px;
+    }
+
+    .auth-buttons-row {
+        flex-direction: column;
+    }
+
+    .run-metrics-row {
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .run-squad-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
 
