@@ -53,6 +53,10 @@
             </div>
 
             <div class="start-footer">
+                <button id="btn-skills-tree-start" class="btn-skills-tree-cta" onclick="openSkillTreeModal()" title="Ver y desbloquear habilidades pasivas permanentes">
+                    <span class="btn-icon">🌳</span> ÁRBOL DE HABILIDADES
+                    <span class="scrap-pill-badge">0 ⚙️</span>
+                </button>
                 <button id="btn-account-start" class="btn-account-cta" onclick="openAccountModal('tab-account')">
                     <span class="btn-icon">👤</span> CUENTA
                 </button>
@@ -233,6 +237,10 @@
                     </div>
                 </div>
 
+                <div id="gameover-global-scrap-added" class="endgame-global-scrap-banner">
+                    +0 ⚙️ transferidos al Pozo Global de tu Cuenta
+                </div>
+
                 <button class="btn-endgame-cta btn-gameover" onclick="location.reload()">
                     <span>🔄 REINICIAR SIMULACIÓN</span>
                 </button>
@@ -262,6 +270,10 @@
                 </div>
 
                 <div id="victory-team-roster" class="victory-roster-row"></div>
+
+                <div id="victory-global-scrap-added" class="endgame-global-scrap-banner">
+                    +0 ⚙️ transferidos al Pozo Global de tu Cuenta
+                </div>
 
                 <button class="btn-endgame-cta btn-victory" onclick="location.reload()">
                     <span>🌟 NUEVA INCURSIÓN</span>
@@ -436,12 +448,75 @@
                 </div>
             </div>
         </div>
+
+        <!-- Modal del Árbol de Habilidades Pasivas (Meta-Progresión) -->
+        <div id="skills-modal" class="modal" style="display: none;">
+            <div class="modal-content skills-modal-box">
+                <button class="close-btn" onclick="closeSkillTreeModal()" title="Cerrar ventana">&times;</button>
+                
+                <div class="skills-modal-header">
+                    <div class="skills-header-badge">🧠 MATRIZ NEURONAL // META-PROGRESIÓN TÁCTICA</div>
+                    <div class="skills-header-main-row">
+                        <div class="skills-title-group">
+                            <h2 class="skills-modal-title">ÁRBOL DE HABILIDADES PASIVAS</h2>
+                            <div class="skills-subtitle">Desbloquea mejoras permanentes para tus unidades y expediciones con tu pozo global de chatarra.</div>
+                        </div>
+                        <div class="skills-global-scrap-card">
+                            <span class="scrap-card-label">⚙️ CHATARRA GLOBAL</span>
+                            <span id="skills-modal-global-scrap" class="scrap-card-val">0 ⚙️</span>
+                            <span class="scrap-card-unlocked">Habilidades: <strong id="skills-modal-unlocked-count">0 / 50</strong></span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Pestañas de Ramas -->
+                <div class="skills-branch-tabs-bar">
+                    <button class="skills-branch-tab-btn active" data-branch="ASSAULT" onclick="SkillsManager.switchBranch('ASSAULT')">
+                        <span class="tab-icon">⚔️</span> PROTOCOLO ASALTO
+                    </button>
+                    <button class="skills-branch-tab-btn" data-branch="DEFENSE" onclick="SkillsManager.switchBranch('DEFENSE')">
+                        <span class="tab-icon">🛡️</span> BLINDAJE ESTRUCTURAL
+                    </button>
+                    <button class="skills-branch-tab-btn" data-branch="ELEMENTAL" onclick="SkillsManager.switchBranch('ELEMENTAL')">
+                        <span class="tab-icon">⚡</span> SINTONÍA ELEMENTAL
+                    </button>
+                    <button class="skills-branch-tab-btn" data-branch="TACTICS" onclick="SkillsManager.switchBranch('TACTICS')">
+                        <span class="tab-icon">🛠️</span> LOGÍSTICA Y TÁCTICA
+                    </button>
+                </div>
+
+                <div id="skills-modal-toast" class="skills-toast"></div>
+
+                <!-- Cuerpo Principal: Grid de Nodos + Panel Lateral de Detalle -->
+                <div class="skills-modal-body">
+                    <div class="skills-tree-view-column">
+                        <div class="skills-branch-info-banner">
+                            <h3 id="skills-branch-name" class="branch-info-name">⚔️ Protocolo Asalto</h3>
+                            <p id="skills-branch-desc" class="branch-info-desc">Optimización de potencia de fuego y sensores críticos.</p>
+                        </div>
+                        <div id="skills-tree-nodes-container" class="skills-nodes-container">
+                            <!-- Generado dinámicamente -->
+                        </div>
+                    </div>
+
+                    <div class="skills-detail-column">
+                        <div id="skill-detail-panel" class="skill-detail-box">
+                            <!-- Generado dinámicamente -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- SDK Supabase vía CDN -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="js/supabaseClient.js"></script>
     <script src="js/authManager.js"></script>
+
+    <!-- Meta-Progresión y Habilidades Pasivas -->
+    <script src="js/skillsData.js"></script>
+    <script src="js/skillsManager.js"></script>
 
     <!-- Scripts del Juego -->
     <script src="js/constants.js"></script>

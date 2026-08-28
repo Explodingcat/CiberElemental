@@ -22,6 +22,7 @@ class Robot {
         this.hp = template.hp; // se inicializará en recalculateStats si está undefined
         
         this.isOffline = false;
+        this.isAlly = template.isAlly !== undefined ? template.isAlly : (!this.name.startsWith('Salvaje') && !this.name.startsWith('ÉLITE') && !this.name.includes('Jefe'));
         
         // Habilidades
         this.skills = template.skills ? JSON.parse(JSON.stringify(template.skills)) : [];
@@ -85,16 +86,39 @@ class Robot {
         this.maxHp = this.baseMaxHp;
         this.atk = this.baseAtk;
 
+        // Aplicar mejoras pasivas de meta-progresión si es una unidad aliada
+        if (this.isAlly && typeof SkillsManager !== 'undefined') {
+            let hpMult = SkillsManager.getHpMultiplier();
+            if (this.element === ELEMENTS.TIERRA) {
+                hpMult += SkillsManager.getModifier('earth_bonus_hp_pct', 0);
+            }
+            this.maxHp = Math.floor(this.maxHp * hpMult);
+            this.atk = Math.floor(this.atk * SkillsManager.getAtkMultiplier());
+            this.dodge += SkillsManager.getDodgeBonus();
+            this.acc += SkillsManager.getAccBonus();
+            this.critChance += SkillsManager.getCritRateBonus();
+        }
+
         if (this.equippedWeapon) {
-            // Bono de afinidad
+            // Bono de afinidad (+20% base, aumentado con pasivas de Sintonía de Chasis)
             if (this.equippedWeapon.element === this.element) {
-                this.maxHp = Math.floor(this.maxHp * 1.2);
-                this.atk = Math.floor(this.atk * 1.2);
+                let affinityMult = 1.20;
+                if (this.isAlly && typeof SkillsManager !== 'undefined') {
+                    affinityMult += SkillsManager.getAffinityMultiplierBonus();
+                }
+                this.maxHp = Math.floor(this.maxHp * affinityMult);
+                this.atk = Math.floor(this.atk * affinityMult);
             }
             // Espada +15% de daño base pasivo (+30% si está mejorada) y +10% de Crítico en básicos (+20% con +1)
             if (this.equippedWeapon.type === WEAPON_TYPES.ESPADA) {
-                this.atk = Math.floor(this.atk * (this.equippedWeapon.isUpgraded ? 1.30 : 1.15));
-                this.critChance += (this.equippedWeapon.isUpgraded ? 20 : 10);
+                let swordDmgMult = this.equippedWeapon.isUpgraded ? 1.30 : 1.15;
+                let swordCrit = this.equippedWeapon.isUpgraded ? 20 : 10;
+                if (this.isAlly && typeof SkillsManager !== 'undefined') {
+                    swordDmgMult += SkillsManager.getModifier('sword_bonus_dmg', 0);
+                    swordCrit += SkillsManager.getModifier('sword_bonus_crit', 0);
+                }
+                this.atk = Math.floor(this.atk * swordDmgMult);
+                this.critChance += swordCrit;
             }
         }
         
@@ -131,12 +155,16 @@ class Robot {
         }
         
         if (!ignoreDefense && this.hasStatus('DEFENDIENDO')) {
+            let baseReduction = 0.50;
+            if (this.isAlly && typeof SkillsManager !== 'undefined') {
+                baseReduction += SkillsManager.getModifier('defend_bonus_reduction', 0); // 0.60 con Modo Fortaleza
+            }
             if (penetrationRatio > 0) {
-                // Perfora la reducción de defensa del 50%
-                let effectiveReduction = 0.5 * (1 - penetrationRatio);
+                // Perfora la reducción de defensa
+                let effectiveReduction = baseReduction * (1 - penetrationRatio);
                 finalDamage = Math.floor(finalDamage * (1 - effectiveReduction));
             } else {
-                finalDamage = Math.floor(finalDamage * 0.5);
+                finalDamage = Math.floor(finalDamage * (1 - baseReduction));
             }
         }
         
@@ -151,13 +179,32 @@ class Robot {
 
     heal(amount) {
         if (this.isOffline) return 0;
+        let effectiveAmount = amount;
+        if (this.isAlly && typeof SkillsManager !== 'undefined') {
+            effectiveAmount *= (1 + SkillsManager.getModifier('healing_received_pct', 0));
+        }
         const oldHp = this.hp;
-        this.hp = Math.min(this.maxHp, this.hp + Math.floor(amount));
+        this.hp = Math.min(this.maxHp, this.hp + Math.floor(effectiveAmount));
         return this.hp - oldHp;
     }
 
     addStatus(status) {
         if (this.isOffline) return;
+        
+        // Inmunidad o resistencia a aturdimiento por Firmeza Giroscópica
+        if (status.type === 'STUN' && this.isAlly && typeof SkillsManager !== 'undefined') {
+            let stunResist = SkillsManager.getModifier('stun_resist_chance', 0);
+            if (stunResist > 0 && Math.random() < stunResist) {
+                return; // Resistió el aturdimiento con éxito
+            }
+        }
+
+        // Blindaje de Plasma: duración extendida de barreras para aliados
+        if (status.type === 'BARRIER' && this.isAlly && typeof SkillsManager !== 'undefined') {
+            let extraDuration = SkillsManager.getModifier('barrier_extra_duration', 0);
+            status.duration = (status.duration || 2) + extraDuration;
+        }
+
         this.statuses.push(status);
     }
 
@@ -173,7 +220,10 @@ class Robot {
             let status = this.statuses[i];
             
             if (status.type === 'BURN') {
-                let dmg = Math.floor(this.maxHp * 0.08);
+                let burnRed = (this.isAlly && typeof SkillsManager !== 'undefined') 
+                    ? SkillsManager.getModifier('burn_damage_reduction', 0) 
+                    : 0;
+                let dmg = Math.max(1, Math.floor(this.maxHp * 0.08 * (1 - burnRed)));
                 this.hp -= dmg;
                 messages.push(`${this.name} sufre ${dmg} por Quemadura.`);
                 if (this.hp <= 0) {
@@ -188,9 +238,13 @@ class Robot {
             }
         }
         
-        // Efecto Báculo: cura 3% max hp (5% si mejorado)
+        // Efecto Báculo: cura 3% max hp (5% si mejorado) + pasiva Báculos de Regeneración
         if (this.equippedWeapon && this.equippedWeapon.type === WEAPON_TYPES.BACULO && this.hp > 0 && this.hp < this.maxHp) {
-            let healAmount = Math.max(1, Math.floor(this.maxHp * (this.equippedWeapon.isUpgraded ? 0.05 : 0.03)));
+            let staffExtra = (this.isAlly && typeof SkillsManager !== 'undefined') 
+                ? SkillsManager.getModifier('staff_extra_heal', 0) 
+                : 0;
+            let healRate = (this.equippedWeapon.isUpgraded ? 0.05 : 0.03) + staffExtra;
+            let healAmount = Math.max(1, Math.floor(this.maxHp * healRate));
             let actualHeal = this.heal(healAmount);
             messages.push(`${this.name} se cura ${actualHeal} gracias a su Báculo.`);
         }

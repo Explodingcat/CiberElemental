@@ -13,15 +13,21 @@ const AuthManager = {
                 const { data: { session } } = await supabaseClient.auth.getSession();
                 this.currentUser = session ? session.user : null;
 
-                supabaseClient.auth.onAuthStateChange((_event, session) => {
+                supabaseClient.auth.onAuthStateChange(async (_event, session) => {
                     this.currentUser = session ? session.user : null;
                     this.updateAuthUI();
+                    if (typeof SkillsManager !== 'undefined') {
+                        await SkillsManager.loadProfile();
+                    }
                 });
             } catch (err) {
                 console.warn('[AuthManager] Error al obtener sesión:', err);
             }
         }
         this.updateAuthUI();
+        if (typeof SkillsManager !== 'undefined') {
+            SkillsManager.loadProfile();
+        }
     },
 
     async signUp(email, password) {
@@ -91,6 +97,11 @@ const AuthManager = {
             this.currentUser = data.user;
             this.showAuthMessage('✅ ¡Sesión iniciada correctamente!', 'success');
             this.updateAuthUI();
+
+            if (typeof SkillsManager !== 'undefined') {
+                await SkillsManager.loadProfile();
+            }
+
             setTimeout(() => {
                 this.switchTab('tab-history');
                 this.loadAndRenderHistory();
@@ -109,17 +120,27 @@ const AuthManager = {
         this.currentUser = null;
         this.showAuthMessage('Sesión cerrada. Modo invitado activo.', 'info');
         this.updateAuthUI();
+
+        if (typeof SkillsManager !== 'undefined') {
+            await SkillsManager.loadProfile();
+        }
+
         this.loadAndRenderHistory();
     },
 
     async saveMatchRun(runData) {
+        // 1. Acumular la chatarra sobrante de la run al pozo global de la cuenta
+        if (typeof SkillsManager !== 'undefined') {
+            SkillsManager.addGlobalScrap(runData.scrap_collected || 0);
+        }
+
         // Enriquecer datos con fecha
         const enrichedRun = {
             ...runData,
             created_at: new Date().toISOString()
         };
 
-        // 1. Guardar siempre en LocalStorage como resguardo
+        // 2. Guardar siempre en LocalStorage como resguardo
         try {
             const localHistory = JSON.parse(localStorage.getItem(LOCAL_STORAGE_HISTORY_KEY) || '[]');
             localHistory.unshift(enrichedRun);
@@ -128,7 +149,7 @@ const AuthManager = {
             console.warn('[AuthManager] Error guardando en localStorage:', e);
         }
 
-        // 2. Si el usuario está autenticado en Supabase, guardar en la nube
+        // 3. Si el usuario está autenticado en Supabase, guardar en la nube
         if (this.currentUser && isSupabaseConfigured() && supabaseClient) {
             try {
                 const playerName = this.currentUser.user_metadata?.nickname 

@@ -1,4 +1,4 @@
-﻿# 🗄️ Scripts de Base de Datos - Cyber-Elemental (Supabase)
+# 🗄️ Scripts de Base de Datos - Cyber-Elemental (Supabase)
 
 Esta carpeta contiene los scripts SQL necesarios para configurar o restaurar la base de datos de **Cyber-Elemental** en **Supabase**.
 
@@ -9,8 +9,9 @@ Esta carpeta contiene los scripts SQL necesarios para configurar o restaurar la 
 * **[`schema.sql`](./schema.sql):** Script completo e idempotente (se puede ejecutar múltiples veces sin borrar datos existentes). Contiene:
   1. Tabla `match_runs` con soporte de `jsonb` para escuadrones, armas y chips.
   2. Columna `player_name` para identificar a los comandantes en el ranking.
-  3. Índices de aceleración para la consulta del **Top 10 Speedrun**.
-  4. Políticas de seguridad **Row Level Security (RLS)** que protegen la privacidad de los usuarios mientras permiten el Leaderboard público de victorias.
+  3. Tabla `player_profiles` para guardar la **Chatarra Global** y el **Árbol de Habilidades Desbloqueadas** del jugador.
+  4. Índices de aceleración para la consulta del **Top 10 Speedrun**.
+  5. Políticas de seguridad **Row Level Security (RLS)** que protegen la privacidad de los usuarios mientras permiten el Leaderboard público de victorias y la meta-progresión personal.
 
 ---
 
@@ -25,7 +26,9 @@ Esta carpeta contiene los scripts SQL necesarios para configurar o restaurar la 
 
 ---
 
-## 📋 Estructura de la Tabla `match_runs`
+## 📋 Estructura de las Tablas
+
+### Tabla `match_runs`
 
 | Columna | Tipo | Descripción |
 | :--- | :--- | :--- |
@@ -38,3 +41,13 @@ Esta carpeta contiene los scripts SQL necesarios para configurar o restaurar la 
 | `scrap_collected` | `int` | Cantidad de chatarra acumulada al finalizar la partida. |
 | `squad` | `jsonb` | Arreglo JSON con robots, elementos, niveles, armas y chips equipados. |
 | `created_at` | `timestamptz`| Fecha y hora de creación del registro. |
+
+### Tabla `player_profiles` (Meta-Progresión)
+
+| Columna | Tipo | Descripción |
+| :--- | :--- | :--- |
+| `user_id` | `uuid` | ID del usuario autenticado (`PRIMARY KEY REFERENCES auth.users`). |
+| `global_scrap` | `int` | Pozo global acumulado de chatarra asociada a la cuenta. |
+| `unlocked_skills` | `jsonb` | Lista (array JSON) de IDs de habilidades pasivas desbloqueadas. |
+| `updated_at` | `timestamptz`| Última fecha de actualización del perfil y meta-progresión. |
+

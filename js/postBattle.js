@@ -7,12 +7,20 @@ function initPostBattle(enemy) {
     showScreen('screen-post-battle');
     defeatedRobot = enemy;
     
-    // Siempre da chatarra base
-    let baseScrap = Math.floor(Math.random() * 10) + 10;
+    // Siempre da chatarra base (modificada por pasivas de Imanes de Chatarrero)
+    let scrapGainMult = (typeof SkillsManager !== 'undefined') ? SkillsManager.getScrapGainMultiplier() : 1;
+    let baseScrap = Math.floor((Math.floor(Math.random() * 10) + 10) * scrapGainMult);
+
+    // Si es Élite, doble chatarra
+    let isElite = enemy.name.includes('ÉLITE');
+    if (isElite) {
+        baseScrap *= 2;
+    }
     addScrap(baseScrap);
 
-    // Repartir XP
-    const xpGained = enemy.level * 50;
+    // Repartir XP (modificada por pasivas de Chips de Aprendizaje)
+    let xpGainMult = (typeof SkillsManager !== 'undefined') ? SkillsManager.getXpGainMultiplier() : 1;
+    const xpGained = Math.floor(enemy.level * 50 * xpGainMult);
     let xpMsgs = [];
     GAME_STATE.team.forEach(r => {
         if (!r.isOffline) {
@@ -24,13 +32,6 @@ function initPostBattle(enemy) {
     });
     
     document.getElementById('defeated-emoji').innerHTML = enemy.getEmojiGraphic();
-    
-    // Si es Élite, doble chatarra
-    let isElite = enemy.name.includes('ÉLITE');
-    if (isElite) {
-        baseScrap *= 2;
-        addScrap(baseScrap / 2); // Añadimos la mitad extra porque ya se añadió baseScrap al inicio
-    }
     
     droppedWeapon = null;
     let droppedItem = null;
@@ -115,9 +116,12 @@ function initPostBattle(enemy) {
         btnRecruit.disabled = true;
         btnRecruit.innerHTML = `<span>🤖 Reclutar (Equipo Completo 3/3)</span>`;
     } else if (isElite) {
+        let eliteChance = (typeof SkillsManager !== 'undefined') ? SkillsManager.getEliteRecruitChance() : 0.50;
+        let successPct = Math.round(eliteChance * 100);
+        let failPct = 100 - successPct;
         btnRecruit.className = 'btn-post-action btn-post-recruit-elite';
-        btnRecruit.innerHTML = `<span>⚠️ Reclutar Élite (50% Éxito / 50% 💥 Explosión -10% HP)</span>`;
-        btnRecruit.title = "50% prob. de éxito. Si falla, el robot explotará e infligirá un 10% de daño de HP a todo el escuadrón (puede ser letal).";
+        btnRecruit.innerHTML = `<span>⚠️ Reclutar Élite (${successPct}% Éxito / ${failPct}% 💥 Explosión)</span>`;
+        btnRecruit.title = `${successPct}% prob. de éxito. Si falla, el robot explotará e infligirá un 10% de daño de HP a todo el escuadrón (puede ser letal).`;
         btnRecruit.onclick = () => handleRecruitElite(enemy, actionsContainer, desc);
     } else {
         btnRecruit.className = 'btn-post-action btn-post-recruit';
@@ -129,15 +133,16 @@ function initPostBattle(enemy) {
     }
     actionsContainer.appendChild(btnRecruit);
 
-    // Botón Desmantelar
+    // Botón Desmantelar (beneficiado por Reciclaje Estructural)
+    const dismantleRewards = (typeof SkillsManager !== 'undefined') ? SkillsManager.getDismantleRewards() : { scrap: 30, healPct: 0.10 };
     const btnScrap = document.createElement('button');
     btnScrap.className = 'btn-post-action btn-post-scrap';
-    btnScrap.innerHTML = `<span>⚙️ Desmantelar (+30 Chatarra, +10% Reparación)</span>`;
+    btnScrap.innerHTML = `<span>⚙️ Desmantelar (+${dismantleRewards.scrap} Chatarra, +${Math.round(dismantleRewards.healPct * 100)}% Reparación)</span>`;
     btnScrap.onclick = () => {
-        addScrap(30);
+        addScrap(dismantleRewards.scrap);
         GAME_STATE.team.forEach(r => {
             if (!r.isOffline) {
-                r.hp = Math.min(r.maxHp, r.hp + Math.floor(r.maxHp * 0.1));
+                r.heal(r.maxHp * dismantleRewards.healPct);
             }
         });
         advanceFloor();
@@ -160,8 +165,9 @@ function handleRecruitElite(enemy, actionsContainer, desc) {
     
     const postContainer = document.querySelector('.post-battle-container') || document.getElementById('screen-post-battle');
     
-    // 50% éxito de reclutamiento, 50% de explosión
-    let isSuccess = Math.random() < 0.5;
+    // Probabilidad de éxito configurada con meta-progresión
+    let recruitChance = (typeof SkillsManager !== 'undefined') ? SkillsManager.getEliteRecruitChance() : 0.50;
+    let isSuccess = Math.random() < recruitChance;
     
     if (isSuccess) {
         if (desc) {

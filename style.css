@@ -5531,5 +5531,712 @@ progress::-webkit-progress-value {
     font-weight: 700;
 }
 
+/* ==========================================================================
+   🌳 ÁRBOL DE HABILIDADES Y META-PROGRESIÓN // ESTILOS CYBERPUNK
+   ========================================================================== */
+
+/* Botón CTA en Pantalla de Inicio */
+.btn-skills-tree-cta {
+    background: linear-gradient(135deg, rgba(102, 252, 241, 0.15), rgba(72, 219, 251, 0.25));
+    border: 1px solid var(--accent-color);
+    color: #fff;
+    padding: 10px 18px;
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    border-radius: 6px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    transition: all 0.25s ease;
+    box-shadow: 0 0 15px rgba(102, 252, 241, 0.2);
+}
+
+.btn-skills-tree-cta:hover {
+    background: linear-gradient(135deg, rgba(102, 252, 241, 0.3), rgba(72, 219, 251, 0.45));
+    box-shadow: 0 0 22px rgba(102, 252, 241, 0.45);
+    transform: translateY(-2px);
+}
+
+.scrap-pill-badge {
+    background: rgba(254, 202, 87, 0.2);
+    border: 1px solid #feca57;
+    color: #feca57;
+    padding: 3px 8px;
+    border-radius: 12px;
+    font-size: 13px;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+}
+
+/* Banner de Chatarra en Pantallas de Fin de Partida */
+.endgame-global-scrap-banner {
+    background: rgba(254, 202, 87, 0.12);
+    border: 1px dashed rgba(254, 202, 87, 0.6);
+    color: #feca57;
+    padding: 10px 16px;
+    border-radius: 6px;
+    font-size: 15px;
+    font-weight: 700;
+    text-align: center;
+    margin: 12px 0 16px;
+    letter-spacing: 0.5px;
+    animation: pulseGlow 2.5s infinite alternate;
+}
+
+@keyframes pulseGlow {
+    0% { box-shadow: 0 0 8px rgba(254, 202, 87, 0.2); }
+    100% { box-shadow: 0 0 18px rgba(254, 202, 87, 0.5); }
+}
+
+/* Modal del Árbol de Habilidades */
+.skills-modal-box {
+    width: 95vw;
+    max-width: 1200px;
+    max-height: 92vh;
+    display: flex;
+    flex-direction: column;
+    background: #0f1118;
+    border: 1px solid rgba(102, 252, 241, 0.35);
+    box-shadow: 0 0 40px rgba(0, 0, 0, 0.8), 0 0 30px rgba(102, 252, 241, 0.15);
+    border-radius: 10px;
+    padding: 24px;
+    overflow: hidden;
+    position: relative;
+}
+
+.skills-modal-header {
+    margin-bottom: 16px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    padding-bottom: 14px;
+}
+
+.skills-header-badge {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--accent-color);
+    letter-spacing: 2px;
+    margin-bottom: 4px;
+}
+
+.skills-header-main-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+.skills-modal-title {
+    font-size: 24px;
+    font-weight: 800;
+    letter-spacing: 1.5px;
+    color: #fff;
+    margin: 0 0 4px;
+    text-shadow: 0 0 12px rgba(102, 252, 241, 0.3);
+}
+
+.skills-subtitle {
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.skills-global-scrap-card {
+    background: rgba(254, 202, 87, 0.08);
+    border: 1px solid rgba(254, 202, 87, 0.4);
+    border-radius: 8px;
+    padding: 8px 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    box-shadow: 0 0 15px rgba(254, 202, 87, 0.15);
+}
+
+.scrap-card-label {
+    font-size: 10px;
+    font-weight: 700;
+    color: rgba(254, 202, 87, 0.8);
+    letter-spacing: 1px;
+}
+
+.scrap-card-val {
+    font-size: 22px;
+    font-weight: 900;
+    color: #feca57;
+    letter-spacing: 1px;
+}
+
+.scrap-card-unlocked {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.7);
+    margin-top: 2px;
+}
+
+.scrap-card-unlocked strong {
+    color: var(--accent-color);
+}
+
+/* Pestañas de Ramas */
+.skills-branch-tabs-bar {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 16px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    padding-bottom: 10px;
+    overflow-x: auto;
+}
+
+.skills-branch-tab-btn {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    color: rgba(255, 255, 255, 0.7);
+    padding: 10px 16px;
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    border-radius: 6px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.skills-branch-tab-btn:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: #fff;
+    border-color: rgba(102, 252, 241, 0.4);
+}
+
+.skills-branch-tab-btn.active {
+    background: rgba(102, 252, 241, 0.15);
+    border-color: var(--accent-color);
+    color: #fff;
+    box-shadow: 0 0 15px rgba(102, 252, 241, 0.25);
+}
+
+/* Cuerpo del Modal (2 columnas) */
+.skills-modal-body {
+    display: grid;
+    grid-template-columns: 1fr 340px;
+    gap: 20px;
+    flex: 1;
+    overflow: hidden;
+}
+
+.skills-tree-view-column {
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    padding-right: 10px;
+}
+
+.skills-branch-info-banner {
+    background: rgba(255, 255, 255, 0.02);
+    border-left: 3px solid var(--accent-color);
+    padding: 10px 14px;
+    margin-bottom: 16px;
+    border-radius: 0 6px 6px 0;
+}
+
+.branch-info-name {
+    font-size: 16px;
+    font-weight: 800;
+    color: #fff;
+    margin: 0 0 2px;
+    letter-spacing: 1px;
+}
+
+.branch-info-desc {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.6);
+    margin: 0;
+}
+
+/* Tiers y Nodos */
+.skills-tier-row {
+    margin-bottom: 20px;
+}
+
+.tier-indicator-pill {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 10px;
+}
+
+.tier-label {
+    font-size: 11px;
+    font-weight: 800;
+    color: var(--accent-color);
+    background: rgba(102, 252, 241, 0.1);
+    border: 1px solid rgba(102, 252, 241, 0.3);
+    padding: 2px 8px;
+    border-radius: 4px;
+    letter-spacing: 1px;
+    white-space: nowrap;
+}
+
+.tier-divider-line {
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, rgba(102, 252, 241, 0.3), rgba(255, 255, 255, 0.03));
+}
+
+.skills-tier-cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 12px;
+}
+
+/* Card de Nodo */
+.skill-node-card {
+    background: #151821;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 8px;
+    padding: 12px;
+    cursor: pointer;
+    transition: all 0.22s ease;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    position: relative;
+    user-select: none;
+}
+
+.skill-node-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.5);
+}
+
+/* Estado: Bloqueada */
+.skill-node-card.node-locked {
+    opacity: 0.65;
+    background: #111319;
+    border-color: rgba(255, 255, 255, 0.05);
+}
+
+.skill-node-card.node-locked:hover {
+    opacity: 0.85;
+    border-color: rgba(255, 255, 255, 0.15);
+}
+
+/* Estado: Disponible para comprar */
+.skill-node-card.node-available {
+    border-color: rgba(254, 202, 87, 0.5);
+    background: linear-gradient(145deg, #151821, #181d28);
+    box-shadow: 0 0 10px rgba(254, 202, 87, 0.1);
+}
+
+.skill-node-card.node-available:hover {
+    border-color: #feca57;
+    box-shadow: 0 0 18px rgba(254, 202, 87, 0.3);
+}
+
+/* Estado: Desbloqueada / Activa */
+.skill-node-card.node-unlocked {
+    border-color: rgba(46, 213, 115, 0.6);
+    background: linear-gradient(145deg, #131d1b, #15221e);
+    box-shadow: 0 0 12px rgba(46, 213, 115, 0.15);
+}
+
+.skill-node-card.node-unlocked:hover {
+    border-color: #2ed573;
+    box-shadow: 0 0 20px rgba(46, 213, 115, 0.35);
+}
+
+/* Estado: Seleccionada */
+.skill-node-card.is-selected {
+    outline: 2px solid var(--accent-color);
+    outline-offset: 1px;
+}
+
+.node-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.node-icon {
+    font-size: 24px;
+}
+
+.node-status-badge {
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 4px;
+    letter-spacing: 0.5px;
+}
+
+.node-locked-badge {
+    background: rgba(255, 255, 255, 0.05);
+    color: rgba(255, 255, 255, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.node-available-badge {
+    background: rgba(254, 202, 87, 0.15);
+    color: #feca57;
+    border: 1px solid rgba(254, 202, 87, 0.4);
+}
+
+.node-unlocked-badge {
+    background: rgba(46, 213, 115, 0.15);
+    color: #2ed573;
+    border: 1px solid rgba(46, 213, 115, 0.4);
+}
+
+.node-name {
+    font-size: 14px;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 4px;
+    line-height: 1.2;
+}
+
+.node-desc {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.6);
+    line-height: 1.35;
+    margin-bottom: 10px;
+    flex: 1;
+}
+
+.node-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    padding-top: 8px;
+    font-size: 11px;
+}
+
+.node-tier-tag {
+    color: rgba(255, 255, 255, 0.4);
+    font-weight: 700;
+}
+
+.node-cost-tag {
+    font-weight: 800;
+}
+
+.node-cost-tag.cost-affordable {
+    color: #feca57;
+}
+
+.node-cost-tag.cost-expensive {
+    color: rgba(255, 107, 107, 0.85);
+}
+
+.node-cost-tag.cost-paid {
+    color: #2ed573;
+}
+
+/* Columna Lateral de Detalle */
+.skills-detail-column {
+    display: flex;
+    flex-direction: column;
+}
+
+.skill-detail-box {
+    background: #151821;
+    border: 1px solid rgba(102, 252, 241, 0.25);
+    border-radius: 8px;
+    padding: 18px;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    box-sizing: border-box;
+    box-shadow: 0 0 25px rgba(0, 0, 0, 0.5);
+}
+
+.detail-empty-state {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    height: 100%;
+    color: rgba(255, 255, 255, 0.4);
+    font-size: 13px;
+    line-height: 1.5;
+    padding: 20px;
+}
+
+.detail-card-inner {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    justify-content: space-between;
+}
+
+.detail-header-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 16px;
+}
+
+.detail-icon-box {
+    font-size: 36px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    width: 54px;
+    height: 54px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.detail-branch-tag {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--accent-color);
+    letter-spacing: 1px;
+}
+
+.detail-skill-name {
+    font-size: 18px;
+    font-weight: 800;
+    color: #fff;
+    margin: 2px 0 0;
+}
+
+.detail-desc-box {
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 6px;
+    padding: 12px;
+    margin-bottom: 14px;
+}
+
+.detail-section-title {
+    font-size: 10px;
+    font-weight: 800;
+    color: rgba(255, 255, 255, 0.45);
+    letter-spacing: 1px;
+    margin-bottom: 6px;
+}
+
+.detail-desc-text {
+    font-size: 13px;
+    color: #fff;
+    line-height: 1.45;
+}
+
+.detail-meta-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 14px;
+}
+
+.detail-meta-cell {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 6px;
+    padding: 8px 10px;
+    display: flex;
+    flex-direction: column;
+}
+
+.detail-meta-label {
+    font-size: 10px;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.5);
+    letter-spacing: 0.5px;
+}
+
+.detail-meta-val {
+    font-size: 14px;
+    font-weight: 800;
+    margin-top: 2px;
+}
+
+.detail-meta-val.val-affordable {
+    color: #feca57;
+}
+
+.detail-meta-val.val-expensive {
+    color: #ff6b6b;
+}
+
+.detail-meta-val.val-unlocked {
+    color: #2ed573;
+}
+
+.detail-meta-val.val-locked {
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.detail-prereqs-section {
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 6px;
+    padding: 10px 12px;
+    margin-bottom: 16px;
+}
+
+.detail-val-none {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.5);
+}
+
+.detail-prereq-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 12px;
+    padding: 4px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+}
+
+.detail-prereq-item:last-child {
+    border-bottom: none;
+}
+
+.detail-prereq-item.is-met {
+    color: #2ed573;
+}
+
+.detail-prereq-item.is-unmet {
+    color: #ff6b6b;
+}
+
+.prereq-status-tag {
+    font-size: 9px;
+    font-weight: 800;
+    padding: 2px 4px;
+    border-radius: 3px;
+}
+
+.detail-prereq-item.is-met .prereq-status-tag {
+    background: rgba(46, 213, 115, 0.15);
+    border: 1px solid rgba(46, 213, 115, 0.4);
+}
+
+.detail-prereq-item.is-unmet .prereq-status-tag {
+    background: rgba(255, 107, 107, 0.15);
+    border: 1px solid rgba(255, 107, 107, 0.4);
+}
+
+.detail-action-container {
+    margin-top: auto;
+}
+
+.btn-unlock-skill {
+    width: 100%;
+    padding: 14px;
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 15px;
+    font-weight: 800;
+    letter-spacing: 1px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    border: none;
+}
+
+.btn-skill-can-buy {
+    background: linear-gradient(135deg, #feca57, #ff9f43);
+    color: #0b0c10;
+    box-shadow: 0 0 20px rgba(254, 202, 87, 0.4);
+}
+
+.btn-skill-can-buy:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 0 28px rgba(254, 202, 87, 0.6);
+}
+
+.btn-skill-acquired {
+    background: rgba(46, 213, 115, 0.2);
+    border: 1px solid #2ed573;
+    color: #2ed573;
+    cursor: default;
+}
+
+.btn-skill-locked {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.4);
+    cursor: not-allowed;
+}
+
+/* Toast de Notificación */
+.skills-toast {
+    position: absolute;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%) translateY(-20px);
+    background: rgba(15, 17, 24, 0.95);
+    border: 1px solid var(--accent-color);
+    color: #fff;
+    padding: 10px 20px;
+    border-radius: 6px;
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8), 0 0 20px rgba(102, 252, 241, 0.3);
+    opacity: 0;
+    pointer-events: none;
+    transition: all 0.3s ease;
+    z-index: 100;
+}
+
+.skills-toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+}
+
+.skills-toast.toast-success {
+    border-color: #2ed573;
+    box-shadow: 0 0 20px rgba(46, 213, 115, 0.4);
+}
+
+.skills-toast.toast-warning {
+    border-color: #feca57;
+    box-shadow: 0 0 20px rgba(254, 202, 87, 0.4);
+}
+
+/* Adaptación responsive para pantallas móviles / tablets */
+@media (max-width: 900px) {
+    .skills-modal-body {
+        grid-template-columns: 1fr;
+        grid-template-rows: 1fr auto;
+        overflow-y: auto;
+    }
+    
+    .skills-tree-view-column {
+        overflow-y: visible;
+    }
+
+    .skills-detail-column {
+        margin-top: 15px;
+    }
+    
+    .skills-header-main-row {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .skills-global-scrap-card {
+        width: 100%;
+        align-items: flex-start;
+        box-sizing: border-box;
+    }
+}
+
+
 
 

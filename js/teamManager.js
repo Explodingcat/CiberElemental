@@ -18,6 +18,8 @@ function addStarterRobot(templateKey) {
 
 function recruitRobot(robot) {
     if (GAME_STATE.team.length < 3) {
+        robot.isAlly = true;
+        robot.recalculateStats();
         robot.hp = Math.floor(robot.maxHp * 0.5); // Reclutado al 50% HP
         robot.isOffline = false;
         robot.statuses = [];

@@ -1,4 +1,4 @@
-﻿-- ============================================================================
+-- ============================================================================
 -- ⚡ CYBER-ELEMENTAL // ESQUEMA DE BASE DE DATOS (SUPABASE / POSTGRESQL)
 -- ============================================================================
 -- Este script crea la estructura completa de base de datos para Cyber-Elemental,
@@ -51,4 +51,37 @@ CREATE POLICY "Allow public read for winning runs leaderboard"
 DROP POLICY IF EXISTS "Users can insert their own runs" ON public.match_runs;
 CREATE POLICY "Users can insert their own runs"
     ON public.match_runs FOR INSERT
+    WITH CHECK (auth.uid() = user_id);
+
+-- 5. Tabla de Perfil de Jugador y Meta-Progresión (Chatarra Global y Habilidades Desbloqueadas)
+CREATE TABLE IF NOT EXISTS public.player_profiles (
+    user_id UUID PRIMARY KEY REFERENCES auth.users ON DELETE CASCADE,
+    global_scrap INT NOT NULL DEFAULT 0,
+    unlocked_skills JSONB NOT NULL DEFAULT '[]'::jsonb,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Asegurar columnas si la tabla ya existía
+ALTER TABLE public.player_profiles ADD COLUMN IF NOT EXISTS global_scrap INT DEFAULT 0;
+ALTER TABLE public.player_profiles ADD COLUMN IF NOT EXISTS unlocked_skills JSONB DEFAULT '[]'::jsonb;
+ALTER TABLE public.player_profiles ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW();
+
+-- Habilitar RLS en player_profiles
+ALTER TABLE public.player_profiles ENABLE ROW LEVEL SECURITY;
+
+-- Políticas de Seguridad para player_profiles:
+DROP POLICY IF EXISTS "Users can read their own profile" ON public.player_profiles;
+CREATE POLICY "Users can read their own profile"
+    ON public.player_profiles FOR SELECT
+    USING (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "Users can insert their own profile" ON public.player_profiles;
+CREATE POLICY "Users can insert their own profile"
+    ON public.player_profiles FOR INSERT
+    WITH CHECK (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "Users can update their own profile" ON public.player_profiles;
+CREATE POLICY "Users can update their own profile"
+    ON public.player_profiles FOR UPDATE
+    USING (auth.uid() = user_id)
     WITH CHECK (auth.uid() = user_id);

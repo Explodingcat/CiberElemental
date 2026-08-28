@@ -35,6 +35,18 @@ function startCombat(nodeType) {
         arenaBg.classList.add(Math.random() > 0.5 ? 'bg-normal' : 'bg-normal-alt');
     }
     
+    // Aplicar ventajas de inicio de combate de meta-progresión si están desbloqueadas
+    if (typeof SkillsManager !== 'undefined' && GAME_STATE && GAME_STATE.team) {
+        GAME_STATE.team.forEach(robot => {
+            if (!robot.isOffline && robot.hp > 0) {
+                // Batería Térmica: Aqua inicia con Barrera
+                if (robot.element === ELEMENTS.AGUA && SkillsManager.hasSkill('starter_water_buff') && !robot.hasStatus('BARRIER')) {
+                    robot.addStatus({ type: 'BARRIER', duration: 2 });
+                }
+            }
+        });
+    }
+
     // Construir la cola de iniciativa inicial por velocidad
     buildInitiativeQueue();
     
@@ -739,6 +751,26 @@ function executeTurn(attacker, skill, defender, isAttackerAlly, allyIndex = 0) {
             
             let mult = getMultiplier(attackElement, defender.element);
             let baseDmg = Math.floor(attacker.atk * skill.power * mult);
+
+            // Bonificaciones de daño de meta-progresión si el atacante es un aliado
+            if (isAttackerAlly && typeof SkillsManager !== 'undefined') {
+                // Potenciadores elementales
+                let elemBoost = SkillsManager.getElementalBoost(attackElement);
+                if (elemBoost > 0) baseDmg = Math.floor(baseDmg * (1 + elemBoost));
+
+                // Núcleo Volcánico (Ignis +10% ATQ en combate)
+                if (attacker.element === ELEMENTS.FUEGO && SkillsManager.hasSkill('starter_fire_buff')) {
+                    baseDmg = Math.floor(baseDmg * 1.10);
+                }
+
+                // Neuro-Marcadores (+10% daño contra objetivos marcados)
+                let hasMark = defender.statuses.some(s => s.type.startsWith('MARCA_'));
+                if (hasMark) {
+                    let markBoost = SkillsManager.getModifier('marked_target_damage', 0);
+                    if (markBoost > 0) baseDmg = Math.floor(baseDmg * (1 + markBoost));
+                }
+            }
+
             const isBasicAttack = (skill.cd === 0);
             let isCrit = false;
             
@@ -746,19 +778,31 @@ function executeTurn(attacker, skill, defender, isAttackerAlly, allyIndex = 0) {
             if (isBasicAttack) {
                 let critRate = attacker.critChance || 5;
                 if (Math.random() * 100 < critRate) {
-                    baseDmg = Math.floor(baseDmg * 1.5);
+                    let critMult = (isAttackerAlly && typeof SkillsManager !== 'undefined') 
+                        ? SkillsManager.getCritDmgMultiplier() 
+                        : 1.5;
+                    baseDmg = Math.floor(baseDmg * critMult);
                     isCrit = true;
-                    logCombat(`⚡💥 ¡Impacto Crítico de [${attacker.name}] (+50% Daño)!`);
+                    let critPctStr = Math.round((critMult - 1) * 100);
+                    logCombat(`⚡💥 ¡Impacto Crítico de [${attacker.name}] (+${critPctStr}% Daño)!`);
                 }
             }
             
             // Evaluar Sinergias y Reacciones Elementales
             let { finalDmg, reaction } = processElementalCombo(attackElement, defender, attacker, baseDmg);
+
+            // Resonancia Reaccionaria: potenciar daño de combos para aliados
+            if (reaction && isAttackerAlly && typeof SkillsManager !== 'undefined') {
+                finalDmg = Math.floor(finalDmg * SkillsManager.getComboDamageMultiplier());
+            }
             
-            // Hacha: perfora 50% de barreras y defensas (75% si mejorada)
+            // Hacha: perfora 50% de barreras y defensas (75% si mejorada) + pasiva Hachas de Plasma
             let penetrationRatio = 0;
             if (attacker.equippedWeapon && attacker.equippedWeapon.type === WEAPON_TYPES.HACHA) {
                 penetrationRatio = attacker.equippedWeapon.isUpgraded ? 0.75 : 0.50;
+                if (isAttackerAlly && typeof SkillsManager !== 'undefined') {
+                    penetrationRatio = Math.min(1.0, penetrationRatio + SkillsManager.getModifier('axe_penetration', 0));
+                }
             }
             
             if (reaction) {
@@ -794,8 +838,15 @@ function executeTurn(attacker, skill, defender, isAttackerAlly, allyIndex = 0) {
             
             showHitAnimation(attackElement, isAttackerAlly, allyIndex);
             
-            // Pasiva Daga: 25% doble ataque (40% si mejorada)
-            if (attacker.equippedWeapon && attacker.equippedWeapon.type === WEAPON_TYPES.DAGA && Math.random() < (attacker.equippedWeapon.isUpgraded ? 0.4 : 0.25)) {
+            // Pasiva Daga: 25% doble ataque (40% si mejorada) + pasiva Dagas de Frecuencia
+            let daggerExtraChance = (isAttackerAlly && typeof SkillsManager !== 'undefined') 
+                ? SkillsManager.getModifier('dagger_double_chance', 0) 
+                : 0;
+            let daggerProb = (attacker.equippedWeapon && attacker.equippedWeapon.type === WEAPON_TYPES.DAGA)
+                ? ((attacker.equippedWeapon.isUpgraded ? 0.4 : 0.25) + daggerExtraChance)
+                : 0;
+
+            if (daggerProb > 0 && Math.random() < daggerProb) {
                 if (defender.hp > 0) {
                     logCombat(`¡Doble Golpe de Daga!`);
                     let hitChance2 = attacker.acc - defender.dodge;
@@ -805,9 +856,12 @@ function executeTurn(attacker, skill, defender, isAttackerAlly, allyIndex = 0) {
                         let daggerBaseDmg = baseDmg;
                         let isDaggerCrit = false;
                         if (isBasicAttack && Math.random() * 100 < (attacker.critChance || 5)) {
-                            daggerBaseDmg = Math.floor(daggerBaseDmg * 1.5);
+                            let critMult = (isAttackerAlly && typeof SkillsManager !== 'undefined') 
+                                ? SkillsManager.getCritDmgMultiplier() 
+                                : 1.5;
+                            daggerBaseDmg = Math.floor(daggerBaseDmg * critMult);
                             isDaggerCrit = true;
-                            logCombat(`⚡💥 ¡Segundo Golpe Crítico (+50% Daño)!`);
+                            logCombat(`⚡💥 ¡Segundo Golpe Crítico!`);
                         }
                         let dmgDealt2 = defender.takeDamage(daggerBaseDmg, penetrationRatio, false, attacker);
                         logCombat(`- Inflige ${dmgDealt2} de daño extra a ${defender.name}.`);
@@ -846,8 +900,13 @@ function executeTurn(attacker, skill, defender, isAttackerAlly, allyIndex = 0) {
             }
             
             if (applyStatus) {
-                defender.addStatus(JSON.parse(JSON.stringify(skill.status)));
-                logCombat(`- Aplica ${formatStatusLabel(skill.status.type)} a ${defender.name} por ${skill.status.duration} turnos.`);
+                let appliedStatus = JSON.parse(JSON.stringify(skill.status));
+                // Napalm Sintético: +1 turno extra a las quemaduras aplicadas por aliados
+                if (appliedStatus.type === 'BURN' && isAttackerAlly && typeof SkillsManager !== 'undefined') {
+                    appliedStatus.duration += SkillsManager.getModifier('burn_duration_extra', 0);
+                }
+                defender.addStatus(appliedStatus);
+                logCombat(`- Aplica ${formatStatusLabel(appliedStatus.type)} a ${defender.name} por ${appliedStatus.duration} turnos.`);
             }
             
             if (skill.cd > 0 && attackElement !== ELEMENTS.NEUTRO) {

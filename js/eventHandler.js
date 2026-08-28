@@ -51,16 +51,19 @@ function startEvent(type) {
         title.innerText = "Campamento (Taller de Reparación)";
         desc.innerText = `Elige una acción para tu equipo.`;
         
+        let healPct = (typeof SkillsManager !== 'undefined') ? SkillsManager.getRepairShopHealPct() : 0.30;
+        let revivePct = (typeof SkillsManager !== 'undefined') ? SkillsManager.getReviveHpPct() : 0.10;
+
         // Opción 1: Reparar
         const btnHeal = document.createElement('button');
-        btnHeal.innerHTML = `🔧 Reparar<br><small>Cura 30% a todos (revive con 10%)</small>`;
+        btnHeal.innerHTML = `🔧 Reparar<br><small>Cura ${Math.round(healPct * 100)}% a todos (revive con ${Math.round(revivePct * 100)}%)</small>`;
         btnHeal.onclick = () => {
             GAME_STATE.team.forEach(r => {
                 if (r.isOffline) {
                     r.isOffline = false;
-                    r.hp = Math.max(1, Math.floor(r.maxHp * 0.10));
+                    r.hp = Math.max(1, Math.floor(r.maxHp * revivePct));
                 } else {
-                    r.heal(r.maxHp * 0.30);
+                    r.heal(r.maxHp * healPct);
                 }
             });
             advanceFloor();
@@ -168,11 +171,13 @@ function initShopEvent() {
     if (desc) desc.style.display = 'none';
     
     currentShopItems = [];
+    let discountPct = (typeof SkillsManager !== 'undefined') ? SkillsManager.getShopDiscountPct() : 0;
     
     // 2 Armas con elemento aleatorio (1 unidad disponible de cada una)
     for (let i = 0; i < 2; i++) {
         let w = generateRandomWeapon();
-        let cost = Math.floor(Math.random() * 15) + 35; // 35 - 49 chatarra
+        let rawCost = Math.floor(Math.random() * 15) + 35; // 35 - 49 chatarra
+        let cost = Math.max(10, Math.floor(rawCost * (1 - discountPct)));
         currentShopItems.push({
             id: 'shop_weapon_' + i,
             category: 'WEAPON',
@@ -190,7 +195,8 @@ function initShopEvent() {
     for (let i = 0; i < 2; i++) {
         let item = generateRandomItem();
         let isChip = item.type.includes('CHIP');
-        let cost = isChip ? 30 : 25;
+        let rawCost = isChip ? 30 : 25;
+        let cost = Math.max(8, Math.floor(rawCost * (1 - discountPct)));
         let element = isChip ? item.type.replace('CHIP_', '') : null;
         currentShopItems.push({
             id: 'shop_item_' + i,

@@ -42,9 +42,11 @@ function showScreen(screenId) {
         const floorEl = document.getElementById('gameover-floor');
         const scrapEl = document.getElementById('gameover-scrap');
         const teamEl = document.getElementById('gameover-team-count');
+        const globalScrapAddedEl = document.getElementById('gameover-global-scrap-added');
         if (floorEl) floorEl.innerText = `Piso ${GAME_STATE.floor}`;
         if (scrapEl) scrapEl.innerText = `${GAME_STATE.scrap} ⚙️`;
         if (teamEl) teamEl.innerText = `${GAME_STATE.team ? GAME_STATE.team.length : 1} 💀`;
+        if (globalScrapAddedEl) globalScrapAddedEl.innerText = `+${GAME_STATE.scrap} ⚙️ transferidos al Pozo Global de tu Cuenta`;
 
         if (!GAME_STATE.runSaved && typeof AuthManager !== 'undefined') {
             GAME_STATE.runSaved = true;
@@ -56,6 +58,7 @@ function showScreen(screenId) {
                 scrap_collected: GAME_STATE.scrap || 0,
                 squad: extractSquadData()
             });
+            if (typeof SkillsManager !== 'undefined') SkillsManager.updateAllScrapDisplays();
         }
     }
 
@@ -64,10 +67,12 @@ function showScreen(screenId) {
         const scrapEl = document.getElementById('victory-scrap');
         const teamEl = document.getElementById('victory-team-count');
         const rosterEl = document.getElementById('victory-team-roster');
+        const globalScrapAddedEl = document.getElementById('victory-global-scrap-added');
         
         let aliveRobots = GAME_STATE.team ? GAME_STATE.team.filter(r => !r.isOffline) : [];
         if (scrapEl) scrapEl.innerText = `${GAME_STATE.scrap} ⚙️`;
         if (teamEl) teamEl.innerText = `${aliveRobots.length} 🤖`;
+        if (globalScrapAddedEl) globalScrapAddedEl.innerText = `+${GAME_STATE.scrap} ⚙️ transferidos al Pozo Global de tu Cuenta`;
 
         if (rosterEl && GAME_STATE.team) {
             rosterEl.innerHTML = GAME_STATE.team.map(r => `
@@ -88,6 +93,7 @@ function showScreen(screenId) {
                 scrap_collected: GAME_STATE.scrap || 0,
                 squad: extractSquadData()
             });
+            if (typeof SkillsManager !== 'undefined') SkillsManager.updateAllScrapDisplays();
         }
     }
 }
@@ -269,6 +275,11 @@ function initGame() {
         GAME_STATE.floor = 1;
         GAME_STATE.startTime = Date.now();
         GAME_STATE.runSaved = false;
+        
+        // Inicializar chatarra de la run con pasiva de meta-progresión
+        GAME_STATE.scrap = (typeof SkillsManager !== 'undefined') ? SkillsManager.getStartingScrap() : 0;
+        const disp = document.getElementById('scrap-display');
+        if (disp) disp.innerText = `Chatarra: ${GAME_STATE.scrap} ⚙️`;
 
         generateFullMap();
         renderMap();
