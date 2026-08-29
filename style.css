@@ -6328,9 +6328,9 @@ progress::-webkit-progress-value {
 .hero-back .avatar-emoji { font-size: 40px !important; animation-delay: 1.2s; }
 
 /* RESPONSIVE SKILL TREE UPDATES */
-.skills-modal-box { overflow-y: auto !important; }
-.skills-modal-body.full-width-grid { display: flex; flex-direction: column; overflow: visible; }
-.skills-branch-tabs-bar { flex-wrap: wrap; justify-content: center; border-bottom: none; }
+.skills-modal-box { overflow-y: auto !important; overflow-x: hidden !important; }
+.skills-modal-body.full-width-grid { display: flex; flex-direction: column; overflow: visible !important; }
+.skills-branch-tabs-bar { flex-wrap: wrap; justify-content: center; border-bottom: none; overflow: visible !important; gap: 15px; }
 .skills-branch-tab-btn { padding: 12px 20px; font-size: 20px; border-radius: 8px; }
 .skills-tree-view-column { width: 100% !important; border-right: none !important; padding-right: 0 !important; overflow-y: visible; flex: 1; }
 .skills-nodes-container.responsive-grid { display: block; overflow-y: visible; max-height: none; }
