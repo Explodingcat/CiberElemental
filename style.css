@@ -6326,3 +6326,20 @@ progress::-webkit-progress-value {
 .hero-back.hero-wind { left: 0px; }
 .hero-back.hero-earth { right: 0px; }
 .hero-back .avatar-emoji { font-size: 40px !important; animation-delay: 1.2s; }
+
+/* RESPONSIVE SKILL TREE UPDATES */
+.skills-modal-body.full-width-grid { display: block; overflow-y: auto; max-height: calc(90vh - 180px); }
+.skills-tree-view-column { width: 100% !important; border-right: none !important; padding-right: 0 !important; }
+.skills-nodes-container.responsive-grid { display: block; overflow-y: visible; max-height: none; padding-right: 0; }
+.skill-node-card { display: flex; flex-direction: column; justify-content: space-between; cursor: default; }
+.skill-node-card:hover { transform: none; box-shadow: inherit; }
+.node-action-bar { margin-top: 15px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 15px; }
+.btn-unlock-inline { width: 100%; padding: 10px; border-radius: 6px; font-weight: bold; cursor: pointer; transition: 0.2s; border: none; font-size: 14px; display: flex; align-items: center; justify-content: center; gap: 8px; }
+.btn-skill-acquired { background: rgba(46, 213, 115, 0.2); color: #2ed573; border: 1px solid rgba(46, 213, 115, 0.3); cursor: not-allowed; }
+.btn-skill-can-buy { background: rgba(102, 252, 241, 0.15); color: #66fcf1; border: 1px solid rgba(102, 252, 241, 0.4); }
+.btn-skill-can-buy:hover { background: rgba(102, 252, 241, 0.3); box-shadow: 0 0 10px rgba(102, 252, 241, 0.5); }
+.btn-skill-locked { background: rgba(255,255,255,0.05); color: #888; border: 1px solid rgba(255,255,255,0.1); cursor: not-allowed; }
+.skill-card-prereqs { margin-top: 8px; margin-bottom: 8px; font-size: 12px; }
+.prereq-pill { display: inline-block; padding: 2px 6px; border-radius: 4px; margin-right: 4px; margin-bottom: 4px; background: rgba(0,0,0,0.3); }
+.prereq-met { color: #2ed573; border: 1px solid rgba(46,213,115,0.3); }
+.prereq-unmet { color: #ff4757; border: 1px solid rgba(255,71,87,0.3); }

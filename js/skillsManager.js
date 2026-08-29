@@ -355,21 +355,32 @@ const SkillsManager = {
                     prereqHtml = `<div class="skill-card-prereqs">${prereqHtml}</div>`;
                 }
 
+                let actionHtml = '';
+                if (isUnlocked) {
+                    actionHtml = `<button class="btn-unlock-inline btn-skill-acquired" disabled>✅ ACTIVA</button>`;
+                } else if (isAvailable) {
+                    actionHtml = `<button class="btn-unlock-inline btn-skill-can-buy" onclick="event.stopPropagation(); SkillsManager.unlockSkill('${skill.id}')">⚡ DESBLOQUEAR (${skill.cost} ⚙️)</button>`;
+                } else {
+                    actionHtml = `<button class="btn-unlock-inline btn-skill-locked" disabled title="${check.reason}">🔒 BLOQUEADA</button>`;
+                }
+
                 return `
-                    <div class="skill-node-card ${statusClass} ${isSelected ? 'is-selected' : ''}" 
-                         onclick="SkillsManager.selectSkill('${skill.id}')"
-                         data-skill-id="${skill.id}">
+                    <div class="skill-node-card ${statusClass}" data-skill-id="${skill.id}">
                         <div class="node-card-header">
                             <span class="node-icon">${skill.icon}</span>
                             <span class="node-status-badge ${statusClass}-badge">${statusBadge}</span>
                         </div>
                         <div class="node-name">${skill.name}</div>
                         <div class="node-desc">${skill.desc}</div>
+                        ${prereqHtml}
                         <div class="node-footer">
                             <span class="node-tier-tag">TIER ${skill.tier}</span>
                             <span class="node-cost-tag ${isUnlocked ? 'cost-paid' : (this.globalScrap >= skill.cost ? 'cost-affordable' : 'cost-expensive')}">
                                 ${isUnlocked ? 'DESBLOQUEADO' : `⚙️ ${skill.cost.toLocaleString()}`}
                             </span>
+                        </div>
+                        <div class="node-action-bar">
+                            ${actionHtml}
                         </div>
                     </div>
                 `;
@@ -400,98 +411,7 @@ const SkillsManager = {
     },
 
     renderSkillDetail() {
-        const detailContainer = document.getElementById('skill-detail-panel');
-        if (!detailContainer) return;
-
-        if (!this.selectedSkillId) {
-            detailContainer.innerHTML = `
-                <div class="detail-empty-state">
-                    <span>👈 Selecciona una habilidad para ver sus especificaciones y desbloquearla.</span>
-                </div>
-            `;
-            return;
-        }
-
-        const skill = this.getSkill(this.selectedSkillId);
-        if (!skill) return;
-
-        const isUnlocked = this.hasSkill(skill.id);
-        const check = this.canUnlockSkill(skill.id);
-        const branchInfo = SKILL_BRANCHES[skill.branch];
-
-        let buttonHtml = '';
-        if (isUnlocked) {
-            buttonHtml = `
-                <button class="btn-unlock-skill btn-skill-acquired" disabled>
-                    <span>✅ MEJORA ACTIVA Y OPERATIVA</span>
-                </button>
-            `;
-        } else if (check.can) {
-            buttonHtml = `
-                <button class="btn-unlock-skill btn-skill-can-buy" onclick="SkillsManager.unlockSkill('${skill.id}')">
-                    <span class="btn-icon">⚡</span> DESBLOQUEAR MEJORA (${skill.cost.toLocaleString()} ⚙️)
-                </button>
-            `;
-        } else {
-            buttonHtml = `
-                <button class="btn-unlock-skill btn-skill-locked" disabled title="${check.reason}">
-                    <span class="btn-icon">🔒</span> ${check.reason} (${skill.cost.toLocaleString()} ⚙️)
-                </button>
-            `;
-        }
-
-        let prereqsHtml = '<span class="detail-val-none">Ninguno (Acceso Inmediato)</span>';
-        if (skill.prerequisites && skill.prerequisites.length > 0) {
-            prereqsHtml = skill.prerequisites.map(pId => {
-                const p = this.getSkill(pId);
-                const hasP = this.hasSkill(pId);
-                return `
-                    <div class="detail-prereq-item ${hasP ? 'is-met' : 'is-unmet'}">
-                        <span>${hasP ? '✅' : '🔒'} ${p ? p.name : pId}</span>
-                        <span class="prereq-status-tag">${hasP ? 'DESBLOQUEADA' : 'BLOQUEADA'}</span>
-                    </div>
-                `;
-            }).join('');
-        }
-
-        detailContainer.innerHTML = `
-            <div class="detail-card-inner">
-                <div class="detail-header-row">
-                    <div class="detail-icon-box">${skill.icon}</div>
-                    <div class="detail-title-group">
-                        <div class="detail-branch-tag">${branchInfo.icon} ${branchInfo.name} // TIER ${skill.tier}</div>
-                        <h3 class="detail-skill-name">${skill.name}</h3>
-                    </div>
-                </div>
-
-                <div class="detail-desc-box">
-                    <div class="detail-section-title">EFECTO PASIVO PERMANENTE:</div>
-                    <div class="detail-desc-text">${skill.desc}</div>
-                </div>
-
-                <div class="detail-meta-grid">
-                    <div class="detail-meta-cell">
-                        <span class="detail-meta-label">⚙️ COSTE DE CHATARRA</span>
-                        <span class="detail-meta-val ${this.globalScrap >= skill.cost ? 'val-affordable' : 'val-expensive'}">${skill.cost.toLocaleString()} ⚙️</span>
-                    </div>
-                    <div class="detail-meta-cell">
-                        <span class="detail-meta-label">📊 ESTADO ACTUAL</span>
-                        <span class="detail-meta-val ${isUnlocked ? 'val-unlocked' : 'val-locked'}">${isUnlocked ? 'DESBLOQUEADA' : 'PENDIENTE'}</span>
-                    </div>
-                </div>
-
-                <div class="detail-prereqs-section">
-                    <div class="detail-section-title">REQUISITOS PREVIOS:</div>
-                    <div class="detail-prereqs-list">
-                        ${prereqsHtml}
-                    </div>
-                </div>
-
-                <div class="detail-action-container">
-                    ${buttonHtml}
-                </div>
-            </div>
-        `;
+        // Obsoleto: Ya no hay panel de detalles a la derecha, todo está en la tarjeta
     },
 
     showFeedbackMessage(msg, type = 'info') {
