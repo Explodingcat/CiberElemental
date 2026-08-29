@@ -5231,12 +5231,25 @@ progress::-webkit-progress-value {
 
     .leaderboard-card {
         flex-direction: column;
-        align-items: flex-start;
-        gap: 8px;
+        align-items: stretch;
+        gap: 12px;
+    }
+
+    .leaderboard-rank-col {
+        flex-direction: row;
+        justify-content: space-between;
+        width: 100%;
+        border-bottom: 1px solid rgba(255,255,255,0.1);
+        padding-bottom: 8px;
     }
 
     .leaderboard-time-col {
-        align-self: flex-end;
+        align-self: flex-start;
+        flex-direction: row;
+        justify-content: space-between;
+        width: 100%;
+        border-top: 1px solid rgba(255,255,255,0.1);
+        padding-top: 8px;
     }
 }
 
@@ -5275,7 +5288,7 @@ progress::-webkit-progress-value {
 }
 
 .leaderboard-runs-container {
-    max-height: 52vh;
+    flex: 1;
     overflow-y: auto;
     display: flex;
     flex-direction: column;
@@ -5295,6 +5308,8 @@ progress::-webkit-progress-value {
     position: relative;
     overflow: hidden;
     transition: all 0.2s ease-in-out;
+    flex-shrink: 0;
+    min-height: min-content;
 }
 
 .leaderboard-card:hover {
