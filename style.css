@@ -6246,16 +6246,17 @@ progress::-webkit-progress-value {
     position: relative; 
     display: flex; 
     flex-direction: column; 
-    justify-content: center; 
     align-items: center; 
     min-height: 100vh; 
     background-color: #0b0c10;
-    overflow: hidden;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 80px 20px 40px;
 }
 
 #screen-main-menu::before {
     content: '';
-    position: absolute;
+    position: fixed;
     top: -50%;
     left: -50%;
     width: 200%;
@@ -6273,7 +6274,7 @@ progress::-webkit-progress-value {
 
 #screen-main-menu::after {
     content: '';
-    position: absolute;
+    position: fixed;
     top: 0;
     left: 0;
     width: 100%;
@@ -6289,18 +6290,19 @@ progress::-webkit-progress-value {
 }
 
 #screen-main-menu:not(.active) { display: none; }
-.main-menu-top-left { position: absolute; top: 20px; left: 20px; background: rgba(0, 0, 0, 0.6); border: 1px solid rgba(102, 252, 241, 0.3); padding: 8px 16px; border-radius: 4px; font-size: 14px; font-weight: 600; color: #fff; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: all 0.3s ease; z-index: 10; }
+.main-menu-top-left { position: fixed; top: 20px; left: 20px; background: rgba(0, 0, 0, 0.6); border: 1px solid rgba(102, 252, 241, 0.3); padding: 8px 16px; border-radius: 4px; font-size: 14px; font-weight: 600; color: #fff; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: all 0.3s ease; z-index: 10; }
 .main-menu-top-left:hover { border-color: #66fcf1; background: rgba(102, 252, 241, 0.1); }
 .status-indicator { display: inline-block; width: 10px; height: 10px; border-radius: 50%; }
 .status-indicator.online { background-color: #00ffaa; box-shadow: 0 0 8px #00ffaa; }
 .status-indicator.offline { background-color: #ff3366; box-shadow: 0 0 8px #ff3366; }
-.main-menu-top-right { position: absolute; top: 20px; right: 20px; background: rgba(0, 0, 0, 0.6); border: 1px solid #c5a365; padding: 8px 16px; border-radius: 4px; font-size: 16px; font-weight: 700; color: #ffd700; display: flex; align-items: center; gap: 8px; z-index: 10; }
+.main-menu-top-right { position: fixed; top: 20px; right: 20px; background: rgba(0, 0, 0, 0.6); border: 1px solid #c5a365; padding: 8px 16px; border-radius: 4px; font-size: 16px; font-weight: 700; color: #ffd700; display: flex; align-items: center; gap: 8px; z-index: 10; }
 .main-menu-center { 
     display: flex; 
     flex-direction: column; 
     align-items: center; 
     gap: 20px; 
     z-index: 5; 
+    margin: auto;
     animation: menuFloat 4s ease-in-out infinite alternate;
 }
 
