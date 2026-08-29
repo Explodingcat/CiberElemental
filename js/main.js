@@ -30,7 +30,7 @@ function showScreen(screenId) {
     // Mostrar u ocultar la barra superior completa
     const topBar = document.getElementById('top-bar');
     if (topBar) {
-        if (['screen-start', 'screen-game-over', 'screen-victory'].includes(screenId)) {
+        if (['screen-main-menu', 'screen-start', 'screen-game-over', 'screen-victory'].includes(screenId)) {
             topBar.style.display = 'none';
         } else {
             topBar.style.display = 'flex';

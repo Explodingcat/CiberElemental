@@ -452,6 +452,15 @@ const AuthManager = {
         if (topBarBtn) topBarBtn.innerHTML = `<span>${btnLabel}</span>`;
         if (startScreenBtn) startScreenBtn.innerHTML = `<span class="btn-icon">${isLogged ? '🟢' : '👤'}</span> ${btnLabel}`;
 
+        const mainMenuStatus = document.getElementById('main-menu-status');
+        if (mainMenuStatus) {
+            if (isLogged) {
+                mainMenuStatus.innerHTML = `<span class="status-indicator online"></span> ONLINE`;
+            } else {
+                mainMenuStatus.innerHTML = `<span class="status-indicator offline"></span> OFFLINE`;
+            }
+        }
+
         if (userEmailDisplay && this.currentUser) {
             userEmailDisplay.innerText = this.currentUser.email;
         }
@@ -499,8 +508,6 @@ const AuthManager = {
         this.clearAuthMessage();
         if (tabId === 'tab-history') {
             this.loadAndRenderHistory();
-        } else if (tabId === 'tab-leaderboard') {
-            this.loadAndRenderLeaderboard();
         }
     }
 };
@@ -526,3 +533,18 @@ function closeAccountModal() {
 document.addEventListener('DOMContentLoaded', () => {
     AuthManager.init();
 });
+
+function openLeaderboardModal() {
+    const modal = document.getElementById('leaderboard-modal');
+    if (modal) {
+        modal.style.display = 'flex';
+        AuthManager.loadAndRenderLeaderboard();
+    }
+}
+
+function closeLeaderboardModal() {
+    const modal = document.getElementById('leaderboard-modal');
+    if (modal) {
+        modal.style.display = 'none';
+    }
+}

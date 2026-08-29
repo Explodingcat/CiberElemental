@@ -6240,3 +6240,89 @@ progress::-webkit-progress-value {
 
 
 
+
+/* MAIN MENU STYLES */
+#screen-main-menu { 
+    position: relative; 
+    display: flex; 
+    flex-direction: column; 
+    justify-content: center; 
+    align-items: center; 
+    min-height: 100vh; 
+    background-color: #0b0c10;
+    overflow: hidden;
+}
+
+#screen-main-menu::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle at center, rgba(102, 252, 241, 0.15) 0%, rgba(13, 17, 23, 0) 50%),
+                linear-gradient(rgba(102, 252, 241, 0.08) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(102, 252, 241, 0.08) 1px, transparent 1px);
+    background-size: 100% 100%, 50px 50px, 50px 50px;
+    background-position: center, center, center;
+    transform: perspective(600px) rotateX(60deg) translateY(-100px);
+    animation: menuGridMove 15s linear infinite;
+    z-index: 1;
+    pointer-events: none;
+}
+
+#screen-main-menu::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(circle at center, transparent 30%, #0b0c10 90%);
+    z-index: 2;
+    pointer-events: none;
+}
+
+@keyframes menuGridMove {
+    0% { background-position: center, 0 0, 0 0; }
+    100% { background-position: center, 0 50px, 0 50px; }
+}
+
+#screen-main-menu:not(.active) { display: none; }
+.main-menu-top-left { position: absolute; top: 20px; left: 20px; background: rgba(0, 0, 0, 0.6); border: 1px solid rgba(102, 252, 241, 0.3); padding: 8px 16px; border-radius: 4px; font-size: 14px; font-weight: 600; color: #fff; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: all 0.3s ease; z-index: 10; }
+.main-menu-top-left:hover { border-color: #66fcf1; background: rgba(102, 252, 241, 0.1); }
+.status-indicator { display: inline-block; width: 10px; height: 10px; border-radius: 50%; }
+.status-indicator.online { background-color: #00ffaa; box-shadow: 0 0 8px #00ffaa; }
+.status-indicator.offline { background-color: #ff3366; box-shadow: 0 0 8px #ff3366; }
+.main-menu-top-right { position: absolute; top: 20px; right: 20px; background: rgba(0, 0, 0, 0.6); border: 1px solid #c5a365; padding: 8px 16px; border-radius: 4px; font-size: 16px; font-weight: 700; color: #ffd700; display: flex; align-items: center; gap: 8px; z-index: 10; }
+.main-menu-center { 
+    display: flex; 
+    flex-direction: column; 
+    align-items: center; 
+    gap: 20px; 
+    z-index: 5; 
+    animation: menuFloat 4s ease-in-out infinite alternate;
+}
+
+@keyframes menuFloat {
+    0% { transform: translateY(0px); }
+    100% { transform: translateY(-10px); }
+}
+.main-menu-buttons { display: flex; flex-direction: column; gap: 15px; margin-top: 30px; width: 100%; max-width: 400px; }
+.btn-main-menu { background: rgba(31, 40, 51, 0.9); border: 2px solid rgba(102, 252, 241, 0.3); color: #c5c6c7; padding: 18px 24px; border-radius: 8px; font-family: 'Rajdhani', sans-serif; font-size: 18px; font-weight: 700; cursor: pointer; text-transform: uppercase; display: flex; align-items: center; justify-content: center; gap: 12px; transition: all 0.2s; letter-spacing: 1px; }
+.btn-main-menu:hover { background: rgba(69, 162, 158, 0.2); border-color: #66fcf1; color: #fff; transform: translateY(-2px); box-shadow: 0 4px 15px rgba(102, 252, 241, 0.2); }
+.btn-main-menu:active { transform: translateY(0); }
+
+/* HERO ROBOTS COMPOSITION */
+.main-menu-hero-robots { position: relative; width: 280px; height: 110px; margin-bottom: 5px; display: flex; justify-content: center; align-items: flex-end; }
+.hero-robot { position: absolute; bottom: 0; }
+.hero-front { z-index: 3; }
+.hero-front .avatar-emoji { font-size: 85px !important; animation-duration: 3.5s; }
+.hero-mid { z-index: 2; bottom: 15px; }
+.hero-mid.hero-fire { left: 30px; }
+.hero-mid.hero-water { right: 30px; }
+.hero-mid .avatar-emoji { font-size: 55px !important; animation-delay: 0.5s; }
+.hero-back { z-index: 1; bottom: 35px; opacity: 0.7; }
+.hero-back.hero-wind { left: 0px; }
+.hero-back.hero-earth { right: 0px; }
+.hero-back .avatar-emoji { font-size: 40px !important; animation-delay: 1.2s; }

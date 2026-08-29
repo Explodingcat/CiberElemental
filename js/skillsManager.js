@@ -261,7 +261,13 @@ const SkillsManager = {
     // RENDERIZADO Y GESTIÓN DE UI DEL ÁRBOL
     // =========================================================================
     updateAllScrapDisplays() {
-        // Botón en pantalla de inicio
+        // Chatarra en menú principal
+        const mainMenuScrapEl = document.getElementById('main-menu-scrap');
+        if (mainMenuScrapEl) {
+            mainMenuScrapEl.innerText = `${this.globalScrap.toLocaleString()}`;
+        }
+
+        // Botón en pantalla de inicio (mantengo si sigue existiendo en algún lado)
         const btnSkillsStart = document.getElementById('btn-skills-tree-start');
         if (btnSkillsStart) {
             btnSkillsStart.innerHTML = `

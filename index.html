@@ -16,8 +16,58 @@
             <div id="scrap-display">Chatarra: 0 ⚙️</div>
         </div>
 
-        <!-- Pantalla de Inicio -->
-        <div id="screen-start" class="screen active">
+        <!-- Menú Principal -->
+        <div id="screen-main-menu" class="screen active">
+            <!-- Esquina superior izquierda: Online / Offline -->
+            <div id="main-menu-status" class="main-menu-top-left" onclick="openAccountModal('tab-account')">
+                <span class="status-indicator offline"></span> OFFLINE
+            </div>
+
+            <!-- Esquina superior derecha: Chatarra de la cuenta -->
+            <div class="main-menu-top-right">
+                <span id="main-menu-scrap">0</span> ⚙️
+            </div>
+
+            <div class="main-menu-center">
+                <div class="main-menu-hero-robots">
+                    <div class="hero-robot hero-back hero-wind">
+                        <span class="avatar-emoji elem-AIRE">🤖</span>
+                    </div>
+                    <div class="hero-robot hero-back hero-earth">
+                        <span class="avatar-emoji elem-TIERRA">🤖</span>
+                    </div>
+                    
+                    <div class="hero-robot hero-mid hero-fire">
+                        <span class="avatar-emoji elem-FUEGO">🤖</span>
+                    </div>
+                    <div class="hero-robot hero-mid hero-water">
+                        <span class="avatar-emoji elem-AGUA">🤖</span>
+                    </div>
+                    
+                    <div class="hero-robot hero-front hero-mystery">
+                        <span class="avatar-emoji elem-NEUTRO" style="filter: grayscale(1) brightness(0.2) drop-shadow(0 0 15px rgba(102, 252, 241, 0.4));">🤖</span>
+                    </div>
+                </div>
+
+                <div class="sub-header-badge">SISTEMA DE DESPLIEGUE // ROGUELIKE v2.0</div>
+                <h1 class="game-title">CYBER-ELEMENTAL</h1>
+
+                <div class="main-menu-buttons">
+                    <button id="btn-menu-new-run" class="btn-main-menu" onclick="showScreen('screen-start')">
+                        <span class="btn-icon">⚡</span> NUEVA INCURSIÓN
+                    </button>
+                    <button id="btn-menu-skill-tree" class="btn-main-menu" onclick="openSkillTreeModal()">
+                        <span class="btn-icon">🌳</span> ÁRBOL DE HABILIDADES
+                    </button>
+                    <button id="btn-menu-leaderboard" class="btn-main-menu" onclick="openLeaderboardModal()">
+                        <span class="btn-icon">🏆</span> TOP 10 (CLASIFICACIÓN)
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pantalla de Inicio (Selección de Personaje) -->
+        <div id="screen-start" class="screen">
             <div class="start-header">
                 <div class="sub-header-badge">SISTEMA DE DESPLIEGUE // ROGUELIKE v2.0</div>
                 <h1 class="game-title">CYBER-ELEMENTAL</h1>
@@ -53,15 +103,8 @@
             </div>
 
             <div class="start-footer">
-                <button id="btn-skills-tree-start" class="btn-skills-tree-cta" onclick="openSkillTreeModal()" title="Ver y desbloquear habilidades pasivas permanentes">
-                    <span class="btn-icon">🌳</span> ÁRBOL DE HABILIDADES
-                    <span class="scrap-pill-badge">0 ⚙️</span>
-                </button>
-                <button id="btn-account-start" class="btn-account-cta" onclick="openAccountModal('tab-account')">
-                    <span class="btn-icon">👤</span> CUENTA
-                </button>
-                <button id="btn-leaderboard-start" class="btn-leaderboard-cta" onclick="openAccountModal('tab-leaderboard')">
-                    <span class="btn-icon">🏆</span> TOP 10
+                <button id="btn-back-main" class="btn-account-cta" onclick="showScreen('screen-main-menu')">
+                    <span class="btn-icon">◀</span> VOLVER AL MENÚ
                 </button>
                 <button id="btn-start" class="btn-start-game">
                     <span class="btn-icon">⚡</span> COMENZAR INCURSIÓN <span class="btn-arrow">➔</span>
@@ -350,9 +393,7 @@
                     <button id="btn-tab-history" class="account-tab-btn" onclick="AuthManager.switchTab('tab-history')">
                         <span>📜</span> HISTORIAL
                     </button>
-                    <button id="btn-tab-leaderboard" class="account-tab-btn" onclick="AuthManager.switchTab('tab-leaderboard')">
-                        <span>🏆</span> TOP 10 SPEEDRUN
-                    </button>
+
                 </div>
 
                 <!-- Banner de Mensajes / Notificaciones -->
@@ -408,7 +449,7 @@
                             <button class="btn-view-history" onclick="AuthManager.switchTab('tab-history')">
                                 <span>📜 VER MIS PARTIDAS</span>
                             </button>
-                            <button class="btn-view-leaderboard" onclick="AuthManager.switchTab('tab-leaderboard')">
+                            <button class="btn-view-leaderboard" onclick="openLeaderboardModal()">
                                 <span>🏆 TOP 10 SPEEDRUN</span>
                             </button>
                             <button class="btn-logout" onclick="AuthManager.signOut()">
@@ -431,11 +472,23 @@
                     </div>
                 </div>
 
-                <!-- Contenedor Pestaña 3: Clasificación Top 10 Speedrunners -->
-                <div id="tab-leaderboard" class="account-tab-panel">
+            </div>
+        </div>
+
+        <!-- Modal de Clasificación Top 10 -->
+        <div id="leaderboard-modal" class="modal" style="display: none;">
+            <div class="modal-content account-modal-box">
+                <button class="close-btn" onclick="closeLeaderboardModal()" title="Cerrar ventana">&times;</button>
+                
+                <div class="account-modal-header">
+                    <div class="account-header-badge">🏆 RED GLOBAL // SPEEDRUNNERS</div>
+                    <h2 class="account-modal-title">TOP 10 SPEEDRUN</h2>
+                </div>
+
+                <div class="account-tab-panel active" style="margin-top: 20px;">
                     <div class="history-controls-row">
                         <div class="leaderboard-title-group">
-                            <span class="history-section-title">⚡ CUADRO DE HONOR // TOP 10 SPEEDRUNNERS</span>
+                            <span class="history-section-title">⚡ CUADRO DE HONOR</span>
                             <span class="leaderboard-subtitle">Partidas ganadas en menor tiempo por pilotos con cuenta</span>
                         </div>
                         <button class="btn-refresh-history" onclick="AuthManager.loadAndRenderLeaderboard()" title="Actualizar clasificación">
