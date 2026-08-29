@@ -436,25 +436,18 @@
                     <div id="auth-logged-in-view" style="display: none;">
                         <div class="profile-card">
                             <div class="profile-avatar-box">
-                                <div class="profile-avatar">👨‍💻</div>
+                                <div class="profile-avatar" style="filter: grayscale(1) brightness(0.2) drop-shadow(0 0 5px rgba(255,255,255,0.5));">🤖</div>
                             </div>
                             <div class="profile-details">
                                 <div class="profile-badge">COMANDANTE AUTORIZADO</div>
                                 <div id="account-user-email" class="profile-email">usuario@correo.com</div>
-                                <div class="profile-sync-note">🟢 Sincronización en la nube activa con Supabase</div>
+                                <div class="profile-sync-note">🟢 Sincronizado</div>
                             </div>
-                        </div>
-
-                        <div class="auth-logged-actions">
-                            <button class="btn-view-history" onclick="AuthManager.switchTab('tab-history')">
-                                <span>📜 VER MIS PARTIDAS</span>
-                            </button>
-                            <button class="btn-view-leaderboard" onclick="openLeaderboardModal()">
-                                <span>🏆 TOP 10 SPEEDRUN</span>
-                            </button>
-                            <button class="btn-logout" onclick="AuthManager.signOut()">
-                                <span>🚪 CERRAR SESIÓN</span>
-                            </button>
+                            <div style="margin-left: auto;">
+                                <button class="btn-logout" onclick="AuthManager.signOut()">
+                                    <span>🚪 CERRAR SESIÓN</span>
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>

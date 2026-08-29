@@ -474,7 +474,7 @@ const AuthManager = {
                 authStatusBadge.innerHTML = '⚡ MODO INVITADO (LOCAL STORAGE)';
             } else if (isLogged) {
                 authStatusBadge.className = 'status-badge-online';
-                authStatusBadge.innerHTML = '☁️ SINCRONIZADO EN LA NUBE (SUPABASE)';
+                authStatusBadge.innerHTML = '☁️ SINCRONIZADO';
             } else {
                 authStatusBadge.className = 'status-badge-ready';
                 authStatusBadge.innerHTML = '☁️ SUPABASE LISTO // INICIA SESIÓN';
