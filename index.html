@@ -16,6 +16,12 @@
                     <span class="status-indicator offline"></span> OFFLINE
                 </div>
             </div>
+            <div class="top-bar-center">
+                <div id="run-timer-display" class="run-timer-badge" title="Tiempo de Incursión (Speedrun)">
+                    <span class="timer-icon">⏱️</span>
+                    <span id="run-timer-val" class="timer-val">00:00</span>
+                </div>
+            </div>
             <div class="top-bar-right">
                 <button id="btn-inventory" class="inventory-btn" onclick="openInventory()" title="Abrir Mochila e Inventario">🎒 Inventario</button>
                 <div id="scrap-display">Chatarra: 0 ⚙️</div>
@@ -280,6 +286,9 @@
                     +0 ⚙️ transferidos al Pozo Global de tu Cuenta
                 </div>
 
+                <!-- Tarjeta / Banner de vinculación de cuenta para usuarios anónimos -->
+                <div id="gameover-auth-card" class="postgame-auth-container" style="display: none;"></div>
+
                 <button class="btn-endgame-cta btn-gameover" onclick="location.reload()">
                     <span>🔄 REINICIAR SIMULACIÓN</span>
                 </button>
@@ -313,6 +322,9 @@
                 <div id="victory-global-scrap-added" class="endgame-global-scrap-banner">
                     +0 ⚙️ transferidos al Pozo Global de tu Cuenta
                 </div>
+
+                <!-- Tarjeta / Banner de vinculación de cuenta para usuarios anónimos -->
+                <div id="victory-auth-card" class="postgame-auth-container" style="display: none;"></div>
 
                 <button class="btn-endgame-cta btn-victory" onclick="location.reload()">
                     <span>🌟 NUEVA INCURSIÓN</span>
@@ -398,14 +410,14 @@
                 <!-- Contenedor Pestaña 1: Cuenta / Autenticación -->
                 <div id="tab-account" class="account-tab-panel active">
                     <div class="account-status-row">
-                        <div id="auth-cloud-status-badge" class="status-badge-offline">⚡ MODO INVITADO (LOCAL STORAGE)</div>
+                        <div id="auth-cloud-status-badge" class="status-badge-anon">⚡ MODO ANÓNIMO</div>
                     </div>
 
-                    <!-- Vista: Usuario NO Autenticado -->
+                    <!-- Vista: Usuario NO Autenticado / Anónimo -->
                     <div id="auth-logged-out-view">
                         <div class="auth-info-card">
-                            <p class="auth-card-lead">Guarda tus estadísticas, récords y composiciones de escuadrón en la nube.</p>
-                            <p class="auth-card-sub">Puedes jugar sin registrarte (modo invitado). Si deseas sincronizar entre dispositivos, crea una cuenta con tu correo.</p>
+                            <p class="auth-card-lead">🛡️ <strong>Vincula tu correo para proteger tu progreso:</strong></p>
+                            <p class="auth-card-sub">Actualmente juegas con una sesión anónima. Vincula un correo y contraseña para no perder tu chatarra global, habilidades e historial al limpiar el navegador.</p>
                         </div>
 
                         <form id="auth-form" onsubmit="event.preventDefault();" class="auth-form-styled">
@@ -421,8 +433,8 @@
                                 <button type="button" class="btn-auth-action btn-auth-login" onclick="AuthManager.signIn(document.getElementById('auth-email').value, document.getElementById('auth-password').value)">
                                     <span>🔑 INICIAR SESIÓN</span>
                                 </button>
-                                <button type="button" class="btn-auth-action btn-auth-signup" onclick="AuthManager.signUp(document.getElementById('auth-email').value, document.getElementById('auth-password').value)">
-                                    <span>✨ REGISTRARSE (CONFIRMAR CORREO)</span>
+                                <button id="btn-modal-signup-action" type="button" class="btn-auth-action btn-auth-signup" onclick="AuthManager.signUp(document.getElementById('auth-email').value, document.getElementById('auth-password').value)">
+                                    <span>🛡️ VINCULAR Y REGISTRAR CUENTA</span>
                                 </button>
                             </div>
                         </form>

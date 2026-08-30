@@ -24,8 +24,8 @@ El juego opera bajo una rueda de afinidades elemental táctica:
 | Elemento | Robot Base | HP Máx | ATQ | Vel | Esq | Prec | Crít | Habilidades Iniciales |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
 | 🔥 **FUEGO** | **Ignis** | 90 | 28 | 11 | 5% | 100% | 10% | **Ataque Básico:** 1.0x Daño.<br>**Ignición (CD 3):** Inflige 1.2x daño directo + Quemadura (8% HP/turno por 2 turnos). |
-| 💦 **AGUA** | **Aqua** | 130 | 14 | 9 | 5% | 95% | 5% | **Ataque Básico:** 1.0x Daño.<br>**Barrera Plasma (CD 4):** Bloquea 100% del próximo golpe recibido y aplica 1 Marca de Agua al atacante. |
-| 🪨 **TIERRA** | **Terra** | 175 | 12 | 4 | 0% | 85% | 5% | **Ataque Básico:** 1.0x Daño.<br>**Terremoto (CD 4):** Inflige 1.3x daño + 60% prob. de Aturdimiento (100% garantizado con Marca previa). |
+| 💦 **AGUA** | **Aqua** | 130 | 14 | 9 | 5% | 95% | 5% | **Ataque Básico:** 1.0x Daño.<br>**Barrera Plasma (CD 4):** Otorga barrera a cualquier aliado: bloquea el 100% de daño recibido hasta el próximo turno del invocador, restaura 5% de HP Máx y adhiere Marca de Agua (3T) al enemigo cuando éste ataca al protegido. |
+| 🪨 **TIERRA** | **Terra** | 175 | 12 | 4 | 0% | 85% | 5% | **Ataque Básico:** 1.0x Daño.<br>**Coraza de Espinas (CD 4):** Provocación: obliga a los enemigos a atacarle (al de menor HP si hay varios), reduce 50% el daño recibido, refleja 50% y adhiere 3 Marcas de Tierra al atacante hasta su próximo turno. |
 | 💨 **AIRE** | **Zephyr** | 80 | 22 | 16 | 25% | 95% | 15% | **Ataque Básico:** 1.0x Daño.<br>**Ráfaga Cortante (CD 2):** Inflige 1.4x daño (garantiza actuar primero en el turno de uso). |
 | ⚙️ **NEUTRO** | **TITAN-X** *(Jefe)* | 200 | 30 | 12 | 10% | 100% | 10% | **Golpe Titánico:** 1.5x Daño.<br>**Protocolo Exterminio (CD 4):** 3.0x Daño masivo. |
 
@@ -35,7 +35,7 @@ El juego opera bajo una rueda de afinidades elemental táctica:
 ### Crecimiento y Nivel del Robot
 * **Ganancia de Experiencia:** Vencer a un enemigo otorga `Nivel_Enemigo * 50 XP` a todos los robots operativos del escuadrón.
 * **Curva de Nivel:** Se requieren `Nivel_Actual * 100 XP` para subir de nivel.
-* **Escalado por Nivel:** Cada nivel otorga **+5% de HP Máx** y **+5% de ATQ**. Además, al subir de nivel el robot **se repara al 100% de su vida**.
+* **Escalado por Nivel:** Cada nivel otorga **+5% de HP Máx** y **+5% de ATQ**.
 
 ---
 

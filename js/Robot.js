@@ -22,7 +22,9 @@ class Robot {
         this.hp = template.hp; // se inicializará en recalculateStats si está undefined
         
         this.isOffline = false;
-        this.isAlly = template.isAlly !== undefined ? template.isAlly : (!this.name.startsWith('Salvaje') && !this.name.startsWith('ÉLITE') && !this.name.includes('Jefe'));
+        this.isAlly = template.isAlly !== undefined ? template.isAlly : (template.isElite ? false : (!this.name.startsWith('Salvaje') && !this.name.startsWith('ÉLITE') && !this.name.includes('Jefe')));
+        this.isElite = !!template.isElite;
+        this.isBoss = !!template.isBoss;
         
         // Habilidades
         this.skills = template.skills ? JSON.parse(JSON.stringify(template.skills)) : [];
@@ -56,7 +58,6 @@ class Robot {
         
         if (leveledUp) {
             this.recalculateStats();
-            this.hp = this.maxHp; // Curar completamente al subir de nivel
         }
         return leveledUp;
     }
@@ -125,7 +126,7 @@ class Robot {
         // Ajustar el HP actual por la misma diferencia que el HP máximo
         if (oldMaxHp > 0) {
             const diff = this.maxHp - oldMaxHp;
-            this.hp = Math.max(1, this.hp + diff); // Asegurar que no muera por cambiar arma, al menos 1 hp
+            this.hp = Math.min(this.maxHp, Math.max(1, this.hp + diff)); // Asegurar que no muera por cambiar arma ni supere maxHp
         }
     }
 
@@ -139,18 +140,16 @@ class Robot {
             if (penetrationRatio > 0) {
                 // Perfora el 50% / 75% de la barrera (el daño que entra es amount * penetrationRatio)
                 finalDamage = Math.floor(amount * penetrationRatio);
-                this.statuses.splice(barrierIndex, 1);
-                if (attacker && this.element !== 'NEUTRO') {
+                if (attacker) {
                     attacker.statuses = attacker.statuses.filter(s => !s.type.startsWith('MARCA_'));
-                    attacker.addStatus({ type: `MARCA_${this.element}`, duration: 3 });
+                    attacker.addStatus({ type: 'MARCA_AGUA', duration: 3 });
                 }
             } else {
-                this.statuses.splice(barrierIndex, 1);
-                if (attacker && this.element !== 'NEUTRO') {
+                if (attacker) {
                     attacker.statuses = attacker.statuses.filter(s => !s.type.startsWith('MARCA_'));
-                    attacker.addStatus({ type: `MARCA_${this.element}`, duration: 3 });
+                    attacker.addStatus({ type: 'MARCA_AGUA', duration: 3 });
                 }
-                return 0; // Daño completamente bloqueado
+                return 0; // Daño completamente bloqueado (100% protección)
             }
         }
 
@@ -182,6 +181,16 @@ class Robot {
             }
             if (penetrationRatio > 0) {
                 // Perfora la reducción de defensa
+                let effectiveReduction = baseReduction * (1 - penetrationRatio);
+                finalDamage = Math.floor(finalDamage * (1 - effectiveReduction));
+            } else {
+                finalDamage = Math.floor(finalDamage * (1 - baseReduction));
+            }
+        }
+
+        if (!ignoreDefense && this.hasStatus('CORAZA_ESPINAS')) {
+            let baseReduction = 0.50;
+            if (penetrationRatio > 0) {
                 let effectiveReduction = baseReduction * (1 - penetrationRatio);
                 finalDamage = Math.floor(finalDamage * (1 - effectiveReduction));
             } else {
@@ -270,12 +279,14 @@ class Robot {
     updateStatuses() {
         if (this.isOffline) return [];
         let messages = [];
+        let totalDamage = 0;
+        let totalHeal = 0;
         
         for (let i = this.statuses.length - 1; i >= 0; i--) {
             let status = this.statuses[i];
             
-            // DEFENDIENDO no se expira en fin de ronda global, sino al inicio del siguiente turno de acción de esta unidad
-            if (status.type === 'DEFENDIENDO') {
+            // DEFENDIENDO, CORAZA_ESPINAS y BARRIER no expiran en fin de ronda global, sino al inicio del siguiente turno de su invocador
+            if (status.type === 'DEFENDIENDO' || status.type === 'CORAZA_ESPINAS' || status.type === 'BARRIER') {
                 continue;
             }
 
@@ -285,6 +296,7 @@ class Robot {
                     : 0;
                 let dmg = Math.max(1, Math.floor(this.maxHp * 0.08 * (1 - burnRed)));
                 this.hp -= dmg;
+                totalDamage += dmg;
                 messages.push(`${this.name} sufre ${dmg} por Quemadura.`);
                 if (this.hp <= 0) {
                     this.hp = 0;
@@ -306,7 +318,10 @@ class Robot {
             let healRate = (this.equippedWeapon.isUpgraded ? 0.07 : 0.05) + staffExtra;
             let healAmount = Math.max(1, Math.floor(this.maxHp * healRate));
             let actualHeal = this.heal(healAmount);
-            messages.push(`${this.name} se cura ${actualHeal} gracias a su Báculo.`);
+            if (actualHeal > 0) {
+                totalHeal += actualHeal;
+                messages.push(`${this.name} se cura ${actualHeal} gracias a su Báculo.`);
+            }
         }
 
         // Reducir cooldowns
@@ -314,6 +329,8 @@ class Robot {
             if (skill.currentCd > 0) skill.currentCd--;
         });
         
+        messages.damage = totalDamage;
+        messages.heal = totalHeal;
         return messages;
     }
 

@@ -26,6 +26,17 @@ Esta carpeta contiene los scripts SQL necesarios para configurar o restaurar la 
 
 ---
 
+## ⚡ Configuración de Autenticación Anónima (Obligatorio)
+
+Para que los jugadores no registrados puedan jugar y almacenar su chatarra/partidas con una sesión anónima en Supabase:
+
+1. Ve a **Authentication** -> **Providers** (o **Sign-in Methods**).
+2. Busca y activa **Anonymous Sign-in** (Habilitar inicios de sesión anónimos).
+3. Guarda los cambios (**Save**).
+4. Cuando un usuario anónimo decida registrarse al finalizar una partida, el juego llamará a `supabase.auth.updateUser()` para convertir su cuenta anónima en una cuenta registrada permanente con correo y contraseña, preservando el mismo `user_id` y todo su progreso.
+
+---
+
 ## 📋 Estructura de las Tablas
 
 ### Tabla `match_runs`

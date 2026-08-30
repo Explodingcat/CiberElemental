@@ -27,9 +27,9 @@ En Cyber-Elemental la economía se divide en dos capas complementarias:
 
 1. **Chatarra de la Run (`GAME_STATE.scrap`):** Se reúne durante el ascenso por los 10 pisos de la torre y se usa para comprar suministros, chips y armas en las tiendas de mercado (`NODE_TYPES.SHOP`).
 2. **Chatarra Global de la Cuenta (`global_scrap`):** Al finalizar la incursión (ya sea que todo el escuadrón caiga o se destruya al jefe final TITAN-X), **el 100% de la chatarra remanente se deposita en el pozo global**.
-3. **Persistencia Híbrida:** 
-   - **Usuarios Autenticados:** Sincronizado en la nube con Supabase mediante la tabla `public.player_profiles`.
-   - **Modo Invitado:** Sincronizado localmente en `localStorage`. Al iniciar sesión con una cuenta de correo, el progreso se migra y unifica automáticamente.
+3. **Persistencia en la Nube con Supabase:** 
+   - **Usuarios Registrados:** Sincronizado en la nube con Supabase mediante la tabla `public.player_profiles`.
+   - **Modo Anónimo (Invitados):** Opera directamente con una sesión anónima en Supabase asociada a un `user_id` único. Al finalizar la partida se ofrece vincular un correo (`updateUser`) para no perder el progreso si se limpia el navegador.
 4. **Acceso Exclusivo en Menú Principal:** La interfaz táctica del Árbol de Habilidades se encuentra en la pantalla de inicio para configurar mejoras antes de iniciar una nueva incursión.
 
 ---

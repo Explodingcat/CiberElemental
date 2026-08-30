@@ -12,7 +12,7 @@ function initPostBattle(enemy) {
     let baseScrap = Math.floor((Math.floor(Math.random() * 10) + 10) * scrapGainMult);
 
     // Si es Élite, doble chatarra
-    let isElite = enemy.name.includes('ÉLITE');
+    let isElite = !!enemy.isElite || enemy.name.includes('ÉLITE');
     if (isElite) {
         baseScrap *= 2;
     }

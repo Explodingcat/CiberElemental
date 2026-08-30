@@ -1,9 +1,6 @@
 // skillsManager.js
 // Gestor de Meta-Progresión, Chatarra Global, Habilidades Pasivas y UI del Árbol de Talentos
 
-const LOCAL_GLOBAL_SCRAP_KEY = 'cyber_elemental_global_scrap';
-const LOCAL_UNLOCKED_SKILLS_KEY = 'cyber_elemental_unlocked_skills';
-
 const SkillsManager = {
     globalScrap: 0,
     unlockedSkills: new Set(),
@@ -18,21 +15,7 @@ const SkillsManager = {
     },
 
     async loadProfile() {
-        // 1. Cargar primero desde LocalStorage (rápido y fallback seguro)
-        try {
-            const localScrap = parseInt(localStorage.getItem(LOCAL_GLOBAL_SCRAP_KEY) || '0', 10);
-            const localSkillsRaw = localStorage.getItem(LOCAL_UNLOCKED_SKILLS_KEY);
-            const localSkills = localSkillsRaw ? JSON.parse(localSkillsRaw) : [];
-
-            this.globalScrap = isNaN(localScrap) ? 0 : localScrap;
-            this.unlockedSkills = new Set(Array.isArray(localSkills) ? localSkills : []);
-        } catch (e) {
-            console.warn('[SkillsManager] Error leyendo de localStorage:', e);
-            this.globalScrap = 0;
-            this.unlockedSkills = new Set();
-        }
-
-        // 2. Si hay usuario autenticado en Supabase, sincronizar con la nube
+        // Cargar directamente desde Supabase usando el user_id del usuario (anónimo o registrado)
         if (typeof AuthManager !== 'undefined' && AuthManager.currentUser && isSupabaseConfigured() && supabaseClient) {
             try {
                 const userId = AuthManager.currentUser.id;
@@ -45,29 +28,22 @@ const SkillsManager = {
                 if (error) {
                     console.warn('[SkillsManager] Error consultando player_profiles:', error);
                 } else if (data) {
-                    // Si ya existe registro remoto, combinar o adoptar el valor de la nube
-                    const cloudScrap = data.global_scrap || 0;
+                    // Cargar perfil desde la base de datos
+                    this.globalScrap = data.global_scrap || 0;
                     const cloudSkills = Array.isArray(data.unlocked_skills) ? data.unlocked_skills : [];
-                    
-                    // Unificar habilidades locales y remotas
-                    cloudSkills.forEach(id => this.unlockedSkills.add(id));
-                    // Usar el mayor valor de chatarra entre local y nube
-                    this.globalScrap = Math.max(this.globalScrap, cloudScrap);
-                    
-                    // Actualizar localStorage sincronizado
-                    localStorage.setItem(LOCAL_GLOBAL_SCRAP_KEY, this.globalScrap.toString());
-                    localStorage.setItem(LOCAL_UNLOCKED_SKILLS_KEY, JSON.stringify(Array.from(this.unlockedSkills)));
+                    this.unlockedSkills = new Set(cloudSkills);
                 } else {
-                    // Si no existe perfil en la nube, crearlo con el progreso actual
+                    // Si no existe perfil en Supabase para este user_id, crearlo con valores iniciales
+                    console.info('[SkillsManager] Creando perfil inicial en Supabase para user_id:', userId);
                     await supabaseClient.from('player_profiles').insert([{
                         user_id: userId,
-                        global_scrap: this.globalScrap,
+                        global_scrap: this.globalScrap || 0,
                         unlocked_skills: Array.from(this.unlockedSkills),
                         updated_at: new Date().toISOString()
                     }]);
                 }
             } catch (err) {
-                console.warn('[SkillsManager] Excepción al sincronizar con Supabase:', err);
+                console.warn('[SkillsManager] Excepción al cargar perfil desde Supabase:', err);
             }
         }
 
@@ -75,15 +51,7 @@ const SkillsManager = {
     },
 
     async saveProfile() {
-        // 1. Guardar localmente
-        try {
-            localStorage.setItem(LOCAL_GLOBAL_SCRAP_KEY, this.globalScrap.toString());
-            localStorage.setItem(LOCAL_UNLOCKED_SKILLS_KEY, JSON.stringify(Array.from(this.unlockedSkills)));
-        } catch (e) {
-            console.warn('[SkillsManager] Error guardando en localStorage:', e);
-        }
-
-        // 2. Guardar en Supabase si está autenticado
+        // Guardar directamente en Supabase si hay sesión
         if (typeof AuthManager !== 'undefined' && AuthManager.currentUser && isSupabaseConfigured() && supabaseClient) {
             try {
                 const userId = AuthManager.currentUser.id;
@@ -107,10 +75,10 @@ const SkillsManager = {
         this.updateAllScrapDisplays();
     },
 
-    addGlobalScrap(amount) {
+    async addGlobalScrap(amount) {
         if (!amount || amount <= 0) return;
         this.globalScrap += Math.floor(amount);
-        this.saveProfile();
+        await this.saveProfile();
     },
 
     hasSkill(skillId) {

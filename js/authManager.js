@@ -1,17 +1,41 @@
 // authManager.js
-// Manejo de autenticación, perfil de usuario y persistencia de partidas en Supabase / localStorage
-
-const LOCAL_STORAGE_HISTORY_KEY = 'cyber_elemental_runs_history';
+// Manejo de autenticación (anónima y registrada), perfil de usuario y persistencia de partidas en Supabase
 
 const AuthManager = {
     currentUser: null,
     historyCache: [],
 
+    isAnonymous() {
+        if (!this.currentUser) return true;
+        return Boolean(this.currentUser.is_anonymous || !this.currentUser.email);
+    },
+
+    getPlayerDisplayName() {
+        if (!this.currentUser) return 'Piloto Desconocido';
+        if (this.isAnonymous()) {
+            return `Invitado_${this.currentUser.id.substring(0, 5)}`;
+        }
+        return this.currentUser.user_metadata?.nickname 
+            || (this.currentUser.email ? this.currentUser.email.split('@')[0] : 'Comandante');
+    },
+
     async init() {
         if (typeof supabaseClient !== 'undefined' && supabaseClient) {
             try {
                 const { data: { session } } = await supabaseClient.auth.getSession();
-                this.currentUser = session ? session.user : null;
+                if (session && session.user) {
+                    this.currentUser = session.user;
+                } else if (isSupabaseConfigured()) {
+                    // Si no hay sesión previa, iniciar sesión anónima automáticamente
+                    console.info('[AuthManager] No hay sesión activa. Iniciando sesión anónima...');
+                    const { data, error } = await supabaseClient.auth.signInAnonymously();
+                    if (error) {
+                        console.warn('[AuthManager] Falló inicio de sesión anónimo automático:', error);
+                    } else if (data && data.user) {
+                        this.currentUser = data.user;
+                        console.info('[AuthManager] Sesión anónima creada con user_id:', this.currentUser.id);
+                    }
+                }
 
                 supabaseClient.auth.onAuthStateChange(async (_event, session) => {
                     this.currentUser = session ? session.user : null;
@@ -21,19 +45,65 @@ const AuthManager = {
                     }
                 });
             } catch (err) {
-                console.warn('[AuthManager] Error al obtener sesión:', err);
+                console.warn('[AuthManager] Error al inicializar sesión:', err);
             }
         }
         this.updateAuthUI();
         if (typeof SkillsManager !== 'undefined') {
-            SkillsManager.loadProfile();
+            await SkillsManager.loadProfile();
+        }
+    },
+
+    async linkAccount(email, password) {
+        if (!isSupabaseConfigured() || !supabaseClient) {
+            this.showAuthMessage('⚠️ Supabase no está configurado aún en js/supabaseClient.js.', 'warning');
+            return { error: 'Supabase no configurado' };
+        }
+
+        if (!email || !password || password.length < 6) {
+            this.showAuthMessage('⚠️ Ingresa un correo válido y una contraseña de al menos 6 caracteres.', 'error');
+            return { error: 'Datos inválidos' };
+        }
+
+        this.showAuthMessage('⏳ Vinculando cuenta con Supabase...', 'info');
+
+        try {
+            // Si el usuario actual es anónimo, actualizar su usuario para convertirlo a permanente conservando su user_id
+            const { data, error } = await supabaseClient.auth.updateUser({
+                email: email,
+                password: password
+            });
+
+            if (error) {
+                this.showAuthMessage(`❌ ${error.message}`, 'error');
+                return { error };
+            }
+
+            this.currentUser = data.user;
+            this.showAuthMessage('🛡️ ¡Cuenta vinculada exitosamente! Tu progreso táctico ha quedado blindado de forma permanente.', 'success');
+            this.updateAuthUI();
+            this.refreshPostGameBanners();
+
+            if (typeof SkillsManager !== 'undefined') {
+                await SkillsManager.saveProfile();
+            }
+
+            return { data };
+        } catch (err) {
+            this.showAuthMessage(`❌ Error de conexión: ${err.message}`, 'error');
+            return { error: err };
         }
     },
 
     async signUp(email, password) {
         if (!isSupabaseConfigured() || !supabaseClient) {
-            this.showAuthMessage('⚠️ Supabase no está configurado aún en js/supabaseClient.js. Configura tus claves primero.', 'warning');
+            this.showAuthMessage('⚠️ Supabase no está configurado aún en js/supabaseClient.js.', 'warning');
             return { error: 'Supabase no configurado' };
+        }
+
+        // Si ya hay un usuario anónimo activo, vincularlo en vez de crear una cuenta desconectada
+        if (this.isAnonymous() && this.currentUser) {
+            return await this.linkAccount(email, password);
         }
 
         if (!email || !password || password.length < 6) {
@@ -61,7 +131,7 @@ const AuthManager = {
             if (data?.user && data.user.identities && data.user.identities.length === 0) {
                 this.showAuthMessage('⚠️ Este correo ya se encuentra registrado. Intenta iniciar sesión.', 'warning');
             } else {
-                this.showAuthMessage('✉️ ¡Registro exitoso! Hemos enviado un enlace de confirmación a tu correo. Revísalo para activar tu cuenta.', 'success');
+                this.showAuthMessage('✉️ ¡Registro exitoso! Hemos enviado un enlace de confirmación a tu correo para activar tu cuenta.', 'success');
             }
             return { data };
         } catch (err) {
@@ -72,7 +142,7 @@ const AuthManager = {
 
     async signIn(email, password) {
         if (!isSupabaseConfigured() || !supabaseClient) {
-            this.showAuthMessage('⚠️ Supabase no está configurado aún en js/supabaseClient.js. Las partidas se guardarán localmente.', 'warning');
+            this.showAuthMessage('⚠️ Supabase no está configurado aún en js/supabaseClient.js.', 'warning');
             return { error: 'Supabase no configurado' };
         }
 
@@ -97,6 +167,7 @@ const AuthManager = {
             this.currentUser = data.user;
             this.showAuthMessage('✅ ¡Sesión iniciada correctamente!', 'success');
             this.updateAuthUI();
+            this.refreshPostGameBanners();
 
             if (typeof SkillsManager !== 'undefined') {
                 await SkillsManager.loadProfile();
@@ -116,10 +187,15 @@ const AuthManager = {
     async signOut() {
         if (supabaseClient) {
             await supabaseClient.auth.signOut();
+            // Generar inmediatamente una nueva sesión anónima para seguir jugando
+            const { data } = await supabaseClient.auth.signInAnonymously();
+            this.currentUser = data ? data.user : null;
+        } else {
+            this.currentUser = null;
         }
-        this.currentUser = null;
-        this.showAuthMessage('Sesión cerrada. Modo invitado activo.', 'info');
+        this.showAuthMessage('Sesión cerrada. Nueva sesión anónima activa.', 'info');
         this.updateAuthUI();
+        this.refreshPostGameBanners();
 
         if (typeof SkillsManager !== 'undefined') {
             await SkillsManager.loadProfile();
@@ -131,29 +207,13 @@ const AuthManager = {
     async saveMatchRun(runData) {
         // 1. Acumular la chatarra sobrante de la run al pozo global de la cuenta
         if (typeof SkillsManager !== 'undefined') {
-            SkillsManager.addGlobalScrap(runData.scrap_collected || 0);
+            await SkillsManager.addGlobalScrap(runData.scrap_collected || 0);
         }
 
-        // Enriquecer datos con fecha
-        const enrichedRun = {
-            ...runData,
-            created_at: new Date().toISOString()
-        };
-
-        // 2. Guardar siempre en LocalStorage como resguardo
-        try {
-            const localHistory = JSON.parse(localStorage.getItem(LOCAL_STORAGE_HISTORY_KEY) || '[]');
-            localHistory.unshift(enrichedRun);
-            localStorage.setItem(LOCAL_STORAGE_HISTORY_KEY, JSON.stringify(localHistory.slice(0, 20)));
-        } catch (e) {
-            console.warn('[AuthManager] Error guardando en localStorage:', e);
-        }
-
-        // 3. Si el usuario está autenticado en Supabase, guardar en la nube
+        // 2. Si hay usuario y Supabase configurado, guardar en la base de datos
         if (this.currentUser && isSupabaseConfigured() && supabaseClient) {
             try {
-                const playerName = this.currentUser.user_metadata?.nickname 
-                    || this.currentUser.email.split('@')[0];
+                const playerName = this.getPlayerDisplayName();
 
                 const { error } = await supabaseClient
                     .from('match_runs')
@@ -170,11 +230,13 @@ const AuthManager = {
                 if (error) {
                     console.error('[Supabase] Error al insertar match_run:', error);
                 } else {
-                    console.info('[Supabase] Partida guardada exitosamente en la nube.');
+                    console.info('[Supabase] Partida guardada exitosamente en la nube para user_id:', this.currentUser.id);
                 }
             } catch (err) {
                 console.error('[Supabase] Excepción al guardar partida:', err);
             }
+        } else {
+            console.warn('[Supabase] No se guardó match_run en la nube (sin usuario o sin cliente Supabase).');
         }
     },
 
@@ -184,6 +246,7 @@ const AuthManager = {
                 const { data, error } = await supabaseClient
                     .from('match_runs')
                     .select('*')
+                    .eq('user_id', this.currentUser.id)
                     .order('created_at', { ascending: false })
                     .limit(20);
 
@@ -191,16 +254,10 @@ const AuthManager = {
                     return data;
                 }
             } catch (err) {
-                console.warn('[Supabase] Falló consulta remota, cargando local:', err);
+                console.warn('[Supabase] Falló consulta de historial en la nube:', err);
             }
         }
-
-        // Fallback a LocalStorage
-        try {
-            return JSON.parse(localStorage.getItem(LOCAL_STORAGE_HISTORY_KEY) || '[]');
-        } catch (e) {
-            return [];
-        }
+        return [];
     },
 
     async loadAndRenderHistory() {
@@ -209,7 +266,7 @@ const AuthManager = {
 
         container.innerHTML = `
             <div class="history-loading">
-                <span class="loading-spinner">⚡</span> Sincronizando registros tácticos...
+                <span class="loading-spinner">⚡</span> Sincronizando registros tácticos con Supabase...
             </div>
         `;
 
@@ -221,7 +278,7 @@ const AuthManager = {
                     <div class="history-empty-state">
                         <div class="empty-icon">📂</div>
                         <div class="empty-title">SIN REGISTROS DE INCURSIÓN</div>
-                        <div class="empty-desc">No hay partidas registradas aún. ¡Comienza una incursión para generar tu historial táctico!</div>
+                        <div class="empty-desc">No hay partidas registradas en tu perfil aún. ¡Completa una incursión para generar tu historial táctico!</div>
                     </div>
                 `;
                 return;
@@ -240,7 +297,7 @@ const AuthManager = {
                 <div class="history-empty-state">
                     <div class="empty-icon">📂</div>
                     <div class="empty-title">SIN REGISTROS DE INCURSIÓN</div>
-                    <div class="empty-desc">No se pudieron procesar los registros locales/remotos.</div>
+                    <div class="empty-desc">No se pudieron procesar los registros de Supabase.</div>
                 </div>
             `;
         } catch (err) {
@@ -249,7 +306,7 @@ const AuthManager = {
                 <div class="history-empty-state">
                     <div class="empty-icon">⚠️</div>
                     <div class="empty-title">ERROR AL CARGAR HISTORIAL</div>
-                    <div class="empty-desc">Ocurrió un error al procesar el historial táctico.</div>
+                    <div class="empty-desc">Ocurrió un error al procesar el historial táctico desde la base de datos.</div>
                     <button class="btn-refresh-history" onclick="AuthManager.loadAndRenderHistory()" style="margin-top: 10px; padding: 6px 14px;">
                         🔄 Reintentar
                     </button>
@@ -371,7 +428,7 @@ const AuthManager = {
 
         container.innerHTML = `
             <div class="history-loading">
-                <span class="loading-spinner">⚡</span> Escaneando registros de los mejores comandantes...
+                <span class="loading-spinner">⚡</span> Escaneando registros de los mejores comandantes en Supabase...
             </div>
         `;
 
@@ -380,7 +437,7 @@ const AuthManager = {
                 <div class="history-empty-state">
                     <div class="empty-icon">☁️</div>
                     <div class="empty-title">CLASIFICACIÓN EN LA NUBE OFFLINE</div>
-                    <div class="empty-desc">Conecta Supabase para sincronizar y visualizar el Top 10 global de speedrunners.</div>
+                    <div class="empty-desc">Conecta Supabase en js/supabaseClient.js para sincronizar y visualizar el Top 10 global.</div>
                 </div>
             `;
             return;
@@ -394,7 +451,7 @@ const AuthManager = {
                     <div class="history-empty-state">
                         <div class="empty-icon">👑</div>
                         <div class="empty-title">SALÓN DE LA FAMA VACÍO</div>
-                        <div class="empty-desc">Aún ningún comandante ha registrado una victoria sobre TITAN-X con su cuenta. ¡Sé el primero en derrotarlo!</div>
+                        <div class="empty-desc">Aún ningún comandante ha registrado una victoria sobre TITAN-X. ¡Sé el primero en derrotarlo!</div>
                     </div>
                 `;
                 return;
@@ -427,7 +484,7 @@ const AuthManager = {
                 <div class="history-empty-state">
                     <div class="empty-icon">⚠️</div>
                     <div class="empty-title">ERROR AL SINCRONIZAR CLASIFICACIÓN</div>
-                    <div class="empty-desc">Ocurrió una anomalía al recuperar el Top 10 global.</div>
+                    <div class="empty-desc">Ocurrió una anomalía al recuperar el Top 10 global desde Supabase.</div>
                     <button class="btn-refresh-history" onclick="AuthManager.loadAndRenderLeaderboard()" style="margin-top: 12px; padding: 8px 16px;">
                         🔄 Reintentar conexión
                     </button>
@@ -529,49 +586,206 @@ const AuthManager = {
     },
 
     updateAuthUI() {
-        const topBarStatus = document.getElementById('top-bar-status') || document.getElementById('btn-account-top');
-        const startScreenBtn = document.getElementById('btn-account-start');
+        const topBarStatus = document.getElementById('top-bar-status');
         const userEmailDisplay = document.getElementById('account-user-email');
         const authLoggedOutView = document.getElementById('auth-logged-out-view');
         const authLoggedInView = document.getElementById('auth-logged-in-view');
         const authStatusBadge = document.getElementById('auth-cloud-status-badge');
+        const mainMenuStatus = document.getElementById('main-menu-status');
 
-        const isLogged = !!this.currentUser;
+        const isAnon = this.isAnonymous();
+        const hasUser = !!this.currentUser;
         const isConfigured = isSupabaseConfigured();
 
-        const indicatorClass = isLogged ? 'online' : 'offline';
-        const statusText = isLogged ? 'ONLINE' : 'OFFLINE';
+        // 1. Estado en Barra Superior y Menú Principal
+        let statusIndicatorClass = 'offline';
+        let statusText = 'OFFLINE';
+
+        if (isConfigured && hasUser) {
+            if (isAnon) {
+                statusIndicatorClass = 'anon';
+                statusText = 'ANÓNIMO';
+            } else {
+                statusIndicatorClass = 'online';
+                statusText = 'ONLINE';
+            }
+        }
 
         if (topBarStatus) {
-            topBarStatus.innerHTML = `<span class="status-indicator ${indicatorClass}"></span> <span>${statusText}</span>`;
-        }
-        if (startScreenBtn) {
-            startScreenBtn.innerHTML = `<span class="btn-icon">${isLogged ? '🟢' : '👤'}</span> ${isLogged ? this.currentUser.email.split('@')[0] : 'CUENTA / HISTORIAL'}`;
+            topBarStatus.innerHTML = `<span class="status-indicator ${statusIndicatorClass}"></span> <span>${statusText}</span>`;
         }
 
-        const mainMenuStatus = document.getElementById('main-menu-status');
         if (mainMenuStatus) {
-            mainMenuStatus.innerHTML = `<span class="status-indicator ${indicatorClass}"></span> ${statusText}`;
+            mainMenuStatus.innerHTML = `<span class="status-indicator ${statusIndicatorClass}"></span> ${statusText}`;
         }
 
-        if (userEmailDisplay && this.currentUser) {
-            userEmailDisplay.innerText = this.currentUser.email;
-        }
-
-        if (authLoggedOutView) authLoggedOutView.style.display = isLogged ? 'none' : 'block';
-        if (authLoggedInView) authLoggedInView.style.display = isLogged ? 'block' : 'none';
-
+        // 2. Vista en Modal de Cuenta
         if (authStatusBadge) {
             if (!isConfigured) {
                 authStatusBadge.className = 'status-badge-offline';
-                authStatusBadge.innerHTML = '⚡ MODO INVITADO (LOCAL STORAGE)';
-            } else if (isLogged) {
+                authStatusBadge.innerHTML = '⚠️ SUPABASE NO CONFIGURADO';
+            } else if (hasUser && !isAnon) {
                 authStatusBadge.className = 'status-badge-online';
-                authStatusBadge.innerHTML = '☁️ SINCRONIZADO';
+                authStatusBadge.innerHTML = '☁️ CUENTA REGISTRADA Y SINCRONIZADA';
+            } else if (hasUser && isAnon) {
+                authStatusBadge.className = 'status-badge-anon';
+                authStatusBadge.innerHTML = `⚡ USUARIO ANÓNIMO (ID: ${this.currentUser.id.substring(0, 8)}...)`;
             } else {
-                authStatusBadge.className = 'status-badge-ready';
-                authStatusBadge.innerHTML = '☁️ SUPABASE LISTO // INICIA SESIÓN';
+                authStatusBadge.className = 'status-badge-offline';
+                authStatusBadge.innerHTML = '⚡ SIN CONEXIÓN';
             }
+        }
+
+        if (userEmailDisplay && this.currentUser && !isAnon) {
+            userEmailDisplay.innerText = this.currentUser.email;
+        }
+
+        if (authLoggedOutView) {
+            authLoggedOutView.style.display = (hasUser && !isAnon) ? 'none' : 'block';
+            
+            // Si es anónimo, actualizar encabezado explicativo del formulario de registro
+            const authCardLead = authLoggedOutView.querySelector('.auth-card-lead');
+            const authCardSub = authLoggedOutView.querySelector('.auth-card-sub');
+            const btnSubmitSignup = document.getElementById('btn-modal-signup-action');
+            
+            if (authCardLead) {
+                authCardLead.innerHTML = isAnon
+                    ? '🛡️ <strong>Vincula tu correo para proteger tu progreso:</strong>'
+                    : 'Guarda tus estadísticas, récords y composiciones de escuadrón en la nube.';
+            }
+            if (authCardSub) {
+                authCardSub.innerHTML = isAnon
+                    ? 'Actualmente juegas con una cuenta temporal anónima. Vincula un correo y contraseña para no perder tu chatarra global, habilidades e historial al limpiar el navegador.'
+                    : 'Inicia sesión con tu cuenta registrada o crea una nueva.';
+            }
+            if (btnSubmitSignup) {
+                btnSubmitSignup.innerHTML = isAnon
+                    ? '<span>🛡️ VINCULAR Y PROTEGER CUENTA</span>'
+                    : '<span>✨ REGISTRARSE</span>';
+            }
+        }
+
+        if (authLoggedInView) {
+            authLoggedInView.style.display = (hasUser && !isAnon) ? 'block' : 'none';
+        }
+    },
+
+    // =========================================================================
+    // BANNER / CTA POST-PARTIDA (VICTORIA Y GAME OVER)
+    // =========================================================================
+    renderPostGameAuthBanner(screenId) {
+        const containerId = (screenId === 'screen-victory') ? 'victory-auth-card' : 'gameover-auth-card';
+        const container = document.getElementById(containerId);
+        if (!container) return;
+
+        const isAnon = this.isAnonymous();
+        const hasUser = !!this.currentUser;
+
+        if (!hasUser || isAnon) {
+            // Ofrecer formulario de registro para vincular la cuenta
+            container.innerHTML = `
+                <div class="postgame-auth-box">
+                    <div class="postgame-auth-header">
+                        <span class="postgame-auth-badge">⚠️ MODO ANÓNIMO DETECTADO</span>
+                        <h3 class="postgame-auth-title">¿DESEAS BLINDAR TU PARTIDA Y RECURSOS?</h3>
+                        <p class="postgame-auth-desc">
+                            Tus <strong>${GAME_STATE ? GAME_STATE.scrap : 0} ⚙️ de Chatarra</strong> y habilidades están en una sesión anónima temporal.
+                            Si cierras o limpias tu navegador, <strong>podrías perderlos definitivamente</strong>.
+                            Registra tu correo para asociar todo tu progreso a una cuenta permanente:
+                        </p>
+                    </div>
+
+                    <form class="postgame-auth-form" onsubmit="event.preventDefault(); AuthManager.handlePostGameLink('${screenId}');">
+                        <div class="postgame-inputs-row">
+                            <input type="email" id="postgame-email-${screenId}" class="cyber-input postgame-input" placeholder="Tu correo electrónico..." autocomplete="email" required>
+                            <input type="password" id="postgame-pass-${screenId}" class="cyber-input postgame-input" placeholder="Contraseña (mín. 6 carácteres)..." autocomplete="new-password" required>
+                            <button type="submit" id="btn-postgame-link-${screenId}" class="btn-postgame-link">
+                                <span>🛡️ BLINDAR Y VINCULAR CUENTA</span>
+                            </button>
+                        </div>
+                        <div id="postgame-msg-${screenId}" class="postgame-auth-feedback" style="display: none;"></div>
+                    </form>
+                </div>
+            `;
+            container.style.display = 'block';
+        } else {
+            // Usuario ya registrado: confirmar que sus datos están a salvo
+            const userEmail = this.currentUser.email || 'tu cuenta';
+            container.innerHTML = `
+                <div class="postgame-auth-box postgame-auth-secured">
+                    <div class="secured-icon">☁️</div>
+                    <div class="secured-content">
+                        <div class="secured-title">PROGRESO ASEGURADO EN LA NUBE</div>
+                        <div class="secured-desc">Esta partida, tu chatarra acumulada y tus talentos han quedado respaldados en tu cuenta: <strong>${userEmail}</strong>.</div>
+                    </div>
+                </div>
+            `;
+            container.style.display = 'block';
+        }
+    },
+
+    async handlePostGameLink(screenId) {
+        const emailInput = document.getElementById(`postgame-email-${screenId}`);
+        const passInput = document.getElementById(`postgame-pass-${screenId}`);
+        const msgEl = document.getElementById(`postgame-msg-${screenId}`);
+        const btnSubmit = document.getElementById(`btn-postgame-link-${screenId}`);
+
+        if (!emailInput || !passInput) return;
+        const email = emailInput.value.trim();
+        const pass = passInput.value;
+
+        if (!email || !pass || pass.length < 6) {
+            if (msgEl) {
+                msgEl.className = 'postgame-auth-feedback feedback-error';
+                msgEl.innerText = '⚠️ Ingresa un correo válido y una contraseña de al menos 6 caracteres.';
+                msgEl.style.display = 'block';
+            }
+            return;
+        }
+
+        if (btnSubmit) {
+            btnSubmit.disabled = true;
+            btnSubmit.innerHTML = '<span>⏳ VINCULANDO...</span>';
+        }
+
+        if (msgEl) {
+            msgEl.className = 'postgame-auth-feedback feedback-info';
+            msgEl.innerText = '⏳ Guardando progreso y vinculando cuenta...';
+            msgEl.style.display = 'block';
+        }
+
+        const res = await this.linkAccount(email, pass);
+
+        if (res.error) {
+            if (btnSubmit) {
+                btnSubmit.disabled = false;
+                btnSubmit.innerHTML = '<span>🛡️ BLINDAR Y VINCULAR CUENTA</span>';
+            }
+            if (msgEl) {
+                msgEl.className = 'postgame-auth-feedback feedback-error';
+                msgEl.innerText = `❌ ${res.error.message || res.error}`;
+                msgEl.style.display = 'block';
+            }
+        } else {
+            if (msgEl) {
+                msgEl.className = 'postgame-auth-feedback feedback-success';
+                msgEl.innerText = '✨ ¡Cuenta vinculada exitosamente! Tu progreso táctico ha sido asegurado permanentemente.';
+                msgEl.style.display = 'block';
+            }
+            setTimeout(() => {
+                this.renderPostGameAuthBanner(screenId);
+            }, 1200);
+        }
+    },
+
+    refreshPostGameBanners() {
+        const gameOverScreen = document.getElementById('screen-game-over');
+        const victoryScreen = document.getElementById('screen-victory');
+        if (gameOverScreen && gameOverScreen.classList.contains('active')) {
+            this.renderPostGameAuthBanner('screen-game-over');
+        }
+        if (victoryScreen && victoryScreen.classList.contains('active')) {
+            this.renderPostGameAuthBanner('screen-victory');
         }
     },
 

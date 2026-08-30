@@ -20,6 +20,40 @@ function extractSquadData() {
     });
 }
 
+let runTimerInterval = null;
+
+function startRunTimer() {
+    stopRunTimer();
+    updateRunTimerDisplay();
+    runTimerInterval = setInterval(updateRunTimerDisplay, 500);
+}
+
+function stopRunTimer() {
+    if (runTimerInterval) {
+        clearInterval(runTimerInterval);
+        runTimerInterval = null;
+    }
+}
+
+function updateRunTimerDisplay() {
+    const timerEl = document.getElementById('run-timer-val');
+    if (!timerEl) return;
+    if (!GAME_STATE || !GAME_STATE.startTime) {
+        timerEl.innerText = '00:00';
+        return;
+    }
+    const elapsedSecs = Math.max(0, Math.floor((Date.now() - GAME_STATE.startTime) / 1000));
+    const hours = Math.floor(elapsedSecs / 3600);
+    const mins = Math.floor((elapsedSecs % 3600) / 60);
+    const secs = elapsedSecs % 60;
+    
+    if (hours > 0) {
+        timerEl.innerText = `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    } else {
+        timerEl.innerText = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    }
+}
+
 function showScreen(screenId) {
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
     const target = document.getElementById(screenId);
@@ -32,8 +66,12 @@ function showScreen(screenId) {
     if (topBar) {
         if (['screen-main-menu', 'screen-start', 'screen-game-over', 'screen-victory'].includes(screenId)) {
             topBar.style.display = 'none';
+            stopRunTimer();
         } else {
             topBar.style.display = 'flex';
+            if (GAME_STATE && GAME_STATE.startTime && !runTimerInterval) {
+                startRunTimer();
+            }
         }
     }
 
@@ -59,6 +97,11 @@ function showScreen(screenId) {
                 squad: extractSquadData()
             });
             if (typeof SkillsManager !== 'undefined') SkillsManager.updateAllScrapDisplays();
+        }
+
+        // Renderizar banner / formulario de registro si el usuario es anónimo
+        if (typeof AuthManager !== 'undefined') {
+            AuthManager.renderPostGameAuthBanner('screen-game-over');
         }
     }
 
@@ -94,6 +137,11 @@ function showScreen(screenId) {
                 squad: extractSquadData()
             });
             if (typeof SkillsManager !== 'undefined') SkillsManager.updateAllScrapDisplays();
+        }
+
+        // Renderizar banner / formulario de registro si el usuario es anónimo
+        if (typeof AuthManager !== 'undefined') {
+            AuthManager.renderPostGameAuthBanner('screen-victory');
         }
     }
 }
@@ -275,6 +323,7 @@ function initGame() {
         GAME_STATE.floor = 1;
         GAME_STATE.startTime = Date.now();
         GAME_STATE.runSaved = false;
+        startRunTimer();
         
         // Inicializar chatarra de la run con pasiva de meta-progresión
         GAME_STATE.scrap = (typeof SkillsManager !== 'undefined') ? SkillsManager.getStartingScrap() : 0;

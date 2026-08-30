@@ -1,4 +1,4 @@
-﻿// supabaseClient.js
+// supabaseClient.js
 // Configuración e inicialización del cliente Supabase para Cyber-Elemental
 
 // ⚙️ INSTRUCCIONES: Reemplaza estos valores con las credenciales de tu proyecto de Supabase
@@ -22,12 +22,12 @@ function isSupabaseConfigured() {
 
 function initSupabase() {
     if (typeof window.supabase === 'undefined') {
-        console.warn('[Supabase] SDK no detectado. Se utilizará almacenamiento local.');
+        console.warn('[Supabase] SDK no detectado. Verifica la conexión a Internet.');
         return null;
     }
     
     if (!isSupabaseConfigured()) {
-        console.info('[Supabase] Credenciales no configuradas todavía. El juego funcionará en Modo Invitado (localStorage).');
+        console.info('[Supabase] Credenciales no configuradas todavía en js/supabaseClient.js.');
         return null;
     }
 

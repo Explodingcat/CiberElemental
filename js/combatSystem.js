@@ -262,6 +262,7 @@ function formatStatusLabel(type) {
         case 'BARRIER': return 'Barrera Plasma';
         case 'SHIELD': return 'Escudo';
         case 'DEFENDIENDO': return 'Defendiendo';
+        case 'CORAZA_ESPINAS': return 'Coraza de Espinas';
         case 'SLOW': return 'Ralentización (-50% VEL)';
         case 'FROST': return 'Congelación (-20% PREC)';
         case 'BLIND': return 'Ceguera (-50% PREC)';
@@ -289,6 +290,7 @@ function renderStatusesSplitted(buffId, debuffId, statuses) {
         if (type === 'SHIELD' || type === 'BARRIER') return '🛡️';
         if (type === 'EVADE') return '💨';
         if (type === 'DEFENDIENDO') return '🛡️';
+        if (type === 'CORAZA_ESPINAS') return '🌵';
         if (type === 'BURN') return '🔥';
         if (type === 'STUN') return '⚡';
         if (type === 'SLOW') return '❄️';
@@ -310,12 +312,17 @@ function renderStatusesSplitted(buffId, debuffId, statuses) {
         if (s.type === 'SHIELD' && s.amount !== undefined) {
             tooltipText = `${labelText} (${s.amount} HP): ${s.duration} turnos`;
         } else if (s.type === 'DEFENDIENDO') {
-            tooltipText = `${labelText}: Activo hasta tu próximo turno`;
+            tooltipText = `${labelText}: Activo hasta tu próximo turno (-50% Daño recibido)`;
+        } else if (s.type === 'CORAZA_ESPINAS') {
+            tooltipText = `${labelText}: Activo hasta tu próximo turno (-50% Daño, refleja 50% y adhiere Marca de Tierra al atacante)`;
+        } else if (s.type === 'BARRIER') {
+            let casterText = s.casterName ? ` (Invocada por ${s.casterName})` : '';
+            tooltipText = `${labelText}${casterText}: Bloquea 100% del daño recibido hasta el próximo turno del invocador`;
         }
         return `
             <div class="status-pill ${isBuff ? 'pill-buff' : 'pill-debuff'} status-${s.type.toLowerCase().replace('_', '-')}" data-tooltip="${tooltipText}">
                 <span class="status-pill-icon">${getIcon(s.type)}</span>
-                ${s.type === 'DEFENDIENDO' ? '' : `<span class="status-pill-turns">${s.duration}</span>`}
+                ${(s.type === 'DEFENDIENDO' || s.type === 'CORAZA_ESPINAS' || s.type === 'BARRIER') ? '' : `<span class="status-pill-turns">${s.duration}</span>`}
             </div>
         `;
     };
@@ -364,20 +371,36 @@ async function advanceTurnQueue() {
         let roundMessages = [];
         GAME_STATE.team.forEach((r, idx) => {
             if (!r.isOffline && r.hp > 0) {
-                let prevHp = r.hp;
                 let msgs = r.updateStatuses();
                 roundMessages.push(...msgs);
-                if (prevHp > r.hp) {
-                    showDamagePopup(prevHp - r.hp, false, idx, false);
+                let dmg = (msgs.damage !== undefined) ? msgs.damage : 0;
+                let heal = (msgs.heal !== undefined) ? msgs.heal : 0;
+                if (dmg > 0) {
+                    showDamagePopup(dmg, false, idx, false);
+                }
+                if (heal > 0) {
+                    if (dmg > 0) {
+                        setTimeout(() => showHealPopup(heal, false, idx), 250);
+                    } else {
+                        showHealPopup(heal, false, idx);
+                    }
                 }
             }
         });
         if (combatState.enemy && combatState.enemy.hp > 0) {
-            let prevHp = combatState.enemy.hp;
             let msgs = combatState.enemy.updateStatuses();
             roundMessages.push(...msgs);
-            if (prevHp > combatState.enemy.hp) {
-                showDamagePopup(prevHp - combatState.enemy.hp, true, 0, false);
+            let dmg = (msgs.damage !== undefined) ? msgs.damage : 0;
+            let heal = (msgs.heal !== undefined) ? msgs.heal : 0;
+            if (dmg > 0) {
+                showDamagePopup(dmg, true, 0, false);
+            }
+            if (heal > 0) {
+                if (dmg > 0) {
+                    setTimeout(() => showHealPopup(heal, true, 0), 250);
+                } else {
+                    showHealPopup(heal, true, 0);
+                }
             }
         }
         roundMessages.forEach(msg => logCombat(msg));
@@ -387,6 +410,9 @@ async function advanceTurnQueue() {
         if (enemy && enemy.hp > 0 && enemy.mutator) {
             if (enemy.mutator.type === 'REGENERADOR') {
                 let healAmt = enemy.heal(enemy.maxHp * 0.05);
+                if (healAmt > 0) {
+                    showHealPopup(healAmt, true, 0);
+                }
                 logCombat(`💀 [Élite] Regenerador curó ${healAmt} HP a ${enemy.name}.`);
             } else if (enemy.mutator.type === 'RABIA') {
                 enemy.atk = Math.floor(enemy.atk * 1.05);
@@ -423,10 +449,36 @@ async function advanceTurnQueue() {
         return advanceTurnQueue();
     }
     
-    // Al iniciar el turno del combatiente, baja su postura defensiva previa si estaba defendiendo
+    // Al iniciar el turno del combatiente, baja su postura defensiva, coraza de espinas o barreras que haya invocado
     if (currentActor.robot.hasStatus('DEFENDIENDO')) {
         currentActor.robot.removeStatus('DEFENDIENDO');
         logCombat(`🛡️ [${currentActor.robot.name}] finaliza su postura defensiva.`);
+    }
+    if (currentActor.robot.hasStatus('CORAZA_ESPINAS')) {
+        currentActor.robot.removeStatus('CORAZA_ESPINAS');
+        logCombat(`🌵 [${currentActor.robot.name}] finaliza su Coraza de Espinas.`);
+    }
+
+    // Expirar Barreras de Plasma invocadas por este combatiente
+    if (GAME_STATE && GAME_STATE.team) {
+        GAME_STATE.team.forEach(robot => {
+            for (let i = robot.statuses.length - 1; i >= 0; i--) {
+                let s = robot.statuses[i];
+                if (s.type === 'BARRIER' && (s.casterId === currentActor.robot.id || (!s.casterId && robot === currentActor.robot))) {
+                    robot.statuses.splice(i, 1);
+                    logCombat(`🌊 La Barrera de Plasma sobre [${robot.name}] ha expirado.`);
+                }
+            }
+        });
+    }
+    if (combatState.enemy) {
+        for (let i = combatState.enemy.statuses.length - 1; i >= 0; i--) {
+            let s = combatState.enemy.statuses[i];
+            if (s.type === 'BARRIER' && (s.casterId === currentActor.robot.id || (!s.casterId && combatState.enemy === currentActor.robot))) {
+                combatState.enemy.statuses.splice(i, 1);
+                logCombat(`🌊 La Barrera de Plasma sobre [${combatState.enemy.name}] ha expirado.`);
+            }
+        }
     }
 
     // Renderizar la UI destacando al robot activo
@@ -466,7 +518,7 @@ function showWaitingCombatActions(msg = 'TURNO ENEMIGO EN PROCESO // CALCULANDO 
     `;
 }
 
-function renderCombatActions(playerRobot, allyIndex, view = 'MAIN') {
+function renderCombatActions(playerRobot, allyIndex, view = 'MAIN', activeSkillIdx = null) {
     const actionsContainer = document.getElementById('combat-actions');
     if (!actionsContainer) return;
     actionsContainer.innerHTML = '';
@@ -559,7 +611,7 @@ function renderCombatActions(playerRobot, allyIndex, view = 'MAIN') {
 
             return `
                 <div class="tactical-skill-card ${cardClass} ${isLocked ? 'is-disabled' : ''}" 
-                     ${isLocked ? '' : `onclick="executePlayerTurn(${skillIdx}, ${allyIndex})"`}>
+                     ${isLocked ? '' : `onclick="onSelectSkill(${skillIdx}, ${allyIndex})"`}>
                     <div class="skill-card-top">
                         <span class="skill-type-badge elem-${elemTag}">${typeTag}</span>
                         ${cdBadge}
@@ -580,10 +632,58 @@ function renderCombatActions(playerRobot, allyIndex, view = 'MAIN') {
                     <button class="btn-tactical-back" onclick="renderCombatActions(GAME_STATE.team[${allyIndex}], ${allyIndex}, 'MAIN')">
                         <span>◀ VOLVER AL MENÚ</span>
                     </button>
-                    <span class="tactical-sub-title">SELECCIONAR ACCIÓN OFENSIVA</span>
+                    <span class="tactical-sub-title">SELECCIONAR ACCIÓN TÁCTICA</span>
                 </div>
                 <div class="tactical-skills-grid">
                     ${skillsHtml}
+                </div>
+            </div>
+        `;
+    }
+    else if (view === 'SELECT_ALLY_TARGET') {
+        const skill = (playerRobot && playerRobot.skills && activeSkillIdx !== null && activeSkillIdx !== undefined) ? playerRobot.skills[activeSkillIdx] : null;
+        const aliveAllies = GAME_STATE.team
+            .map((r, idx) => ({ robot: r, idx }))
+            .filter(item => !item.robot.isOffline && item.robot.hp > 0);
+
+        const alliesHtml = aliveAllies.map(item => {
+            const r = item.robot;
+            const idx = item.idx;
+            const isSelf = (idx === allyIndex);
+            const hpPercent = Math.max(0, Math.min(100, (r.hp / r.maxHp) * 100));
+
+            return `
+                <div class="tactical-ally-target-card ${isSelf ? 'is-self' : ''}">
+                    <div class="ally-target-top">
+                        <span class="ally-target-emoji elem-${r.element}">${r.emoji}</span>
+                        <div class="ally-target-info">
+                            <span class="ally-target-name">${r.name} ${isSelf ? '(Usuario)' : ''}</span>
+                            <span class="member-elem-badge elem-${r.element}">(${r.element})</span>
+                        </div>
+                    </div>
+                    <div class="ally-target-hp-row">
+                        <span class="hud-hp-label">HP</span>
+                        <span class="hud-hp-val">${r.hp}/${r.maxHp}</span>
+                    </div>
+                    <progress value="${hpPercent}" max="100"></progress>
+                    <button class="btn-target-ally-cta" onclick="executePlayerTurn(${activeSkillIdx}, ${allyIndex}, ${idx})">
+                        <span>🛡️ Proteger a ${r.name}</span>
+                    </button>
+                </div>
+            `;
+        }).join('');
+
+        actionsContainer.innerHTML = `
+            ${headerHtml}
+            <div class="tactical-sub-panel">
+                <div class="tactical-sub-header">
+                    <button class="btn-tactical-back" onclick="renderCombatActions(GAME_STATE.team[${allyIndex}], ${allyIndex}, 'ATTACK')">
+                        <span>◀ VOLVER A HABILIDADES</span>
+                    </button>
+                    <span class="tactical-sub-title">SELECCIONAR ALIADO OBJETIVO PARA ${skill ? skill.name.toUpperCase() : 'HABILIDAD'}</span>
+                </div>
+                <div class="tactical-allies-target-grid">
+                    ${alliesHtml}
                 </div>
             </div>
         `;
@@ -646,6 +746,9 @@ async function useCombatItem(idx, activeAllyIndex) {
     
     if (item.type === ITEM_TYPES.NANOBOTS) {
         let healed = activeRobot.heal(activeRobot.maxHp * 0.4);
+        if (healed > 0) {
+            showHealPopup(healed, false, activeAllyIndex);
+        }
         logCombat(`- ${activeRobot.name} recupera ${healed} HP.`);
         GAME_STATE.inventory.items.splice(idx, 1);
         renderPartyCombatUI();
@@ -686,7 +789,29 @@ async function useCombatItem(idx, activeAllyIndex) {
     }
 }
 
-async function executePlayerTurn(skillIndex, allyIndex) {
+function onSelectSkill(skillIdx, allyIndex) {
+    if (combatState.isGameOver || combatState.isProcessing) return;
+    const ally = GAME_STATE.team[allyIndex];
+    if (!ally) return;
+    const skill = ally.skills[skillIdx];
+    if (!skill || skill.currentCd > 0) return;
+
+    if (skill.target === 'ALLY') {
+        const aliveAllies = GAME_STATE.team
+            .map((r, idx) => ({ robot: r, idx }))
+            .filter(item => !item.robot.isOffline && item.robot.hp > 0);
+        
+        if (aliveAllies.length <= 1) {
+            executePlayerTurn(skillIdx, allyIndex, allyIndex);
+        } else {
+            renderCombatActions(ally, allyIndex, 'SELECT_ALLY_TARGET', skillIdx);
+        }
+    } else {
+        executePlayerTurn(skillIdx, allyIndex);
+    }
+}
+
+async function executePlayerTurn(skillIndex, allyIndex, targetAllyIndex = null) {
     if (combatState.isGameOver || combatState.isProcessing) return;
     combatState.isProcessing = true;
     
@@ -698,10 +823,15 @@ async function executePlayerTurn(skillIndex, allyIndex) {
         return;
     }
     
-    showWaitingCombatActions(`⚡ [${ally.name.toUpperCase()}] EJECUTANDO ${skill.name.toUpperCase()}...`);
+    let targetAlly = (targetAllyIndex !== null && GAME_STATE.team[targetAllyIndex]) ? GAME_STATE.team[targetAllyIndex] : ally;
+    let actionDesc = (skill.target === 'ALLY' && targetAlly !== ally) 
+        ? `⚡ [${ally.name.toUpperCase()}] APLICANDO ${skill.name.toUpperCase()} A [${targetAlly.name.toUpperCase()}]...`
+        : `⚡ [${ally.name.toUpperCase()}] EJECUTANDO ${skill.name.toUpperCase()}...`;
+
+    showWaitingCombatActions(actionDesc);
     
-    // Ejecutar la acción del aliado contra el enemigo (dispara el dash de ataque)
-    executeTurn(ally, skill, combatState.enemy, true, allyIndex);
+    // Ejecutar la acción del aliado contra el enemigo / aliado objetivo
+    executeTurn(ally, skill, combatState.enemy, true, allyIndex, targetAllyIndex);
     
     // Esperar a que la animación de dash y golpe termine antes de re-renderizar la UI
     await delay(450);
@@ -739,16 +869,24 @@ async function executeEnemyTurn(enemy) {
     let validSkills = enemy.skills.filter(s => s.currentCd === 0);
     let enemySkill = validSkills[Math.floor(Math.random() * validSkills.length)];
     
-    // 2. Elegir objetivo aliado vivo (prioriza debilidades o menor HP)
+    // 2. Elegir objetivo aliado vivo (prioriza Coraza de Espinas / Provocación)
     let aliveAllies = GAME_STATE.team
         .map((r, idx) => ({ robot: r, idx }))
         .filter(item => !item.robot.isOffline && item.robot.hp > 0);
     
     if (aliveAllies.length === 0) return;
     
-    // Buscar objetivo con ventaja elemental o menor HP
-    let target = aliveAllies.find(a => getMultiplier(enemy.element, a.robot.element) > 1.0) ||
+    // Si hay aliados con Coraza de Espinas activa, obligar al enemigo a atacarlos (al de menor HP si hay varios)
+    const tauntAllies = aliveAllies.filter(item => item.robot.hasStatus('CORAZA_ESPINAS'));
+    let target;
+    if (tauntAllies.length > 0) {
+        target = tauntAllies.reduce((prev, curr) => (curr.robot.hp < prev.robot.hp ? curr : prev), tauntAllies[0]);
+        logCombat(`🧲 ¡${enemy.name} es obligado a atacar a [${target.robot.name}] por su Coraza de Espinas!`);
+    } else {
+        // Buscar objetivo con ventaja elemental o menor HP
+        target = aliveAllies.find(a => getMultiplier(enemy.element, a.robot.element) > 1.0) ||
                  aliveAllies.reduce((prev, curr) => (curr.robot.hp < prev.robot.hp ? curr : prev), aliveAllies[0]);
+    }
     
     let targetAlly = target.robot;
     let targetIndex = target.idx;
@@ -810,6 +948,27 @@ function showDamagePopup(amount, isTargetEnemy, targetIndex = 0, isRed = false, 
     }, 1100);
 }
 
+function showHealPopup(amount, isTargetEnemy, targetIndex = 0) {
+    if (!amount || amount <= 0) return;
+    let containerId = isTargetEnemy ? 'enemy-hit-container' : `player-hit-container-${targetIndex}`;
+    const container = document.getElementById(containerId);
+    if (!container) return;
+    
+    const popup = document.createElement('div');
+    popup.className = 'damage-popup-banner damage-popup-green';
+    
+    popup.innerHTML = `
+        <span class="damage-popup-val">+${amount}</span>
+    `;
+    container.appendChild(popup);
+    
+    setTimeout(() => {
+        if (container.contains(popup)) {
+            popup.remove();
+        }
+    }, 1100);
+}
+
 function processElementalCombo(attackElement, defender, attacker, baseDmg) {
     let reaction = null;
     let finalDmg = baseDmg;
@@ -850,7 +1009,7 @@ function processElementalCombo(attackElement, defender, attacker, baseDmg) {
             if (defender.removeBuffs) {
                 defender.removeBuffs();
             } else {
-                const buffTypes = ['BARRIER', 'SHIELD', 'DEFENDIENDO', 'EVADE'];
+                const buffTypes = ['BARRIER', 'SHIELD', 'DEFENDIENDO', 'CORAZA_ESPINAS', 'EVADE'];
                 defender.statuses = defender.statuses.filter(s => !buffTypes.includes(s.type));
             }
             reaction = { name: '¡CHOQUE TÉRMICO!', desc: '¡Daño x1.45 + Purga ventajas enemigas!', color: '#48dbfb' };
@@ -915,7 +1074,7 @@ function processElementalCombo(attackElement, defender, attacker, baseDmg) {
     return { finalDmg, reaction };
 }
 
-function executeTurn(attacker, skill, defender, isAttackerAlly, allyIndex = 0) {
+function executeTurn(attacker, skill, defender, isAttackerAlly, allyIndex = 0, targetAllyIndex = null) {
     logCombat(`[${attacker.name}] usa ${skill.name}`);
     skill.currentCd = skill.cd;
     
@@ -1011,6 +1170,9 @@ function executeTurn(attacker, skill, defender, isAttackerAlly, allyIndex = 0) {
             if (reaction && reaction.lifesteal && dmgDealt > 0) {
                 let healAmt = Math.max(1, Math.floor(dmgDealt * reaction.lifesteal));
                 let actualHealed = attacker.heal(healAmt);
+                if (actualHealed > 0) {
+                    showHealPopup(actualHealed, !isAttackerAlly, isAttackerAlly ? allyIndex : 0);
+                }
                 logCombat(`- 🌿 [${attacker.name}] absorbe y recupera ${actualHealed} HP (30% del daño infligido).`);
             }
 
@@ -1038,6 +1200,26 @@ function executeTurn(attacker, skill, defender, isAttackerAlly, allyIndex = 0) {
                     logCombat(`💀 [Élite] Espinas devuelve ${recoil} daño a ${attacker.name}.`);
                     setTimeout(() => showDamagePopup(recoil, !isAttackerAlly, allyIndex, false), 200);
                 }
+            }
+
+            // Coraza de Espinas (Refleja 50% del daño y adhiere Marca de Tierra de 3 turnos al atacante)
+            if (defender.hasStatus('CORAZA_ESPINAS') && finalDmg > 0) {
+                let reflectDmg = Math.max(1, Math.floor(finalDmg * 0.50));
+                let actualReflected = attacker.takeDamage(reflectDmg, 0, true);
+                logCombat(`🌵 ¡[${defender.name}] refleja ${actualReflected} de daño a [${attacker.name}] con Coraza de Espinas!`);
+                setTimeout(() => showDamagePopup(actualReflected, !isAttackerAlly, allyIndex, false), 200);
+                
+                // Aplicar Marca de Tierra (3 turnos) al atacante
+                attacker.statuses = attacker.statuses.filter(s => !s.type.startsWith('MARCA_'));
+                attacker.addStatus({ type: 'MARCA_TIERRA', duration: 3 });
+                logCombat(`- 🪨 Coraza de Espinas adhiere ${formatStatusLabel('MARCA_TIERRA')} a [${attacker.name}] (3 turnos).`);
+            }
+
+            // Barrera de Plasma: Adhiere Marca de Agua de 3 turnos al atacante
+            if (defender.hasStatus('BARRIER') && finalDmg > 0) {
+                attacker.statuses = attacker.statuses.filter(s => !s.type.startsWith('MARCA_'));
+                attacker.addStatus({ type: 'MARCA_AGUA', duration: 3 });
+                logCombat(`- 🌊 La Barrera de Plasma adhiere ${formatStatusLabel('MARCA_AGUA')} a [${attacker.name}] (3 turnos).`);
             }
             
             // Aplicar marca elemental si es habilidad especial
@@ -1079,6 +1261,12 @@ function executeTurn(attacker, skill, defender, isAttackerAlly, allyIndex = 0) {
                         }
                         let dmgDealt2 = defender.takeDamage(daggerBaseDmg, penetrationRatio, false, attacker);
                         logCombat(`- Inflige ${dmgDealt2} de daño extra a ${defender.name}.`);
+                        if (defender.hasStatus('CORAZA_ESPINAS') && daggerBaseDmg > 0) {
+                            let daggerReflect = Math.max(1, Math.floor(daggerBaseDmg * 0.50));
+                            let actualDaggerReflect = attacker.takeDamage(daggerReflect, 0, true);
+                            logCombat(`🌵 ¡[${defender.name}] refleja ${actualDaggerReflect} de daño extra a [${attacker.name}] con Coraza de Espinas!`);
+                            setTimeout(() => showDamagePopup(actualDaggerReflect, !isAttackerAlly, allyIndex, false), 350);
+                        }
                         setTimeout(() => {
                             showHitAnimation(attackElement, isAttackerAlly, allyIndex);
                             showDamagePopup(dmgDealt2, isAttackerAlly, allyIndex, isDaggerCrit, isDaggerCrit);
@@ -1101,29 +1289,13 @@ function executeTurn(attacker, skill, defender, isAttackerAlly, allyIndex = 0) {
                 setTimeout(() => triggerCombatAnim(!isAttackerAlly, 'HIT', allyIndex), 100);
             }
             
-            // Verificación especial para Terremoto (60% prob. o 100% garantizado con Marca previa)
-            let applyStatus = true;
-            if (skill.name === 'Terremoto' && skill.status && skill.status.type === 'STUN') {
-                let hasPreviousMark = defender.statuses.some(s => s.type.startsWith('MARCA_'));
-                if (hasPreviousMark) {
-                    logCombat(`🪨 ¡Marca previa detectada! Aturdimiento garantizado por Terremoto.`);
-                } else if (Math.random() < 0.60) {
-                    logCombat(`🪨 ¡Terremoto desestabilizó al enemigo (60% éxito)!`);
-                } else {
-                    applyStatus = false;
-                    logCombat(`- [${defender.name}] resistió el aturdimiento de Terremoto.`);
-                }
+            let appliedStatus = JSON.parse(JSON.stringify(skill.status));
+            // Napalm Sintético: +1 turno extra a las quemaduras aplicadas por aliados
+            if (appliedStatus.type === 'BURN' && isAttackerAlly && typeof SkillsManager !== 'undefined') {
+                appliedStatus.duration += SkillsManager.getModifier('burn_duration_extra', 0);
             }
-            
-            if (applyStatus) {
-                let appliedStatus = JSON.parse(JSON.stringify(skill.status));
-                // Napalm Sintético: +1 turno extra a las quemaduras aplicadas por aliados
-                if (appliedStatus.type === 'BURN' && isAttackerAlly && typeof SkillsManager !== 'undefined') {
-                    appliedStatus.duration += SkillsManager.getModifier('burn_duration_extra', 0);
-                }
-                defender.addStatus(appliedStatus);
-                logCombat(`- Aplica ${formatStatusLabel(appliedStatus.type)} a ${defender.name} por ${appliedStatus.duration} turnos.`);
-            }
+            defender.addStatus(appliedStatus);
+            logCombat(`- Aplica ${formatStatusLabel(appliedStatus.type)} a ${defender.name} por ${appliedStatus.duration} turnos.`);
             
             if (skill.cd > 0 && attackElement !== ELEMENTS.NEUTRO) {
                 let markType = `MARCA_${attackElement}`;
@@ -1134,18 +1306,69 @@ function executeTurn(attacker, skill, defender, isAttackerAlly, allyIndex = 0) {
         }
     }
     
-    // 3. Buffs sobre el atacante
+    // 3. Buffs sobre el atacante o aliado objetivo
     if (skill.type.includes('BUFF')) {
-        attacker.addStatus(JSON.parse(JSON.stringify(skill.status)));
-        logCombat(`- Obtiene ${formatStatusLabel(skill.status.type)} por ${skill.status.duration} turnos.`);
+        let recipient = attacker;
+        let recipientAllyIdx = allyIndex;
+        let recipientIsEnemy = !isAttackerAlly;
+
+        if (isAttackerAlly && skill.target === 'ALLY' && targetAllyIndex !== null && GAME_STATE.team[targetAllyIndex]) {
+            recipient = GAME_STATE.team[targetAllyIndex];
+            recipientAllyIdx = targetAllyIndex;
+            recipientIsEnemy = false;
+        }
+
+        let appliedStatus = JSON.parse(JSON.stringify(skill.status));
+        appliedStatus.casterId = attacker.id;
+        appliedStatus.casterName = attacker.name;
         
-        // Si el buff es elemental especial, también salpica marca al rival
-        if (skill.cd > 0 && attackElement !== ELEMENTS.NEUTRO && defender && defender.hp > 0) {
+        // Si ya tenía barrera previa, renovarla
+        if (appliedStatus.type === 'BARRIER') {
+            recipient.statuses = recipient.statuses.filter(s => s.type !== 'BARRIER');
+        }
+        recipient.addStatus(appliedStatus);
+
+        if (skill.status.type === 'CORAZA_ESPINAS') {
+            logCombat(`- [${attacker.name}] activa Coraza de Espinas (reduce 50% daño recibido y refleja 50% al atacante hasta su próximo turno).`);
+            showHitAnimation('SHIELD', !isAttackerAlly, allyIndex);
+        } else if (skill.status.type === 'BARRIER') {
+            // Curar 5% de la vida máxima del que recibe la barrera
+            let healAmt = Math.max(1, Math.floor(recipient.maxHp * 0.05));
+            let actualHealed = recipient.heal(healAmt);
+            if (actualHealed > 0) {
+                showHealPopup(actualHealed, recipientIsEnemy, recipientAllyIdx);
+            }
+            logCombat(`🌊 [${attacker.name}] otorga Barrera de Plasma a [${recipient.name}] (100% protección hasta el próximo turno de ${attacker.name}) y le restaura ${actualHealed} HP.`);
+            showHitAnimation('SHIELD', recipientIsEnemy, recipientAllyIdx);
+        } else {
+            logCombat(`- Obtiene ${formatStatusLabel(skill.status.type)} por ${skill.status.duration} turnos.`);
+        }
+        
+        // Si el buff es elemental especial y NO es de reacción defensiva (como BARRIER o CORAZA_ESPINAS que aplican marca al recibir ataque), salpica marca al rival
+        const isDefensiveReactionBuff = (skill.status && (skill.status.type === 'BARRIER' || skill.status.type === 'CORAZA_ESPINAS'));
+        if (!isDefensiveReactionBuff && skill.cd > 0 && attackElement !== ELEMENTS.NEUTRO && defender && defender.hp > 0) {
             let markType = `MARCA_${attackElement}`;
             defender.statuses = defender.statuses.filter(s => !s.type.startsWith('MARCA_'));
             defender.addStatus({ type: markType, duration: 3 });
             logCombat(`- Salpica a ${defender.name} con ${formatStatusLabel(markType)} (3 turnos).`);
         }
+    }
+
+    // 4. Curación (Habilidades con efecto de curación o tipo HEAL)
+    if (skill.type && (skill.type.includes('HEAL') || skill.healPower || skill.healPct)) {
+        let healAmount = 0;
+        if (skill.healPower) {
+            healAmount = Math.floor(attacker.atk * skill.healPower);
+        } else if (skill.healPct) {
+            healAmount = Math.floor(attacker.maxHp * skill.healPct);
+        } else {
+            healAmount = Math.floor(attacker.maxHp * 0.3);
+        }
+        let actualHealed = attacker.heal(healAmount);
+        if (actualHealed > 0) {
+            showHealPopup(actualHealed, !isAttackerAlly, isAttackerAlly ? allyIndex : 0);
+        }
+        logCombat(`- 💚 [${attacker.name}] recupera ${actualHealed} HP.`);
     }
 }
 

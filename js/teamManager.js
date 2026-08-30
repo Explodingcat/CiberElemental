@@ -23,7 +23,7 @@ function recruitRobot(robot) {
         robot.hp = Math.floor(robot.maxHp * 0.5); // Reclutado al 50% HP
         robot.isOffline = false;
         robot.statuses = [];
-        robot.name = robot.name.replace('Salvaje ', ''); // Quitar etiqueta
+        robot.name = robot.name.replace(/^Salvaje\s+/i, '').replace(/^ÉLITE\s+/i, '');
         GAME_STATE.team.push(robot);
         updateTeamUI();
         return true;
