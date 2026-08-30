@@ -4,55 +4,57 @@ let fullMap = []; // Array de 10 pisos
 
 function generateFullMap() {
     fullMap = [];
-    const repairShopFloor = Math.floor(Math.random() * 3) + 6; // 6, 7 o 8
     const numLanes = 3;
 
-    let totalChests = 0;
-    let totalShops = 0;
+    // 1er Mercado: Garantizado exactamente 1 mercado entre los pisos 2, 3 o 4
+    const shopFloor1 = Math.floor(Math.random() * 3) + 2; // 2, 3 o 4
+    const shopLane1 = Math.floor(Math.random() * numLanes);
+
+    // 2do Mercado: Garantizado exactamente 1 mercado entre los pisos 6, 7, 8 o 9
+    const shopFloor2 = Math.floor(Math.random() * 4) + 6; // 6, 7, 8 o 9
+    const shopLane2 = Math.floor(Math.random() * numLanes);
+
+    // Taller de Reparación (Campamento): Piso 6, 7 u 8
+    let possibleRepairFloors = [6, 7, 8].filter(f => f !== shopFloor2);
+    if (possibleRepairFloors.length === 0) possibleRepairFloors = [6, 7, 8];
+    const repairShopFloor = possibleRepairFloors[Math.floor(Math.random() * possibleRepairFloors.length)];
+    const repairShopLane = (repairShopFloor === shopFloor2) ? ((shopLane2 + 1) % numLanes) : 1;
 
     // Generar Nodos
     for (let floor = 1; floor <= 10; floor++) {
         let floorNodes = [];
-        let hasRepairShop = (floor === repairShopFloor);
-
         let nodesInThisFloor = (floor === 10) ? 1 : numLanes;
 
         for (let i = 0; i < nodesInThisFloor; i++) {
             let type;
             if (floor === 10) {
                 type = NODE_TYPES.BOSS;
-            } else if (hasRepairShop && i === 1) { // Taller al centro
+            } else if (floor === 5) {
+                // Piso 5: Siempre son puros tesoros (el jugador escoge 1 en su ruta)
+                type = NODE_TYPES.CHEST;
+            } else if (floor === shopFloor1 && i === shopLane1) {
+                type = NODE_TYPES.SHOP;
+            } else if (floor === shopFloor2 && i === shopLane2) {
+                type = NODE_TYPES.SHOP;
+            } else if (floor === repairShopFloor && i === repairShopLane) {
                 type = NODE_TYPES.REPAIR_SHOP;
+            } else if (floor === 1) {
+                // Piso 1: Combates iniciales o misterio
+                type = (Math.random() < 0.8) ? NODE_TYPES.COMBAT : NODE_TYPES.MYSTERY;
             } else {
                 let rand = Math.random();
-                let chosenType = NODE_TYPES.COMBAT; // fallback
-                
-                if (rand < 0.3) chosenType = NODE_TYPES.COMBAT;
-                else if (rand < 0.5) {
-                    if (floor >= 3) chosenType = NODE_TYPES.ELITE;
-                    else chosenType = NODE_TYPES.COMBAT;
-                }
-                else if (rand < 0.65) {
-                    if (floor >= 2 && totalChests < 2) {
-                        chosenType = NODE_TYPES.CHEST;
-                        totalChests++;
+                if (rand < 0.45) {
+                    type = NODE_TYPES.COMBAT;
+                } else if (rand < 0.75) {
+                    // Élite disponible desde piso 3
+                    if (floor >= 3) {
+                        type = NODE_TYPES.ELITE;
                     } else {
-                        chosenType = NODE_TYPES.COMBAT;
+                        type = NODE_TYPES.COMBAT;
                     }
+                } else {
+                    type = NODE_TYPES.MYSTERY;
                 }
-                else if (rand < 0.85) {
-                    chosenType = NODE_TYPES.MYSTERY;
-                }
-                else {
-                    if (floor >= 2 && totalShops < 2) {
-                        chosenType = NODE_TYPES.SHOP;
-                        totalShops++;
-                    } else {
-                        chosenType = NODE_TYPES.COMBAT;
-                    }
-                }
-                
-                type = chosenType;
             }
             floorNodes.push({ 
                 id: `f${floor}-n${i}`, 

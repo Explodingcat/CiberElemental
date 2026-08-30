@@ -1202,24 +1202,109 @@ function executeTurn(attacker, skill, defender, isAttackerAlly, allyIndex = 0, t
                 }
             }
 
-            // Coraza de Espinas (Refleja 50% del daño y adhiere Marca de Tierra de 3 turnos al atacante)
+            // Coraza de Espinas (Refleja daño y adhiere Marca de Tierra / detona reacción elemental con TIERRA)
             if (defender.hasStatus('CORAZA_ESPINAS') && finalDmg > 0) {
-                let reflectDmg = Math.max(1, Math.floor(finalDmg * 0.50));
-                let actualReflected = attacker.takeDamage(reflectDmg, 0, true);
-                logCombat(`🌵 ¡[${defender.name}] refleja ${actualReflected} de daño a [${attacker.name}] con Coraza de Espinas!`);
-                setTimeout(() => showDamagePopup(actualReflected, !isAttackerAlly, allyIndex, false), 200);
-                
-                // Aplicar Marca de Tierra (3 turnos) al atacante
-                attacker.statuses = attacker.statuses.filter(s => !s.type.startsWith('MARCA_'));
-                attacker.addStatus({ type: 'MARCA_TIERRA', duration: 3 });
-                logCombat(`- 🪨 Coraza de Espinas adhiere ${formatStatusLabel('MARCA_TIERRA')} a [${attacker.name}] (3 turnos).`);
+                let elemMultTierra = getMultiplier(ELEMENTS.TIERRA, attacker.element);
+                let baseDmgTierra = Math.max(1, Math.floor(defender.atk * 1.0 * elemMultTierra));
+                if (!isAttackerAlly && typeof SkillsManager !== 'undefined') {
+                    let elemBoost = SkillsManager.getElementalBoost(ELEMENTS.TIERRA);
+                    if (elemBoost > 0) baseDmgTierra = Math.floor(baseDmgTierra * (1 + elemBoost));
+                }
+
+                // Evaluar si el atacante ya tenía una marca activa para detonar reacción combinada
+                let { finalDmg: reflectDmg, reaction: reflectReaction } = processElementalCombo(ELEMENTS.TIERRA, attacker, defender, baseDmgTierra);
+
+                if (reflectReaction) {
+                    if (!isAttackerAlly && typeof SkillsManager !== 'undefined') {
+                        reflectDmg = Math.floor(reflectDmg * SkillsManager.getComboDamageMultiplier());
+                    }
+                    let actualReflected = attacker.takeDamage(reflectDmg, 0, true);
+                    logCombat(`🌵 ¡[${defender.name}] reacciona con Coraza de Espinas e inflige ${actualReflected} de daño a [${attacker.name}]!`);
+                    setTimeout(() => showDamagePopup(actualReflected, !isAttackerAlly, allyIndex, true), 200);
+                    showComboPopup(reflectReaction, !isAttackerAlly, allyIndex);
+                    logCombat(`💥⚡ [COMBO] ${reflectReaction.name} ${reflectReaction.desc}`);
+                    showHitAnimation(ELEMENTS.TIERRA, !isAttackerAlly, allyIndex);
+
+                    if (reflectReaction.lifesteal && actualReflected > 0) {
+                        let healAmt = Math.max(1, Math.floor(actualReflected * reflectReaction.lifesteal));
+                        let actualHealed = defender.heal(healAmt);
+                        if (actualHealed > 0) {
+                            showHealPopup(actualHealed, isAttackerAlly, isAttackerAlly ? 0 : allyIndex);
+                        }
+                        logCombat(`- 🌿 [${defender.name}] absorbe y recupera ${actualHealed} HP.`);
+                    }
+
+                    if (reflectReaction.delayTurn && attacker.hp > 0) {
+                        let attQueueIdx = combatState.initiativeQueue.findIndex((item, idx) => idx > combatState.queueIndex && item.robot === attacker);
+                        if (attQueueIdx !== -1) {
+                            let [delayedItem] = combatState.initiativeQueue.splice(attQueueIdx, 1);
+                            combatState.initiativeQueue.push(delayedItem);
+                            logCombat(`💨 ¡[${attacker.name}] fue empujado al final de la ronda de turnos!`);
+                            const currentActor = combatState.initiativeQueue[combatState.queueIndex];
+                            renderTurnQueue(currentActor);
+                        }
+                    }
+                } else {
+                    // Reflejo estándar (50% del daño recibido) + Marca de Tierra si no hubo combo
+                    let standardReflectDmg = Math.max(1, Math.floor(finalDmg * 0.50));
+                    let actualReflected = attacker.takeDamage(standardReflectDmg, 0, true);
+                    logCombat(`🌵 ¡[${defender.name}] refleja ${actualReflected} de daño a [${attacker.name}] con Coraza de Espinas!`);
+                    setTimeout(() => showDamagePopup(actualReflected, !isAttackerAlly, allyIndex, false), 200);
+
+                    attacker.statuses = attacker.statuses.filter(s => !s.type.startsWith('MARCA_'));
+                    attacker.addStatus({ type: 'MARCA_TIERRA', duration: 3 });
+                    logCombat(`- 🪨 Coraza de Espinas adhiere ${formatStatusLabel('MARCA_TIERRA')} a [${attacker.name}] (3 turnos).`);
+                }
             }
 
-            // Barrera de Plasma: Adhiere Marca de Agua de 3 turnos al atacante
+            // Barrera de Plasma: Adhiere Marca de Agua de 3 turnos al atacante o detona reacción elemental con AGUA
             if (defender.hasStatus('BARRIER') && finalDmg > 0) {
-                attacker.statuses = attacker.statuses.filter(s => !s.type.startsWith('MARCA_'));
-                attacker.addStatus({ type: 'MARCA_AGUA', duration: 3 });
-                logCombat(`- 🌊 La Barrera de Plasma adhiere ${formatStatusLabel('MARCA_AGUA')} a [${attacker.name}] (3 turnos).`);
+                let elemMultAgua = getMultiplier(ELEMENTS.AGUA, attacker.element);
+                let baseDmgAgua = Math.max(1, Math.floor(defender.atk * 1.0 * elemMultAgua));
+                if (!isAttackerAlly && typeof SkillsManager !== 'undefined') {
+                    let elemBoost = SkillsManager.getElementalBoost(ELEMENTS.AGUA);
+                    if (elemBoost > 0) baseDmgAgua = Math.floor(baseDmgAgua * (1 + elemBoost));
+                }
+
+                // Evaluar si el atacante ya tenía una marca activa para detonar reacción combinada
+                let { finalDmg: counterDmg, reaction: barrierReaction } = processElementalCombo(ELEMENTS.AGUA, attacker, defender, baseDmgAgua);
+
+                if (barrierReaction) {
+                    if (!isAttackerAlly && typeof SkillsManager !== 'undefined') {
+                        counterDmg = Math.floor(counterDmg * SkillsManager.getComboDamageMultiplier());
+                    }
+                    let actualCounterDmg = attacker.takeDamage(counterDmg, 0, true);
+                    logCombat(`🌊 ¡La Barrera de Plasma reacciona e inflige ${actualCounterDmg} de daño a [${attacker.name}]!`);
+                    setTimeout(() => showDamagePopup(actualCounterDmg, !isAttackerAlly, allyIndex, true), 200);
+                    showComboPopup(barrierReaction, !isAttackerAlly, allyIndex);
+                    logCombat(`💥⚡ [COMBO] ${barrierReaction.name} ${barrierReaction.desc}`);
+                    showHitAnimation(ELEMENTS.AGUA, !isAttackerAlly, allyIndex);
+
+                    if (barrierReaction.lifesteal && actualCounterDmg > 0) {
+                        let healAmt = Math.max(1, Math.floor(actualCounterDmg * barrierReaction.lifesteal));
+                        let actualHealed = defender.heal(healAmt);
+                        if (actualHealed > 0) {
+                            showHealPopup(actualHealed, isAttackerAlly, isAttackerAlly ? 0 : allyIndex);
+                        }
+                        logCombat(`- 🌿 [${defender.name}] absorbe y recupera ${actualHealed} HP.`);
+                    }
+
+                    if (barrierReaction.delayTurn && attacker.hp > 0) {
+                        let attQueueIdx = combatState.initiativeQueue.findIndex((item, idx) => idx > combatState.queueIndex && item.robot === attacker);
+                        if (attQueueIdx !== -1) {
+                            let [delayedItem] = combatState.initiativeQueue.splice(attQueueIdx, 1);
+                            combatState.initiativeQueue.push(delayedItem);
+                            logCombat(`💨 ¡[${attacker.name}] fue empujado al final de la ronda de turnos!`);
+                            const currentActor = combatState.initiativeQueue[combatState.queueIndex];
+                            renderTurnQueue(currentActor);
+                        }
+                    }
+                } else {
+                    // Si no hubo combo, aplicar Marca de Agua (3 turnos) al atacante
+                    attacker.statuses = attacker.statuses.filter(s => !s.type.startsWith('MARCA_'));
+                    attacker.addStatus({ type: 'MARCA_AGUA', duration: 3 });
+                    logCombat(`- 🌊 La Barrera de Plasma adhiere ${formatStatusLabel('MARCA_AGUA')} a [${attacker.name}] (3 turnos).`);
+                }
             }
             
             // Aplicar marca elemental si es habilidad especial
@@ -1240,7 +1325,7 @@ function executeTurn(attacker, skill, defender, isAttackerAlly, allyIndex = 0, t
                 ? ((attacker.equippedWeapon.isUpgraded ? 0.4 : 0.25) + daggerExtraChance)
                 : 0;
 
-            if (daggerProb > 0 && Math.random() < daggerProb) {
+            if (daggerProb > 0 && Math.random() < daggerProb && attacker.hp > 0) {
                 if (defender.hp > 0) {
                     logCombat(`¡Doble Golpe de Daga!`);
                     let hitChance2 = (attacker.getEffectiveAcc ? attacker.getEffectiveAcc() : attacker.acc) - defender.dodge;

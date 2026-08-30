@@ -40,7 +40,7 @@ const ROBOT_TEMPLATES = {
             },
             {
                 name: 'Barrera de Plasma',
-                cd: 4,
+                cd: 3,
                 currentCd: 0,
                 desc: 'Otorga una barrera a cualquier aliado: bloquea el 100% de daño recibido hasta el próximo turno del invocador y le restaura 5% de su HP máximo.',
                 type: 'BUFF',
@@ -64,7 +64,7 @@ const ROBOT_TEMPLATES = {
             },
             {
                 name: 'Coraza de Espinas',
-                cd: 4,
+                cd: 2,
                 currentCd: 0,
                 desc: 'Provocación: los enemigos solo pueden atacarlo a él (al de menor HP si hay varios). Reduce 50% el daño recibido, refleja 50% y adhiere 3 Marcas de Tierra al atacante.',
                 type: 'BUFF',

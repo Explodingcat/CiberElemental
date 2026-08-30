@@ -490,6 +490,7 @@ function initGenericEvent() {
 }
 
 let currentShopItems = [];
+let shopDismissalUsed = false;
 
 function initShopEvent() {
     const title = document.getElementById('event-title');
@@ -501,6 +502,7 @@ function initShopEvent() {
     if (desc) desc.style.display = 'none';
     
     currentShopItems = [];
+    shopDismissalUsed = false;
     let discountPct = (typeof SkillsManager !== 'undefined') ? SkillsManager.getShopDiscountPct() : 0;
     
     // 2 Armas con elemento aleatorio (1 unidad disponible de cada una)
@@ -607,6 +609,42 @@ function renderShopUI(feedbackMessage = '') {
         `;
     }).join('');
     
+    // Botón / Panel de Servicio de Desguace (Baja de Robot por 30 chatarra, 1 por mercado)
+    let dismissBtnHtml = '';
+    if (shopDismissalUsed) {
+        dismissBtnHtml = `<button class="btn-shop-service is-used" disabled><span class="shop-btn-icon">✓</span> SERVICIO UTILIZADO (Agotado)</button>`;
+    } else if (GAME_STATE.team.length <= 1) {
+        dismissBtnHtml = `<button class="btn-shop-service cannot-use" disabled><span class="shop-btn-icon">🔒</span> MÍNIMO 1 ROBOT EN EQUIPO</button>`;
+    } else if (GAME_STATE.scrap < 30) {
+        dismissBtnHtml = `<button class="btn-shop-service cannot-use" disabled><span class="shop-btn-icon">🔒</span> CHATARRA INSUFICIENTE (30 ⚙️)</button>`;
+    } else {
+        dismissBtnHtml = `
+            <button class="btn-shop-service can-use" onclick="showShopDismissalPicker()">
+                <span class="shop-btn-icon">🗑️</span> RETIRAR ROBOT <span class="shop-btn-price">(30 ⚙️)</span>
+            </button>
+        `;
+    }
+
+    const dismissServiceHtml = `
+        <div class="shop-service-panel">
+            <div class="shop-service-header">
+                <span class="shop-service-badge">🗑️ DESGUACE // BAJA DE UNIDAD</span>
+                <div class="shop-service-price">
+                    <span class="price-gear">⚙️</span> 30
+                </div>
+            </div>
+            <div class="shop-service-body">
+                <div class="shop-service-info">
+                    <div class="shop-service-title">Retirar Robot del Escuadrón</div>
+                    <div class="shop-service-desc">Da de baja a un robot para liberar espacio táctico. Sus armas equipadas y chips instalados regresarán a tu inventario. (Límite: 1 por mercado).</div>
+                </div>
+                <div class="shop-service-action">
+                    ${dismissBtnHtml}
+                </div>
+            </div>
+        </div>
+    `;
+
     // Calcular costo de comprar todo lo disponible en el catálogo
     const unboughtItems = currentShopItems.filter(it => !it.bought);
     const totalCostAll = unboughtItems.reduce((acc, it) => acc + it.cost, 0);
@@ -627,7 +665,7 @@ function renderShopUI(feedbackMessage = '') {
                 <div class="shop-header-badge">🛒 MERCADO NEGRO // RED DE CONTRABANDO</div>
                 <h1 class="shop-main-title">MERCADO NEGRO</h1>
                 <div class="shop-subtitle-row">
-                    <p class="shop-subtitle">Existencias limitadas (1 unidad por artículo). Compra todo lo que tu chatarra te permita.</p>
+                    <p class="shop-subtitle">Existencias limitadas (1 unidad por artículo). Compra suministros o contrata el servicio de desguace.</p>
                     <div class="shop-scrap-pill">
                         <span class="scrap-pill-label">TU SALDO:</span>
                         <span class="scrap-pill-val">${GAME_STATE.scrap} ⚙️</span>
@@ -640,6 +678,8 @@ function renderShopUI(feedbackMessage = '') {
             <div class="shop-cards-grid">
                 ${cardsHtml}
             </div>
+
+            ${dismissServiceHtml}
             
             <div class="shop-bottom-actions">
                 ${buyAllBtnHtml}
@@ -651,6 +691,101 @@ function renderShopUI(feedbackMessage = '') {
     `;
     
     updateTeamUI();
+}
+
+function showShopDismissalPicker() {
+    const actions = document.getElementById('event-actions');
+    if (!actions) return;
+    
+    const aliveCount = GAME_STATE.team.filter(r => !r.isOffline && r.hp > 0).length;
+    
+    const unitCards = GAME_STATE.team.map((r, idx) => {
+        const isOffline = r.isOffline || r.hp <= 0;
+        const isLastAlive = !isOffline && aliveCount <= 1;
+        const weaponText = r.equippedWeapon ? `${WEAPON_EMOJIS[r.equippedWeapon.type]} ${r.equippedWeapon.name}` : 'Sin arma';
+        const chipText = r.skills.length > 2 ? `💾 ${r.skills[2].name}` : 'Sin chip';
+        
+        let btnHtml = '';
+        if (isLastAlive) {
+            btnHtml = `<button class="btn-camp-select-cta" disabled style="opacity:0.5; cursor:not-allowed; background:rgba(255,255,255,0.05); color:#8395a7; border-color:rgba(255,255,255,0.15);"><span>🔒 ÚNICO OPERATIVO</span></button>`;
+        } else {
+            btnHtml = `
+                <button class="btn-camp-select-cta btn-camp-dismiss" onclick="executeShopDismissal(${idx})">
+                    <span>🗑️ Dar de Baja (30 ⚙️)</span>
+                </button>
+            `;
+        }
+        
+        return `
+            <div class="camp-select-card member-elem-${r.element}">
+                <div class="camp-select-header">
+                    <span class="member-elem-badge elem-${r.element}">${r.element}</span>
+                    <span class="member-lvl-badge">NV. ${r.level}</span>
+                </div>
+                <div class="camp-select-emoji elem-${r.element}">${r.emoji}</div>
+                <div class="camp-select-name">${r.name}</div>
+                <div class="camp-select-desc">
+                    <div><strong>Estado:</strong> ${isOffline ? '<span style="color:#ff4757;">DESACTIVADO</span>' : '<span style="color:#2ed573;">OPERATIVO</span>'} (${r.hp}/${r.maxHp} HP)</div>
+                    <div style="margin-top:4px; font-size:11px; opacity:0.85;">⚔️ ${weaponText} | ${chipText}</div>
+                </div>
+                ${btnHtml}
+            </div>
+        `;
+    }).join('');
+    
+    actions.innerHTML = `
+        <div class="event-panel-container">
+            <div class="event-header-panel">
+                <div class="event-header-badge">🗑️ DESGUACE // RETIRAR UNIDAD DEL ESCUADRÓN</div>
+                <h1 class="event-main-title">SELECCIONA EL ROBOT A RETIRAR</h1>
+                <p class="event-subtitle">Elige qué unidad deseas dar de baja (costo: 30 ⚙️). Sus armas y chips equipados serán devueltos a tu inventario:</p>
+            </div>
+            
+            <div class="camp-select-grid">
+                ${unitCards}
+            </div>
+            
+            <div class="event-bottom-actions">
+                <button class="btn-camp-back" onclick="renderShopUI()">
+                    <span>◀ Volver al Mercado</span>
+                </button>
+            </div>
+        </div>
+    `;
+}
+
+function executeShopDismissal(robotIndex) {
+    if (shopDismissalUsed || GAME_STATE.scrap < 30 || GAME_STATE.team.length <= 1) return;
+    const robot = GAME_STATE.team[robotIndex];
+    if (!robot) return;
+    
+    const aliveCount = GAME_STATE.team.filter(r => !r.isOffline && r.hp > 0).length;
+    if (!robot.isOffline && robot.hp > 0 && aliveCount <= 1) return;
+    
+    addScrap(-30);
+    shopDismissalUsed = true;
+    
+    let salvagedMsg = [];
+    if (robot.equippedWeapon) {
+        GAME_STATE.inventory.weapons.push(robot.equippedWeapon);
+        salvagedMsg.push(`arma (${robot.equippedWeapon.name})`);
+        robot.equippedWeapon = null;
+    }
+    if (robot.skills.length > 2) {
+        if (typeof uninstallChip === 'function') {
+            uninstallChip(robot);
+        } else {
+            robot.skills.splice(2);
+        }
+        salvagedMsg.push(`chip instalado`);
+    }
+    
+    const robotName = robot.name;
+    GAME_STATE.team.splice(robotIndex, 1);
+    updateTeamUI();
+    
+    let extraText = salvagedMsg.length > 0 ? ` Se recuperaron en tu mochila: ${salvagedMsg.join(' y ')}.` : '';
+    renderShopUI(`✓ ¡[${robotName}] fue dado de baja del escuadrón por 30 ⚙️!${extraText}`);
 }
 
 function buyShopItem(idx) {

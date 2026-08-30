@@ -140,15 +140,7 @@ class Robot {
             if (penetrationRatio > 0) {
                 // Perfora el 50% / 75% de la barrera (el daño que entra es amount * penetrationRatio)
                 finalDamage = Math.floor(amount * penetrationRatio);
-                if (attacker) {
-                    attacker.statuses = attacker.statuses.filter(s => !s.type.startsWith('MARCA_'));
-                    attacker.addStatus({ type: 'MARCA_AGUA', duration: 3 });
-                }
             } else {
-                if (attacker) {
-                    attacker.statuses = attacker.statuses.filter(s => !s.type.startsWith('MARCA_'));
-                    attacker.addStatus({ type: 'MARCA_AGUA', duration: 3 });
-                }
                 return 0; // Daño completamente bloqueado (100% protección)
             }
         }

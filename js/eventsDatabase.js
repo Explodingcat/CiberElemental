@@ -391,5 +391,52 @@ const MYSTERY_EVENTS = [
                 }
             }
         ]
+    },
+    {
+        title: "Chatarrero de Androides Caídos",
+        desc: "Un camión recolector y desmantelador automatizado bloquea el cruce. Sus sensores detectan restos y circuitos inservibles en tu escuadrón. Ofrece desarmar y purgar todos los robots destruidos, extrayendo sus componentes valiosos.",
+        choices: [
+            {
+                label: "Reciclar robots caídos (Elimina todos los robots desactivados)",
+                condition: () => GAME_STATE.team.some(r => r.isOffline || r.hp <= 0) && GAME_STATE.team.some(r => !r.isOffline && r.hp > 0),
+                action: () => {
+                    const deadRobots = GAME_STATE.team.filter(r => r.isOffline || r.hp <= 0);
+                    if (deadRobots.length === 0) return "No tienes robots desactivados en tu escuadrón.";
+                    
+                    let returnedWeapons = 0;
+                    let returnedChips = 0;
+                    
+                    deadRobots.forEach(robot => {
+                        if (robot.equippedWeapon) {
+                            GAME_STATE.inventory.weapons.push(robot.equippedWeapon);
+                            robot.equippedWeapon = null;
+                            returnedWeapons++;
+                        }
+                        if (robot.skills.length > 2) {
+                            if (typeof uninstallChip === 'function') {
+                                uninstallChip(robot);
+                            } else {
+                                robot.skills.splice(2);
+                            }
+                            returnedChips++;
+                        }
+                    });
+                    
+                    let scrapGained = deadRobots.length * 15;
+                    addScrap(scrapGained);
+                    
+                    const names = deadRobots.map(r => r.name).join(', ');
+                    GAME_STATE.team = GAME_STATE.team.filter(r => !r.isOffline && r.hp > 0);
+                    updateTeamUI();
+                    
+                    let bonusMsg = `Recuperaste ${returnedWeapons} arma(s) y ${returnedChips} chip(s) en tu inventario, además de ganar +${scrapGained} ⚙️ de chatarra reciclada.`;
+                    return `♻️ Los robots caídos ([${names}]) fueron desmantelados y purgados del escuadrón. ${bonusMsg}`;
+                }
+            },
+            {
+                label: "Ignorar y conservar los restos",
+                action: () => "Decides no tocar los restos de tu escuadrón por si encuentras un taller de reparación más adelante."
+            }
+        ]
     }
 ];

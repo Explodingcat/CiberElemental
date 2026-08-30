@@ -24,8 +24,8 @@ El juego opera bajo una rueda de afinidades elemental táctica:
 | Elemento | Robot Base | HP Máx | ATQ | Vel | Esq | Prec | Crít | Habilidades Iniciales |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
 | 🔥 **FUEGO** | **Ignis** | 90 | 28 | 11 | 5% | 100% | 10% | **Ataque Básico:** 1.0x Daño.<br>**Ignición (CD 3):** Inflige 1.2x daño directo + Quemadura (8% HP/turno por 2 turnos). |
-| 💦 **AGUA** | **Aqua** | 130 | 14 | 9 | 5% | 95% | 5% | **Ataque Básico:** 1.0x Daño.<br>**Barrera Plasma (CD 4):** Otorga barrera a cualquier aliado: bloquea el 100% de daño recibido hasta el próximo turno del invocador, restaura 5% de HP Máx y adhiere Marca de Agua (3T) al enemigo cuando éste ataca al protegido. |
-| 🪨 **TIERRA** | **Terra** | 175 | 12 | 4 | 0% | 85% | 5% | **Ataque Básico:** 1.0x Daño.<br>**Coraza de Espinas (CD 4):** Provocación: obliga a los enemigos a atacarle (al de menor HP si hay varios), reduce 50% el daño recibido, refleja 50% y adhiere 3 Marcas de Tierra al atacante hasta su próximo turno. |
+| 💦 **AGUA** | **Aqua** | 130 | 14 | 9 | 5% | 95% | 5% | **Ataque Básico:** 1.0x Daño.<br>**Barrera Plasma (CD 3):** Otorga barrera a cualquier aliado: bloquea el 100% de daño recibido hasta el próximo turno del invocador, restaura 5% de HP Máx y adhiere Marca de Agua (3T) al enemigo cuando éste ataca al protegido. |
+| 🪨 **TIERRA** | **Terra** | 175 | 12 | 4 | 0% | 85% | 5% | **Ataque Básico:** 1.0x Daño.<br>**Coraza de Espinas (CD 2):** Provocación: obliga a los enemigos a atacarle (al de menor HP si hay varios), reduce 50% el daño recibido, refleja 50% y adhiere 3 Marcas de Tierra al atacante hasta su próximo turno. |
 | 💨 **AIRE** | **Zephyr** | 80 | 22 | 16 | 25% | 95% | 15% | **Ataque Básico:** 1.0x Daño.<br>**Ráfaga Cortante (CD 2):** Inflige 1.4x daño (garantiza actuar primero en el turno de uso). |
 | ⚙️ **NEUTRO** | **TITAN-X** *(Jefe)* | 200 | 30 | 12 | 10% | 100% | 10% | **Golpe Titánico:** 1.5x Daño.<br>**Protocolo Exterminio (CD 4):** 3.0x Daño masivo. |
 
@@ -83,7 +83,7 @@ Toda **Habilidad Especial con Cooldown** (incluyendo habilidades nativas y las a
 | 💨 **Marca de Aire** | 🔥 **FUEGO** | **¡DEFLAGRACIÓN!** | Inflige **1.45x Daño directo puro** (sin quemadura adicional). |
 | 💨 **Marca de Aire** | 💦 **AGUA** | **¡CICLÓN!** | Inflige **1.35x Daño** y **retrasa el turno del rival al final de la ronda**. |
 | 💨 **Marca de Aire** | 🪨 **TIERRA** | **¡COLAPSO SÍSMICO!** | Inflige **1.4x Daño** y causa **Aturdimiento condicional con 40% de probabilidad**. |
-| 🛡️ *(Barrera Activa)* | *(Cualquiera)* | **RETRIBUCIÓN DE BARRERA** | Si un enemigo impacta contra tu Barrera, esta absorbe el daño y contraataca aplicando la **Marca Elemental** del robot defensor al agresor durante **3 turnos**. |
+| 🛡️ *(Barrera / Coraza Activa)* | *(Cualquiera)* | **RETRIBUCIÓN PROTECTORA** | Si un enemigo impacta contra tu Barrera o Coraza, ésta absorbe/refleja el daño y contraataca: si el agresor ya posee una Marca Elemental previa, detona la **Reacción Elemental Combinada** con daño basado en el **Ataque Básico** del portador; si no posee marca, le adhiere la **Marca Elemental** correspondiente durante **3 turnos**. |
 
 ---
 
@@ -136,6 +136,9 @@ En los **Campamentos / Talleres (⛺)** puedes **Forjar** para subir un arma a *
 | **Bomba PEM** | 💥 | En Combate *(Gasta Turno)* | Sobrecarga los circuitos del enemigo, dejándolo **Aturdido (STUN)** por **1 turno**. |
 | **Núcleo Sobrecarga** | 🔋 | En Combate *(Acción Gratuita)* | **Reduce 1 turno de Cooldown** a todas las habilidades del robot activo. |
 
+> [!TIP]
+> **Servicio de Desguace en Mercado Negro (🛒):** En cada tienda de mercado puedes pagar **30 Chatarra (⚙️)** para dar de baja a 1 robot del escuadrón (máx. 1 por visita). Sus armas y chips equipados son devueltos a la mochila automáticamente.
+
 ---
 
 ## 6. Mochila y Centro de Gestión Táctica
@@ -158,16 +161,22 @@ La ventana modal de **Mochila y Escuadrón (`🎒`)** ofrece control total sobre
 
 ## 7. Navegación de la Torre y Nodos Sectoriales
 
-El mapa de cada sector consta de 10 pisos de bifurcaciones tácticas:
+El mapa de cada sector consta de 10 pisos de bifurcaciones tácticas con una estructura equilibrada:
+* **🛒 Mercados Garantizados (2 por incursión):** Aparece exactamente 1 Mercado entre los **Pisos 2 a 4**, y un 2º Mercado entre los **Pisos 6 a 9**.
+* **🎁 Cámara de Tesoros (Piso 5):** El piso 5 está compuesto **exclusivamente por cofres de tesoro** en todas sus rutas, permitiendo tomar exactamente 1 tesoro garantizado a mitad de torre.
+* **👑 Núcleo de la Torre (Piso 10):** Enfrentamiento final contra el jefe supremo **TITAN-X**.
 
 ### Leyenda de Nodos
 * 👾 **Combate Normal:** Enfrentamiento contra robot salvaje del nivel del piso actual.
 * 💀 **Combate Élite:** Robot potenciado (+2 niveles, mayor vida, botín doble garantizado) con un **Mutador Cibernético** aleatorio (*Espinas*, *Regenerador* o *Rabia*).
 * 🎁 **Tesoro / Suministros:** Recompensa de chatarra, objetos raros o armas sin combatir.
-* 🛒 **Mercado Negro:** Tienda para adquirir armas y suministros a cambio de chatarra.
+* 🛒 **Mercado Negro:** Tienda para adquirir armas, suministros y dar de baja robots por 30 ⚙️.
 * ⛺ **Taller de Reparación:** Permite elegir entre **Reparar Escuadrón** (cura 30%), **Entrenar Robot** (+300 XP) o **Forjar Arma** (mejora a +1).
 * ❓ **Evento Misterioso:** Terminales narrativas con decisiones de riesgo y recompensa.
 * 👑 **Jefe de Sector (Piso 10):** Enfrentamiento supremo contra **TITAN-X** en el núcleo de la torre.
+
+> [!TIP]
+> **📊 Tabla de Probabilidades y Tasas de Aparición:** Puedes consultar el desglose matemático detallado de botines de cofres, tiradas de armas (+1), chips y precios del mercado negro en [PROBABILIDADES_RECOMPENSAS.md](file:///c:/Git/CiberElemental/PROBABILIDADES_RECOMPENSAS.md).
 
 ### Estados Visuales del Mapa
 * **👑 Piso 10 (Cámara del Jefe):** Advertencia e iluminación en rojo carmesí (`#ff4757`).
