@@ -626,7 +626,7 @@ button:disabled {
 
 #screen-map {
     display: none;
-    padding: 16px 20px 20px 20px;
+    padding: 65px 20px 20px 20px;
     height: 100%;
     box-sizing: border-box;
     overflow: hidden;
@@ -992,7 +992,8 @@ button:disabled {
 }
 
 /* ==========================================================================
-   Pantalla de Evento / Nodo
+/* ==========================================================================
+   Pantalla de Evento / Nodo (Cofres, Campamento, Misterios, Tienda)
    ========================================================================== */
 
 #screen-event {
@@ -1002,47 +1003,576 @@ button:disabled {
     justify-content: flex-start;
     padding-top: 65px;
     padding-bottom: 25px;
+    box-sizing: border-box;
+    overflow-y: auto;
 }
 
 #screen-event.active {
     display: flex;
 }
 
-#event-title {
-    font-size: clamp(22px, 5vw, 30px);
-    font-weight: 800;
-    letter-spacing: 2px;
-    color: #fff;
-    margin: 4px 0 10px 0;
-    text-shadow: 0 0 15px rgba(102, 252, 241, 0.4);
+.event-panel-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    max-width: 960px;
+    margin: 0 auto;
+    box-sizing: border-box;
 }
 
-.emoji-graphic {
-    font-size: clamp(48px, 12vw, 70px);
-    margin: 10px 0;
-    line-height: 1;
-    filter: drop-shadow(0 0 16px rgba(255, 255, 255, 0.35));
+.event-header-panel {
+    text-align: center;
+    margin-bottom: 14px;
+    width: 100%;
+}
+
+.event-header-badge {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    color: var(--accent-color);
+    background: rgba(102, 252, 241, 0.1);
+    border: 1px solid var(--secondary-accent);
+    border-radius: 20px;
+    padding: 3px 14px;
+    margin-bottom: 6px;
+    text-transform: uppercase;
+}
+
+.event-main-title {
+    font-size: clamp(24px, 4.5vw, 34px);
+    font-weight: 900;
+    letter-spacing: 2.5px;
+    color: #fff;
+    margin: 0 0 6px 0;
+    text-transform: uppercase;
+    text-shadow: 0 0 20px rgba(102, 252, 241, 0.5), 0 0 35px rgba(102, 252, 241, 0.2);
+}
+
+.event-subtitle {
+    font-size: 14px;
+    color: #a4b0be;
+    margin: 0 auto;
+    max-width: 650px;
+    line-height: 1.35;
+}
+
+/* ==========================================================================
+   Cofres y Suministros (Loot Showcase)
+   ========================================================================== */
+
+.chest-showcase-box {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    margin: 12px 0 20px 0;
+}
+
+.chest-reward-card {
+    background: rgba(15, 20, 30, 0.85);
+    border: 2px solid rgba(102, 252, 241, 0.4);
+    border-radius: 16px;
+    padding: 22px 28px;
+    width: 100%;
+    max-width: 520px;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.8), 0 0 30px rgba(102, 252, 241, 0.2);
+    backdrop-filter: blur(10px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    box-sizing: border-box;
+    transition: all 0.3s ease;
+}
+
+.chest-reward-card:hover {
+    border-color: var(--accent-color);
+    box-shadow: 0 16px 50px rgba(0, 0, 0, 0.9), 0 0 40px rgba(102, 252, 241, 0.35);
+    transform: translateY(-3px);
+}
+
+.chest-card-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    margin-bottom: 12px;
+}
+
+.chest-badge {
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 1px;
+    padding: 3px 10px;
+    border-radius: 12px;
+    text-transform: uppercase;
+}
+
+.chest-type-tag {
+    font-size: 11px;
+    font-weight: 700;
+    color: #8395a7;
+    letter-spacing: 1px;
+}
+
+.chest-hero-visual {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin: 10px 0 14px 0;
+}
+
+.chest-holo-pedestal {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(102, 252, 241, 0.25) 0%, transparent 70%);
+    border: 1px dashed rgba(102, 252, 241, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 0 25px rgba(102, 252, 241, 0.3);
+    margin-bottom: 10px;
     animation: heroFloat 3s ease-in-out infinite;
 }
 
-#event-description {
-    font-size: clamp(14px, 3.5vw, 17px);
-    color: #c5c6c7;
-    max-width: 600px;
-    line-height: 1.4;
-    margin: 6px 0 16px 0;
+.chest-reward-icon {
+    font-size: 52px;
+    line-height: 1;
 }
 
-.actions-container {
+.chest-reward-title {
+    font-size: 24px;
+    font-weight: 900;
+    letter-spacing: 1.5px;
+    color: #fff;
+    margin-top: 4px;
+}
+
+.chest-reward-desc {
+    font-size: 14px;
+    color: #c5c6c7;
+    line-height: 1.45;
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 8px;
+    padding: 10px 14px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+/* ==========================================================================
+   Campamento Táctico (Taller de Reparación)
+   ========================================================================== */
+
+.camp-operations-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 16px;
+    width: 100%;
+    margin: 10px 0 20px 0;
+    box-sizing: border-box;
+}
+
+.camp-op-card {
+    background: rgba(15, 20, 30, 0.85);
+    border: 1px solid rgba(102, 252, 241, 0.25);
+    border-radius: 14px;
+    padding: 18px 16px;
     display: flex;
-    justify-content: center;
+    flex-direction: column;
     align-items: center;
-    gap: 10px;
-    flex-wrap: wrap;
-    margin: 10px auto 16px auto;
+    text-align: center;
+    backdrop-filter: blur(8px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+    transition: all 0.25s ease;
+    box-sizing: border-box;
+}
+
+.camp-op-card:hover {
+    border-color: var(--accent-color);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.8), 0 0 20px rgba(102, 252, 241, 0.3);
+    transform: translateY(-4px);
+}
+
+.camp-op-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    margin-bottom: 8px;
+}
+
+.camp-op-badge {
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 1px;
+    padding: 2px 8px;
+    border-radius: 10px;
+    text-transform: uppercase;
+}
+
+.badge-green { background: rgba(46, 213, 115, 0.15); color: #2ed573; border: 1px solid #2ed573; }
+.badge-purple { background: rgba(162, 155, 254, 0.15); color: #a29bfe; border: 1px solid #a29bfe; }
+.badge-gold { background: rgba(254, 202, 87, 0.15); color: #feca57; border: 1px solid #feca57; }
+
+.camp-op-stat {
+    font-size: 13px;
+    font-weight: 800;
+    color: #fff;
+    font-family: 'Rajdhani', monospace;
+}
+
+.camp-op-icon {
+    font-size: 40px;
+    margin: 6px 0 8px 0;
+}
+
+.camp-op-title {
+    font-size: 18px;
+    font-weight: 800;
+    color: #fff;
+    letter-spacing: 1px;
+    margin-bottom: 6px;
+}
+
+.camp-op-desc {
+    font-size: 13px;
+    color: #a4b0be;
+    line-height: 1.35;
+    flex-grow: 1;
+    margin-bottom: 14px;
+}
+
+.camp-op-footer {
+    width: 100%;
+}
+
+.btn-camp-action {
+    width: 100%;
+    padding: 10px 14px;
+    font-size: 14px;
+    font-weight: 800;
+    letter-spacing: 1px;
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    margin: 0;
+    transition: all 0.2s ease;
+}
+
+.btn-camp-heal {
+    background: rgba(46, 213, 115, 0.15);
+    border-color: #2ed573;
+    color: #2ed573;
+}
+.btn-camp-heal:hover {
+    background: #2ed573;
+    color: #0b0c10;
+    box-shadow: 0 0 16px rgba(46, 213, 115, 0.6);
+}
+
+.btn-camp-train {
+    background: rgba(162, 155, 254, 0.15);
+    border-color: #a29bfe;
+    color: #a29bfe;
+}
+.btn-camp-train:hover {
+    background: #a29bfe;
+    color: #0b0c10;
+    box-shadow: 0 0 16px rgba(162, 155, 254, 0.6);
+}
+
+.btn-camp-forge {
+    background: rgba(254, 202, 87, 0.15);
+    border-color: #feca57;
+    color: #feca57;
+}
+.btn-camp-forge:hover {
+    background: #feca57;
+    color: #0b0c10;
+    box-shadow: 0 0 16px rgba(254, 202, 87, 0.6);
+}
+
+/* Selector de Unidades / Armas en Campamento */
+.camp-select-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 14px;
+    width: 100%;
+    max-width: 800px;
+    margin: 12px 0 20px 0;
+    box-sizing: border-box;
+}
+
+.camp-select-card {
+    background: rgba(15, 20, 30, 0.9);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 12px;
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-sizing: border-box;
+}
+
+.camp-select-card:hover {
+    border-color: var(--accent-color);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.8), 0 0 18px rgba(102, 252, 241, 0.4);
+    transform: translateY(-3px);
+}
+
+.camp-select-header {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    margin-bottom: 6px;
+    align-items: center;
+}
+
+.camp-select-emoji {
+    font-size: 38px;
+    margin: 4px 0;
+}
+
+.camp-select-name {
+    font-size: 16px;
+    font-weight: 800;
+    color: #fff;
+    margin-bottom: 4px;
+}
+
+.camp-select-xp-row {
+    font-size: 11px;
+    color: #a4b0be;
+    margin-bottom: 3px;
+    font-family: 'Rajdhani', monospace;
+    font-weight: 700;
+}
+
+.camp-select-desc {
+    font-size: 11px;
+    color: #a4b0be;
+    margin: 4px 0 10px 0;
+    line-height: 1.25;
+}
+
+.btn-camp-select-cta {
+    width: 100%;
+    padding: 7px 12px;
+    font-size: 13px;
+    font-weight: 800;
+    border-radius: 6px;
+    margin: 8px 0 0 0;
+}
+
+.btn-camp-back {
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #c5c6c7;
+    padding: 8px 20px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-camp-back:hover {
+    background: rgba(255, 255, 255, 0.2);
+    color: #fff;
+}
+
+/* ==========================================================================
+   Eventos Misteriosos (Anomalías y Decisiones)
+   ========================================================================== */
+
+.mystery-terminal-card {
     width: 100%;
     max-width: 700px;
+    background: rgba(13, 17, 23, 0.94);
+    border: 1px solid rgba(102, 252, 241, 0.35);
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8), 0 0 20px rgba(102, 252, 241, 0.15);
+    backdrop-filter: blur(10px);
+    overflow: hidden;
+    margin-bottom: 16px;
     box-sizing: border-box;
+}
+
+.mystery-terminal-header {
+    background: rgba(0, 0, 0, 0.6);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    padding: 8px 14px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.terminal-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+}
+.terminal-dot.green { background: #2ed573; box-shadow: 0 0 6px #2ed573; }
+.terminal-dot.yellow { background: #feca57; box-shadow: 0 0 6px #feca57; }
+.terminal-dot.red { background: #ff4757; box-shadow: 0 0 6px #ff4757; }
+
+.terminal-title {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    color: #8395a7;
+    margin-left: 8px;
+    text-transform: uppercase;
+}
+
+.mystery-terminal-body {
+    padding: 18px 24px;
+}
+
+.mystery-narrative-text {
+    font-size: 16px;
+    color: #e0fbf9;
+    line-height: 1.5;
+    font-style: italic;
+    letter-spacing: 0.5px;
+}
+
+.mystery-choices-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: 100%;
+    max-width: 700px;
+    margin-bottom: 16px;
+}
+
+.btn-mystery-choice {
+    background: rgba(102, 252, 241, 0.06);
+    border: 1px solid rgba(102, 252, 241, 0.3);
+    color: #fff;
+    padding: 12px 18px;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 15px;
+    font-weight: 700;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    margin: 0;
+    transition: all 0.2s ease;
+    text-align: left;
+}
+
+.btn-mystery-choice.can-choose:hover {
+    background: rgba(102, 252, 241, 0.2);
+    border-color: var(--accent-color);
+    box-shadow: 0 0 16px rgba(102, 252, 241, 0.4);
+    transform: translateX(4px);
+}
+
+.btn-mystery-choice.cannot-choose {
+    border-color: rgba(255, 71, 87, 0.3);
+    background: rgba(255, 71, 87, 0.05);
+    color: #8395a7;
+    cursor: not-allowed;
+}
+
+.choice-content {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.choice-icon {
+    font-size: 16px;
+}
+
+.choice-label {
+    letter-spacing: 0.5px;
+}
+
+.choice-locked-tag {
+    font-size: 10px;
+    font-weight: 800;
+    color: #ff6b81;
+    background: rgba(255, 71, 87, 0.15);
+    padding: 2px 8px;
+    border-radius: 4px;
+    text-transform: uppercase;
+}
+
+.choice-arrow {
+    font-size: 16px;
+    color: var(--accent-color);
+}
+
+/* Caja de Resolución de Evento */
+.event-resolution-box {
+    width: 100%;
+    max-width: 650px;
+    background: rgba(13, 17, 23, 0.94);
+    border: 1px solid rgba(46, 213, 115, 0.4);
+    border-radius: 14px;
+    padding: 20px 24px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8), 0 0 20px rgba(46, 213, 115, 0.2);
+    margin: 10px 0 20px 0;
+    box-sizing: border-box;
+}
+
+.resolution-icon {
+    font-size: 38px;
+    flex-shrink: 0;
+}
+
+.resolution-text {
+    font-size: 16px;
+    color: #fff;
+    line-height: 1.45;
+}
+
+.event-bottom-actions {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+    margin-top: 8px;
+}
+
+.btn-event-cta {
+    background: linear-gradient(135deg, rgba(102, 252, 241, 0.2) 0%, rgba(69, 162, 158, 0.35) 100%);
+    border: 1.5px solid var(--accent-color);
+    color: #fff;
+    padding: 12px 30px;
+    font-size: 16px;
+    font-weight: 800;
+    letter-spacing: 1.5px;
+    border-radius: 10px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.2s ease;
+    box-shadow: 0 0 20px rgba(102, 252, 241, 0.35);
+}
+
+.btn-event-cta:hover {
+    background: var(--accent-color);
+    color: #0b0c10;
+    box-shadow: 0 0 30px rgba(102, 252, 241, 0.7);
+    transform: translateY(-2px);
 }
 
 /* ==========================================================================
@@ -2151,169 +2681,520 @@ button:disabled {
     100% { transform: scaleX(-1) translateX(0); }
 }
 
-/* Botones de Acción de Combate */
-.combat-actions-bar {
-    display: flex;
-    justify-content: center;
-    gap: 8px;
-    flex-wrap: wrap;
-    margin: 4px 0 10px 0;
+/* Animaciones de Esquive / Evasión Acrobática */
+.combat-avatar-emoji.anim-dodge-player,
+.anim-dodge-player {
+    animation: dodge-player-anim 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
+}
+@keyframes dodge-player-anim {
+    0% { transform: translateY(0) scale(1); filter: brightness(1); }
+    25% { transform: translate(-35px, -22px) scale(0.88) skewX(-14deg); filter: brightness(2) drop-shadow(0 0 16px #48dbfb); opacity: 0.65; }
+    60% { transform: translate(-12px, -6px) scale(1.05); filter: brightness(1.3) drop-shadow(0 0 10px #66fcf1); opacity: 0.95; }
+    100% { transform: translateY(0) scale(1); filter: brightness(1); opacity: 1; }
 }
 
-.btn-combat-skill {
-    background: rgba(102, 252, 241, 0.08);
-    border: 1px solid var(--secondary-accent);
-    color: var(--accent-color);
-    padding: 9px 18px;
+.combat-avatar-emoji.anim-dodge-enemy,
+.anim-dodge-enemy {
+    animation: dodge-enemy-anim 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
+}
+@keyframes dodge-enemy-anim {
+    0% { transform: scaleX(-1) translateY(0) scale(1); filter: brightness(1); }
+    25% { transform: scaleX(-1) translate(-35px, -22px) scale(0.88) skewX(14deg); filter: brightness(2) drop-shadow(0 0 16px #48dbfb); opacity: 0.65; }
+    60% { transform: scaleX(-1) translate(-12px, -6px) scale(1.05); filter: brightness(1.3) drop-shadow(0 0 10px #66fcf1); opacity: 0.95; }
+    100% { transform: scaleX(-1) translateY(0) scale(1); filter: brightness(1); opacity: 1; }
+}
+
+/* Banner de Esquive Flotante Cyberpunk */
+.dodge-popup-banner {
+    position: absolute;
+    top: -18px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(11, 19, 43, 0.96);
+    backdrop-filter: blur(8px);
+    border: 2px solid #48dbfb;
     border-radius: 8px;
-    font-size: 15px;
-    font-weight: 700;
+    padding: 4px 14px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 110;
+    pointer-events: none;
+    box-shadow: 0 0 25px rgba(0, 0, 0, 0.95), 0 0 18px rgba(72, 219, 251, 0.85), inset 0 0 10px rgba(72, 219, 251, 0.3);
+    animation: dodgePop 1.1s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+    white-space: nowrap;
+}
+
+.dodge-popup-tag {
+    font-size: 16px;
+    font-weight: 900;
+    color: #48dbfb;
+    letter-spacing: 1.5px;
+    font-family: 'Rajdhani', sans-serif;
+    text-transform: uppercase;
+    text-shadow: 0 0 12px rgba(72, 219, 251, 1), 0 0 20px rgba(0, 210, 211, 0.9);
+    line-height: 1.1;
+}
+
+.dodge-popup-sub {
+    font-size: 10px;
+    font-weight: 800;
+    color: #c8d6e5;
     letter-spacing: 1px;
+    text-transform: uppercase;
+    font-family: 'Rajdhani', monospace;
+    opacity: 0.9;
+}
+
+@keyframes dodgePop {
+    0% { opacity: 0; transform: translate(-50%, 15px) scale(0.6); }
+    20% { opacity: 1; transform: translate(-50%, -10px) scale(1.15); }
+    40% { transform: translate(-50%, -14px) scale(1.0); }
+    75% { opacity: 1; transform: translate(-50%, -20px) scale(1.0); }
+    100% { opacity: 0; transform: translate(-50%, -35px) scale(0.9); }
+}
+
+/* ==========================================================================
+   🎮 CONSOLA TÁCTICA DE COMBATE (Nuevo Cuadro Unificado de Acciones)
+   ========================================================================== */
+.combat-tactical-box {
+    width: 96%;
+    max-width: 960px;
+    margin: 8px auto 14px auto;
+    background: rgba(13, 17, 23, 0.94);
+    backdrop-filter: blur(12px);
+    border: 1.5px solid rgba(102, 252, 241, 0.3);
+    border-radius: 14px;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.75), 0 0 20px rgba(102, 252, 241, 0.12);
+    padding: 10px 14px;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    transition: all 0.25s ease;
+}
+
+/* Cabecera del Panel Táctico */
+.tactical-box-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    padding-bottom: 6px;
+    margin-bottom: 4px;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.tactical-header-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.tactical-indicator-pulse {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: var(--accent-color);
+    box-shadow: 0 0 10px var(--accent-color);
+    animation: indicatorGlow 1.5s infinite alternate;
+}
+
+.tactical-header-title {
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 1.8px;
+    color: var(--accent-color);
+    text-transform: uppercase;
+}
+
+.tactical-header-right {
     display: flex;
     align-items: center;
     gap: 6px;
-    cursor: pointer;
-    margin: 0;
-    transition: all 0.2s ease;
 }
 
-.btn-combat-skill:hover:not(:disabled) {
-    background: var(--accent-color);
-    color: #0b0c10;
-    box-shadow: 0 0 16px rgba(102, 252, 241, 0.6);
-    transform: translateY(-2px);
-}
-
-.btn-special-skill {
-    border-color: #a29bfe;
-    background: rgba(162, 155, 254, 0.12);
-    color: #e4e5f0;
-}
-
-.btn-special-skill:hover:not(:disabled) {
-    background: #a29bfe;
-    color: #0b0c10;
-    box-shadow: 0 0 16px rgba(162, 155, 254, 0.6);
-}
-
-.btn-cd-tag {
-    font-size: 10px;
-    padding: 1px 5px;
-    border-radius: 4px;
-    background: rgba(0,0,0,0.6);
-    border: 1px solid #555;
-    color: #feca57;
-}
-
-.btn-combat-defend {
-    border-color: #48dbfb;
-    color: #48dbfb;
-    background: rgba(72, 219, 251, 0.08);
-}
-.btn-combat-defend:hover:not(:disabled) {
-    background: #48dbfb;
-    color: #0b0c10;
-    box-shadow: 0 0 16px rgba(72, 219, 251, 0.6);
-}
-
-.btn-combat-swap {
-    border-color: #feca57;
-    color: #feca57;
-    background: rgba(254, 202, 87, 0.08);
-}
-.btn-combat-swap:hover:not(:disabled) {
-    background: #feca57;
-    color: #0b0c10;
-    box-shadow: 0 0 16px rgba(254, 202, 87, 0.6);
-}
-
-.btn-combat-item {
-    border-color: #ff9ff3;
-    color: #ff9ff3;
-    background: rgba(255, 159, 243, 0.08);
-}
-.btn-combat-item:hover:not(:disabled) {
-    background: #ff9ff3;
-    color: #0b0c10;
-    box-shadow: 0 0 16px rgba(255, 159, 243, 0.6);
-}
-
-/* Panel Inferior: Log de Combate + Botón Historial */
-.combat-bottom-panel {
-    display: flex;
-    justify-content: center;
-    align-items: stretch;
-    gap: 10px;
-    width: 96%;
-    margin: 0 auto;
-    margin-bottom: 6px;
-}
-
-.combat-log-container {
-    flex-grow: 1;
-    background: rgba(11, 12, 16, 0.85);
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 10px;
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-    box-shadow: 0 6px 20px rgba(0,0,0,0.6);
-}
-
-.combat-log-header {
-    background: rgba(255, 255, 255, 0.03);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-    padding: 5px 12px;
+.tactical-spd-badge {
     font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 2px;
-    color: var(--secondary-accent);
-    text-align: left;
+    font-weight: 800;
+    color: #feca57;
+    background: rgba(254, 202, 87, 0.12);
+    border: 1px solid rgba(254, 202, 87, 0.3);
+    padding: 2px 6px;
+    border-radius: 4px;
 }
 
-.log-box-styled {
-    height: 85px;
-    overflow-y: auto;
-    text-align: left;
-    padding: 8px 12px;
-    font-size: 14px;
-    font-family: 'Rajdhani', sans-serif;
-    color: #c5c6c7;
-    line-height: 1.35;
-    box-sizing: border-box;
+/* 1. Grid Principal (4 Comandos Tácticos) */
+.tactical-main-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
 }
 
-.btn-history-styled {
-    width: 110px;
-    background: rgba(69, 162, 158, 0.1);
-    border: 1px solid var(--secondary-accent);
+.tactical-cmd-btn {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
     border-radius: 10px;
-    color: var(--accent-color);
+    background: rgba(255, 255, 255, 0.03);
+    border: 1.5px solid rgba(255, 255, 255, 0.12);
+    color: #fff;
+    cursor: pointer;
+    text-align: left;
+    margin: 0;
+    transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
+    box-sizing: border-box;
+    font-family: 'Rajdhani', sans-serif;
+    position: relative;
+    overflow: hidden;
+}
+
+.tactical-cmd-btn::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+    background: transparent;
+    transition: background 0.2s ease;
+}
+
+.tactical-cmd-btn:hover {
+    transform: translateY(-3px);
+}
+
+/* Colores de Comandos */
+.tactical-cmd-btn.cmd-attack {
+    border-color: rgba(102, 252, 241, 0.35);
+    background: linear-gradient(135deg, rgba(102, 252, 241, 0.1) 0%, rgba(11, 12, 16, 0.8) 100%);
+}
+.tactical-cmd-btn.cmd-attack:hover {
+    border-color: #66fcf1;
+    background: linear-gradient(135deg, rgba(102, 252, 241, 0.25) 0%, rgba(11, 12, 16, 0.9) 100%);
+    box-shadow: 0 0 20px rgba(102, 252, 241, 0.4);
+}
+.tactical-cmd-btn.cmd-attack::after { background: #66fcf1; }
+
+.tactical-cmd-btn.cmd-defend {
+    border-color: rgba(72, 219, 251, 0.35);
+    background: linear-gradient(135deg, rgba(72, 219, 251, 0.1) 0%, rgba(11, 12, 16, 0.8) 100%);
+}
+.tactical-cmd-btn.cmd-defend:hover {
+    border-color: #48dbfb;
+    background: linear-gradient(135deg, rgba(72, 219, 251, 0.25) 0%, rgba(11, 12, 16, 0.9) 100%);
+    box-shadow: 0 0 20px rgba(72, 219, 251, 0.4);
+}
+.tactical-cmd-btn.cmd-defend::after { background: #48dbfb; }
+
+.tactical-cmd-btn.cmd-inventory {
+    border-color: rgba(255, 159, 243, 0.35);
+    background: linear-gradient(135deg, rgba(255, 159, 243, 0.1) 0%, rgba(11, 12, 16, 0.8) 100%);
+}
+.tactical-cmd-btn.cmd-inventory:hover {
+    border-color: #ff9ff3;
+    background: linear-gradient(135deg, rgba(255, 159, 243, 0.25) 0%, rgba(11, 12, 16, 0.9) 100%);
+    box-shadow: 0 0 20px rgba(255, 159, 243, 0.4);
+}
+.tactical-cmd-btn.cmd-inventory::after { background: #ff9ff3; }
+
+.tactical-cmd-btn.cmd-history {
+    border-color: rgba(254, 202, 87, 0.35);
+    background: linear-gradient(135deg, rgba(254, 202, 87, 0.1) 0%, rgba(11, 12, 16, 0.8) 100%);
+}
+.tactical-cmd-btn.cmd-history:hover {
+    border-color: #feca57;
+    background: linear-gradient(135deg, rgba(254, 202, 87, 0.25) 0%, rgba(11, 12, 16, 0.9) 100%);
+    box-shadow: 0 0 20px rgba(254, 202, 87, 0.4);
+}
+.tactical-cmd-btn.cmd-history::after { background: #feca57; }
+
+.cmd-icon {
+    font-size: 26px;
+    line-height: 1;
+    flex-shrink: 0;
+}
+
+.cmd-texts {
     display: flex;
     flex-direction: column;
+    gap: 1px;
+    overflow: hidden;
+}
+
+.cmd-title {
+    font-size: 16px;
+    font-weight: 900;
+    letter-spacing: 1.2px;
+    color: #fff;
+    text-transform: uppercase;
+}
+
+.cmd-sub {
+    font-size: 11px;
+    font-weight: 600;
+    color: #8395a7;
+    letter-spacing: 0.4px;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow: hidden;
+}
+
+/* 2. Subpanel (Ataques e Inventario) */
+.tactical-sub-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    animation: fadeIn 0.2s ease-in-out;
+}
+
+.tactical-sub-header {
+    display: flex;
+    justify-content: space-between;
     align-items: center;
-    justify-content: center;
-    gap: 4px;
-    font-size: 13px;
-    font-weight: 700;
+    gap: 8px;
+}
+
+.btn-tactical-back {
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #fff;
+    padding: 6px 14px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 800;
     letter-spacing: 1px;
     cursor: pointer;
     margin: 0;
-    padding: 8px;
     transition: all 0.2s ease;
-    box-shadow: 0 6px 20px rgba(0,0,0,0.6);
 }
 
-.btn-history-styled:hover {
-    background: var(--accent-color);
-    color: #0b0c10;
+.btn-tactical-back:hover {
+    background: rgba(255, 255, 255, 0.2);
+    border-color: #fff;
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+}
+
+.tactical-sub-title {
+    font-size: 11.5px;
+    font-weight: 800;
+    letter-spacing: 1.5px;
+    color: var(--secondary-accent);
+    text-transform: uppercase;
+}
+
+/* Grid de Habilidades */
+.tactical-skills-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+    gap: 10px;
+}
+
+.tactical-skill-card {
+    background: rgba(18, 24, 38, 0.9);
+    border: 1.5px solid rgba(255, 255, 255, 0.12);
+    border-radius: 10px;
+    padding: 10px 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    text-align: left;
+}
+
+.tactical-skill-card:hover:not(.is-disabled) {
+    border-color: var(--accent-color);
+    box-shadow: 0 0 18px rgba(102, 252, 241, 0.4);
     transform: translateY(-2px);
-    box-shadow: 0 0 20px rgba(102, 252, 241, 0.5);
 }
 
-.btn-history-styled .history-icon {
-    font-size: 22px;
+.tactical-skill-card.is-disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+    filter: grayscale(0.6);
+}
+
+.skill-card-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.skill-type-badge {
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.8px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    text-transform: uppercase;
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--accent-color);
+}
+
+.skill-card-cd {
+    font-size: 10px;
+    font-weight: 800;
+    color: #feca57;
+    background: rgba(254, 202, 87, 0.15);
+    border: 1px solid rgba(254, 202, 87, 0.3);
+    padding: 2px 6px;
+    border-radius: 4px;
+}
+
+.skill-card-ready {
+    font-size: 10px;
+    font-weight: 800;
+    color: #2ed573;
+    letter-spacing: 0.5px;
+}
+
+.skill-card-name-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 6px;
+}
+
+.skill-name-text {
+    font-size: 15px;
+    font-weight: 800;
+    color: #fff;
+    letter-spacing: 0.5px;
+}
+
+.skill-card-desc {
+    font-size: 11.5px;
+    color: #8395a7;
+    line-height: 1.3;
+}
+
+/* Grid de Objetos en Combate */
+.tactical-items-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 10px;
+}
+
+.tactical-item-card {
+    background: rgba(18, 24, 38, 0.9);
+    border: 1.5px solid rgba(255, 159, 243, 0.25);
+    border-radius: 10px;
+    padding: 10px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    text-align: left;
+}
+
+.tactical-item-top {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.tactical-item-emoji {
+    font-size: 20px;
+}
+
+.tactical-item-name {
+    font-size: 14px;
+    font-weight: 800;
+    color: #fff;
+}
+
+.tactical-item-desc {
+    font-size: 11px;
+    color: #8395a7;
+    line-height: 1.3;
+    flex-grow: 1;
+}
+
+.btn-use-item-cta {
+    background: rgba(255, 159, 243, 0.15);
+    border: 1px solid #ff9ff3;
+    color: #ff9ff3;
+    padding: 6px 10px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 800;
+    cursor: pointer;
+    margin: 0;
+    transition: all 0.2s ease;
+}
+
+.btn-use-item-cta:hover {
+    background: #ff9ff3;
+    color: #0b0c10;
+    box-shadow: 0 0 12px rgba(255, 159, 243, 0.5);
+}
+
+.tactical-items-empty {
+    padding: 20px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-open-full-inv {
+    background: rgba(102, 252, 241, 0.15);
+    border: 1px solid var(--accent-color);
+    color: var(--accent-color);
+    padding: 6px 14px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 800;
+    cursor: pointer;
+    margin-top: 4px;
+}
+
+/* Estado de Espera / Procesando */
+.tactical-waiting-card {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 16px;
+    background: rgba(0, 0, 0, 0.4);
+    border-radius: 8px;
+    color: var(--secondary-accent);
+    font-size: 13.5px;
+    font-weight: 800;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+}
+
+.tactical-waiting-spinner {
+    font-size: 18px;
+    animation: indicatorGlow 1s infinite alternate;
+}
+
+/* Historial de Combate en Modal */
+.combat-history-log-container {
+    max-height: 55vh;
+    overflow-y: auto;
+    padding: 12px 14px;
+    background: rgba(0, 0, 0, 0.5);
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    box-sizing: border-box;
+}
+
+.history-log-item {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 13.5px;
+    color: #e0fbf9;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    padding-bottom: 4px;
+    text-align: left;
+    line-height: 1.35;
 }
 
 progress {
@@ -2349,7 +3230,8 @@ progress::-webkit-progress-value {
     top: 0;
     left: 0;
     width: 100%;
-    padding: 10px 30px;
+    height: 52px;
+    padding: 6px 20px;
     background-color: rgba(11, 12, 16, 0.95);
     display: none; /* Oculto por defecto, main.js lo muestra */
     justify-content: space-between;
@@ -2360,6 +3242,30 @@ progress::-webkit-progress-value {
     box-shadow: 0 4px 15px rgba(0,0,0,0.5);
 }
 
+.top-bar-left, .top-bar-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.session-status-badge {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 13.5px;
+    font-weight: 800;
+    letter-spacing: 1.5px;
+    color: #c5c6c7;
+    background: rgba(0, 0, 0, 0.45);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 5px 12px;
+    border-radius: 6px;
+    user-select: none;
+    cursor: default;
+    pointer-events: none;
+}
+
 .inventory-btn {
     background-color: rgba(102, 252, 241, 0.1);
     border: 1px solid var(--secondary-accent);
@@ -2367,13 +3273,35 @@ progress::-webkit-progress-value {
     padding: 6px 16px;
     cursor: pointer;
     border-radius: 4px;
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin: 0;
+    transition: all 0.2s ease;
+}
+
+.inventory-btn:hover {
+    background-color: rgba(102, 252, 241, 0.25);
+    border-color: var(--accent-color);
+    box-shadow: 0 0 10px rgba(102, 252, 241, 0.3);
 }
 
 #scrap-display {
-    font-size: 18px;
-    font-weight: 600;
+    font-size: 15px;
+    font-weight: 700;
     color: #feca57;
-    margin-right: 20px;
+    background: rgba(254, 202, 87, 0.1);
+    border: 1px solid rgba(254, 202, 87, 0.3);
+    padding: 5px 14px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    letter-spacing: 0.5px;
+    font-family: 'Rajdhani', sans-serif;
+    margin: 0;
 }
 
 /* Modal del Inventario Cyberpunk */
@@ -2545,11 +3473,12 @@ progress::-webkit-progress-value {
 .inv-stats-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 4px;
+    gap: 3px 8px;
     width: 100%;
-    background: rgba(0,0,0,0.4);
+    background: rgba(0, 0, 0, 0.45);
+    border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 6px;
-    padding: 4px 6px;
+    padding: 5px 8px;
     margin-bottom: 6px;
     box-sizing: border-box;
 }
@@ -2557,12 +3486,13 @@ progress::-webkit-progress-value {
 .inv-stat-cell {
     display: flex;
     justify-content: space-between;
-    font-size: 10px;
+    align-items: center;
+    font-size: 11px;
     font-weight: 700;
 }
 
-.inv-stat-cell .stat-lbl { color: #8395a7; }
-.inv-stat-cell .stat-val { color: #fff; font-family: 'Rajdhani', monospace; }
+.inv-stat-cell .stat-lbl { color: #8395a7; font-size: 10.5px; }
+.inv-stat-cell .stat-val { color: #fff; font-family: 'Rajdhani', monospace; font-weight: 800; }
 
 /* Ranuras de Arma y Chips en Tarjetas */
 .inv-slot-box {
@@ -3630,8 +4560,9 @@ progress::-webkit-progress-value {
         max-width: 230px;
     }
     
-    .combat-bottom-panel {
+    .combat-tactical-box {
         width: 100%;
+        margin: 6px auto;
     }
 
     .shop-cards-grid {
@@ -3781,7 +4712,7 @@ progress::-webkit-progress-value {
 
     /* Pantalla del Mapa */
     #screen-map {
-        padding: 50px 6px 10px 6px;
+        padding: 58px 8px 10px 8px;
     }
 
     .map-header-panel {
@@ -4028,37 +4959,63 @@ progress::-webkit-progress-value {
         padding: 1px 3px;
     }
 
-    .combat-bottom-panel {
+    .combat-tactical-box {
         width: 100%;
+        padding: 8px 10px;
+        margin: 4px auto 6px auto;
+        border-radius: 10px;
         gap: 6px;
+    }
+
+    .tactical-box-header {
+        padding-bottom: 4px;
         margin-bottom: 2px;
     }
 
-    .combat-log-container {
-        border-radius: 6px;
+    .tactical-header-title {
+        font-size: 10.5px;
+        letter-spacing: 1px;
     }
 
-    .combat-log-header {
+    .tactical-main-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 8px;
+    }
+
+    .tactical-cmd-btn {
+        padding: 8px 10px;
+        gap: 8px;
+        border-radius: 8px;
+    }
+
+    .cmd-icon {
+        font-size: 20px;
+    }
+
+    .cmd-title {
+        font-size: 13.5px;
+        letter-spacing: 0.8px;
+    }
+
+    .cmd-sub {
         font-size: 9.5px;
-        padding: 3px 8px;
     }
 
-    .log-box-styled {
-        height: 54px;
-        font-size: 11.5px;
-        padding: 4px 8px;
-        line-height: 1.25;
+    .tactical-skills-grid, .tactical-items-grid {
+        grid-template-columns: 1fr;
+        gap: 6px;
     }
 
-    .btn-history-styled {
-        width: 75px;
-        padding: 4px;
-        font-size: 10px;
-        border-radius: 6px;
+    .tactical-skill-card {
+        padding: 8px 10px;
     }
 
-    .btn-history-styled .history-icon {
-        font-size: 16px;
+    .skill-name-text {
+        font-size: 13.5px;
+    }
+
+    .skill-card-desc {
+        font-size: 10.5px;
     }
 
     /* Pantalla de Tienda / Mercado Negro */
@@ -5288,12 +6245,13 @@ progress::-webkit-progress-value {
 }
 
 .leaderboard-runs-container {
-    flex: 1;
+    max-height: 56vh;
     overflow-y: auto;
     display: flex;
     flex-direction: column;
     gap: 10px;
-    padding-right: 4px;
+    padding-right: 6px;
+    box-sizing: border-box;
 }
 
 /* Tarjeta Base de Clasificación */
@@ -6365,3 +7323,48 @@ progress::-webkit-progress-value {
 .prereq-pill { display: inline-block; padding: 2px 6px; border-radius: 4px; margin-right: 4px; margin-bottom: 4px; background: rgba(0,0,0,0.3); }
 .prereq-met { color: #2ed573; border: 1px solid rgba(46,213,115,0.3); }
 .prereq-unmet { color: #ff4757; border: 1px solid rgba(255,71,87,0.3); }
+
+/* Responsive adjustments for Event Screens */
+@media (max-width: 600px) {
+    #screen-event {
+        padding-top: 58px;
+        padding-left: 10px;
+        padding-right: 10px;
+    }
+    .chest-reward-card {
+        padding: 16px 14px;
+    }
+    .chest-holo-pedestal {
+        width: 80px;
+        height: 80px;
+    }
+    .chest-reward-icon {
+        font-size: 42px;
+    }
+    .chest-reward-title {
+        font-size: 20px;
+    }
+    .camp-operations-grid {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+    .camp-select-grid {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+    .mystery-terminal-body {
+        padding: 14px 16px;
+    }
+    .mystery-narrative-text {
+        font-size: 14.5px;
+    }
+    .btn-mystery-choice {
+        padding: 10px 14px;
+        font-size: 14px;
+    }
+    .event-resolution-box {
+        padding: 14px 16px;
+        flex-direction: column;
+        text-align: center;
+    }
+}

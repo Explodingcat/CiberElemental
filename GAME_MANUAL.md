@@ -7,16 +7,16 @@ Bienvenido al manual oficial de **Cyber-Elemental**. Aquí encontrarás desglosa
 ## 1. Sistema de Elementos y Atributos
 
 El juego opera bajo una rueda de afinidades elemental táctica:
-* 🔥 **Fuego** vence a 🪨 **Tierra** (x1.5 daño)
-* 🪨 **Tierra** vence a 💨 **Aire** (x1.5 daño)
-* 💨 **Aire** vence a 💦 **Agua** (x1.5 daño)
-* 💦 **Agua** vence a 🔥 **Fuego** (x1.5 daño)
+* 🔥 **Fuego** vence a 🪨 **Tierra** (x1.35 daño)
+* 🪨 **Tierra** vence a 💨 **Aire** (x1.35 daño)
+* 💨 **Aire** vence a 💦 **Agua** (x1.35 daño)
+* 💦 **Agua** vence a 🔥 **Fuego** (x1.35 daño)
 * ⚙️ **Neutro** (Jefe) no tiene ventajas ni desventajas directas (x1.0 daño siempre).
 
 > [!TIP]
 > **Multiplicadores de Daño:**
-> * **Ventaja Elemental:** Inflige **1.5x (150%)** del daño base.
-> * **Desventaja Elemental:** Inflige **0.5x (50%)** del daño base.
+> * **Ventaja Elemental:** Inflige **1.35x (135%)** del daño base.
+> * **Desventaja Elemental:** Inflige **0.75x (75%)** del daño base.
 > * **Neutral / Mismo Elemento:** Inflige **1.0x (100%)** del daño base.
 
 ### Estadísticas Base y Habilidades Iniciales (Nivel 1)
@@ -54,7 +54,7 @@ El juego opera bajo una rueda de afinidades elemental táctica:
 
 ### Acciones por Turno
 1. **⚔️ Ataque / Habilidad:** Ejecuta una habilidad básica (0 CD) o especial del robot activo.
-2. **🛡️ Defender:** Recupera **5% del HP Máximo** y **reduce a la mitad (50%)** todo el daño recibido ese turno.
+2. **🛡️ Defender:** **Reduce a la mitad (50%)** todo el daño recibido hasta el inicio de su **próximo turno** (protegiendo eficazmente tanto a unidades rápidas como lentas).
 3. **🎒 Objeto:** Usa consumibles tácticos desde la mochila (los Nanobots y Núcleos de Sobrecarga son acciones gratuitas; la Bomba PEM gasta el turno de acción).
 
 ---
@@ -71,18 +71,18 @@ Toda **Habilidad Especial con Cooldown** (incluyendo habilidades nativas y las a
 
 | Marca en el Defensor | Elemento Atacante | Nombre del Combo | Efecto Táctico de la Reacción |
 | :--- | :---: | :--- | :--- |
-| 💦 **Marca de Agua** | 🔥 **FUEGO** | **¡VAPORIZACIÓN!** | Daño crítico duplicado (**2.0x / 200% de Daño**). |
-| 💦 **Marca de Agua** | 🪨 **TIERRA** | **¡LODO!** | Inflige 1.3x Daño y **Aturde (STUN)** al enemigo por 1 turno completo. |
-| 💦 **Marca de Agua** | 💨 **AIRE** | **¡VENTISCA!** | Inflige **1.5x Daño** con choque de escarcha gélida. |
-| 🔥 **Marca de Fuego** | 💨 **AIRE** | **¡TORMENTA ÍGNEA!** | Inflige **1.4x Daño** y provoca **Quemadura Grave (BURN)** (drena HP por 2 turnos). |
-| 🔥 **Marca de Fuego** | 💦 **AGUA** | **¡CHOQUE TÉRMICO!** | Extinción explosiva que inflige **1.75x de Daño**. |
-| 🔥 **Marca de Fuego** | 🪨 **TIERRA** | **¡ERUPCIÓN DE MAGMA!** | Inflige **1.5x Daño** e inflige estado de Quemadura. |
-| 🪨 **Marca de Tierra** | 🔥 **FUEGO** | **¡CRISTALIZACIÓN!** | Inflige **1.3x Daño** y otorga al atacante una **Barrera de Plasma** (bloquea 100% del próximo golpe). |
-| 🪨 **Marca de Tierra** | 💦 **AGUA** | **¡EROSIÓN!** | Inflige **1.5x Daño** y el atacante **absorbe y cura un 15% de su HP Máximo**. |
-| 🪨 **Marca de Tierra** | 💨 **AIRE** | **¡TORMENTA DE ARENA!** | Inflige 1.4x Daño y **Aturde (STUN)** al enemigo durante 1 turno. |
-| 💨 **Marca de Aire** | 🔥 **FUEGO** | **¡DEFLAGRACIÓN!** | Inflige **1.6x Daño** masivo y aplica estado de Quemadura por 2 turnos. |
-| 💨 **Marca de Aire** | 💦 **AGUA** | **¡CICLÓN TORMENTOSO!** | Desata un vórtice acuático que inflige **1.6x Daño**. |
-| 💨 **Marca de Aire** | 🪨 **TIERRA** | **¡COLAPSO SÍSMICO!** | Inflige **1.5x Daño** y derriba al objetivo dejándolo **Aturdido (STUN)** por 1 turno. |
+| 💦 **Marca de Agua** | 🔥 **FUEGO** | **¡VAPORIZACIÓN!** | Inflige **1.5x Daño**. |
+| 💦 **Marca de Agua** | 🪨 **TIERRA** | **¡LODO!** | Inflige **1.2x Daño** y aplica **Ralentización** (-50% Velocidad por 2 turnos). |
+| 💦 **Marca de Agua** | 💨 **AIRE** | **¡VENTISCA!** | Inflige **1.35x Daño** y aplica **Congelación leve** (-20% Precisión rival por 2 turnos). |
+| 🔥 **Marca de Fuego** | 💨 **AIRE** | **¡TORMENTA ÍGNEA!** | Inflige **1.3x Daño** y **renueva la Quemadura a 3 turnos**. |
+| 🔥 **Marca de Fuego** | 💦 **AGUA** | **¡CHOQUE TÉRMICO!** | Inflige **1.45x Daño** y **remueve todas las ventajas y bufos del rival**. |
+| 🔥 **Marca de Fuego** | 🪨 **TIERRA** | **¡ERUPCIÓN!** | Inflige **1.4x Daño** y aplica **Rompearmaduras** (-25% Defensa enemiga por 2 turnos). |
+| 🪨 **Marca de Tierra** | 🔥 **FUEGO** | **¡CRISTALIZACIÓN!** | Inflige **1.2x Daño** y otorga un **Escudo equivalente al 25% de la vida actual**. |
+| 🪨 **Marca de Tierra** | 💦 **AGUA** | **¡EROSIÓN!** | Inflige **1.3x Daño** y **cura al usuario el 30% del daño infligido**. |
+| 🪨 **Marca de Tierra** | 💨 **AIRE** | **¡TORMENTA DE ARENA!** | Inflige **1.3x Daño** y aplica **Ceguera** (-50% Precisión en el siguiente ataque rival). |
+| 💨 **Marca de Aire** | 🔥 **FUEGO** | **¡DEFLAGRACIÓN!** | Inflige **1.45x Daño directo puro** (sin quemadura adicional). |
+| 💨 **Marca de Aire** | 💦 **AGUA** | **¡CICLÓN!** | Inflige **1.35x Daño** y **retrasa el turno del rival al final de la ronda**. |
+| 💨 **Marca de Aire** | 🪨 **TIERRA** | **¡COLAPSO SÍSMICO!** | Inflige **1.4x Daño** y causa **Aturdimiento condicional con 40% de probabilidad**. |
 | 🛡️ *(Barrera Activa)* | *(Cualquiera)* | **RETRIBUCIÓN DE BARRERA** | Si un enemigo impacta contra tu Barrera, esta absorbe el daño y contraataca aplicando la **Marca Elemental** del robot defensor al agresor durante **3 turnos**. |
 
 ---
@@ -92,7 +92,9 @@ Toda **Habilidad Especial con Cooldown** (incluyendo habilidades nativas y las a
 Los **Chips Elementales (💾)** permiten a un robot aprender habilidades de **otro elemento distinto al suyo**, creando configuraciones híbridas capaces de detonar sus propias marcas y combos.
 
 > [!TIP]
-> **Instalación:** Se instalan directamente desde la **Mochila** en cualquier aliado operativo.
+> **Instalación Modular:** Se instalan directamente desde la **Mochila** en cualquier aliado operativo.
+>
+> **Límite de Ranura (Máx. 1 Chip por Robot):** Cada robot posee **1 única ranura para Chip** (3 habilidades en total: 2 nativas + 1 de chip). Si instalas un nuevo chip en un robot que ya tiene uno, el chip anterior se desinstalará automáticamente y regresará a tu mochila. También puedes pulsar **Desinstalar** en cualquier momento desde la tarjeta del robot.
 
 | Chip | Icono | Habilidad Añadida | Elemento | CD | Potencia | Efecto Táctico y Marca |
 | :--- | :---: | :--- | :---: | :---: | :---: | :--- |
@@ -120,7 +122,7 @@ En los **Campamentos / Talleres (⛺)** puedes **Forjar** para subir un arma a *
 | :--- | :---: | :--- | :--- |
 | **Daga** | 🗡️ | **25% de probabilidad** de asestar un segundo golpe consecutivo. | **40% de probabilidad** de doble ataque consecutivo. |
 | **Hacha** | 🪓 | **Perfora el 50%** de la reducción de daño por defensa y barreras. | **Perfora el 75%** de la reducción de daño por defensa y barreras. |
-| **Báculo** | 🪄 | Repara automáticamente un **3% del HP Máximo** al final de cada turno. | Repara un **5% del HP Máximo** al final de cada turno. |
+| **Báculo** | 🪄 | Repara automáticamente un **5% del HP Máximo** al final de cada turno. | Repara un **7% del HP Máximo** al final de cada turno. |
 | **Espada** | ⚔️ | **+15% Daño base pasivo** + **10% de Golpe Crítico en Básicos**. | **+30% Daño base pasivo** + **20% de Golpe Crítico en Básicos**. |
 
 > [!NOTE]

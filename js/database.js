@@ -119,7 +119,7 @@ function generateRandomWeapon(forcedElement = null) {
             break;
         case WEAPON_TYPES.BACULO:
             name = 'Báculo';
-            abilityDesc = 'Cura 3% HP al final del turno (5% con +1)';
+            abilityDesc = 'Cura 5% HP al final del turno (7% con +1)';
             break;
         case WEAPON_TYPES.ESPADA:
             name = 'Espada';

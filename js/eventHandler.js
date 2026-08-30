@@ -1,5 +1,8 @@
 // eventHandler.js
 
+let pendingChestReward = null;
+let currentMysteryEvent = null;
+
 function startEvent(type) {
     showScreen('screen-event');
     
@@ -8,155 +11,482 @@ function startEvent(type) {
     const desc = document.getElementById('event-description');
     const actions = document.getElementById('event-actions');
     
-    if (title) title.style.display = 'block';
-    if (content) content.style.display = 'block';
-    if (desc) desc.style.display = 'block';
-    
-    content.innerHTML = NODE_EMOJIS[type];
-    actions.innerHTML = '';
+    if (title) title.style.display = 'none';
+    if (content) content.style.display = 'none';
+    if (desc) desc.style.display = 'none';
+    if (actions) actions.innerHTML = '';
     
     updateTeamUI();
 
     if (type === NODE_TYPES.CHEST) {
-        title.innerText = "Cofre Abandonado";
-        
-        let r = Math.random();
-        if (r < 0.5) {
-            // 50% Arma +1
-            const weapon = generateRandomWeapon();
-            weapon.isUpgraded = true;
-            weapon.name += " +1";
-            if (weapon.type === WEAPON_TYPES.DAGA) weapon.desc = '40% prob. doble ataque';
-            if (weapon.type === WEAPON_TYPES.HACHA) weapon.desc = 'Perfora 75% de barreras y defensas';
-            if (weapon.type === WEAPON_TYPES.BACULO) weapon.desc = 'Cura 5% HP al final del turno';
-            if (weapon.type === WEAPON_TYPES.ESPADA) weapon.desc = '+30% Daño + 20% Crítico en Básicos';
-            desc.innerText = `Encontraste un arma rara: ${weapon.name} ${WEAPON_EMOJIS[weapon.type]}\nHa sido guardada en tu inventario.`;
-            GAME_STATE.inventory.weapons.push(weapon);
-        } else {
-            // 50% Chip (Los chips están en los items, debemos asegurar que toque un chip)
-            let chipKeys = Object.keys(ITEM_TYPES).filter(k => k.includes('CHIP'));
-            let randomChipType = ITEM_TYPES[chipKeys[Math.floor(Math.random() * chipKeys.length)]];
-            let item = { type: randomChipType, ...ITEM_DEFS[randomChipType] };
-            
-            desc.innerText = `Encontraste un objeto raro: ${item.name} ${item.emoji}\nHa sido guardado en tu inventario.`;
-            GAME_STATE.inventory.items.push(item);
-        }
-        
-        const btnAvanzar = document.createElement('button');
-        btnAvanzar.innerText = "Continuar";
-        btnAvanzar.onclick = () => advanceFloor();
-        actions.appendChild(btnAvanzar);
-    } 
-    else if (type === NODE_TYPES.REPAIR_SHOP) {
-        title.innerText = "Campamento (Taller de Reparación)";
-        desc.innerText = `Elige una acción para tu equipo.`;
-        
-        let healPct = (typeof SkillsManager !== 'undefined') ? SkillsManager.getRepairShopHealPct() : 0.30;
-        let revivePct = (typeof SkillsManager !== 'undefined') ? SkillsManager.getReviveHpPct() : 0.10;
-
-        // Opción 1: Reparar
-        const btnHeal = document.createElement('button');
-        btnHeal.innerHTML = `🔧 Reparar<br><small>Cura ${Math.round(healPct * 100)}% a todos (revive con ${Math.round(revivePct * 100)}%)</small>`;
-        btnHeal.onclick = () => {
-            GAME_STATE.team.forEach(r => {
-                if (r.isOffline) {
-                    r.isOffline = false;
-                    r.hp = Math.max(1, Math.floor(r.maxHp * revivePct));
-                } else {
-                    r.heal(r.maxHp * healPct);
-                }
-            });
-            advanceFloor();
-        };
-        actions.appendChild(btnHeal);
-
-        // Opción 2: Entrenar
-        const btnTrain = document.createElement('button');
-        btnTrain.innerHTML = `💪 Entrenar<br><small>Dar 300 XP a un robot</small>`;
-        btnTrain.onclick = () => {
-            actions.innerHTML = '';
-            desc.innerText = 'Selecciona quién recibirá el entrenamiento:';
-            GAME_STATE.team.forEach(r => {
-                const btn = document.createElement('button');
-                btn.innerText = `Entrenar a ${r.name}`;
-                btn.onclick = () => {
-                    r.gainXp(300);
-                    advanceFloor();
-                };
-                actions.appendChild(btn);
-            });
-        };
-        actions.appendChild(btnTrain);
-
-        // Opción 3: Forjar
-        const btnForge = document.createElement('button');
-        btnForge.innerHTML = `⚒️ Forjar<br><small>Mejorar arma equipada a +1</small>`;
-        btnForge.onclick = () => {
-            actions.innerHTML = '';
-            const eligible = GAME_STATE.team.filter(r => r.equippedWeapon && !r.equippedWeapon.isUpgraded);
-            if (eligible.length === 0) {
-                desc.innerText = 'Nadie tiene un arma equipada que pueda mejorarse.';
-                const backBtn = document.createElement('button');
-                backBtn.innerText = 'Atrás';
-                backBtn.onclick = () => startEvent(type);
-                actions.appendChild(backBtn);
-            } else {
-                desc.innerText = 'Selecciona qué arma mejorar:';
-                eligible.forEach(r => {
-                    const btn = document.createElement('button');
-                    btn.innerText = `Mejorar ${r.equippedWeapon.name} (en ${r.name})`;
-                    btn.onclick = () => {
-                        r.equippedWeapon.isUpgraded = true;
-                        r.equippedWeapon.name += ' +1';
-                        if (r.equippedWeapon.type === WEAPON_TYPES.DAGA) r.equippedWeapon.desc = '40% prob. doble ataque';
-                        if (r.equippedWeapon.type === WEAPON_TYPES.HACHA) r.equippedWeapon.desc = 'Perfora 75% de barreras y defensas';
-                        if (r.equippedWeapon.type === WEAPON_TYPES.BACULO) r.equippedWeapon.desc = 'Cura 5% HP al final del turno';
-                        if (r.equippedWeapon.type === WEAPON_TYPES.ESPADA) r.equippedWeapon.desc = '+30% Daño + 20% Crítico en Básicos';
-                        r.recalculateStats();
-                        advanceFloor();
-                    };
-                    actions.appendChild(btn);
-                });
-            }
-        };
-        actions.appendChild(btnForge);
+        initChestEvent();
+    } else if (type === NODE_TYPES.REPAIR_SHOP) {
+        initCampEvent();
     } else if (type === NODE_TYPES.SHOP) {
         initShopEvent();
     } else if (type === NODE_TYPES.MYSTERY) {
-        let event = MYSTERY_EVENTS[Math.floor(Math.random() * MYSTERY_EVENTS.length)];
-        title.innerText = event.title;
-        desc.innerText = event.desc;
-        
-        event.choices.forEach(choice => {
-            const btn = document.createElement('button');
-            btn.innerText = choice.label;
-            
-            if (choice.condition && !choice.condition()) {
-                btn.disabled = true;
-                btn.style.opacity = '0.5';
-            } else {
-                btn.onclick = () => {
-                    let resultMsg = choice.action();
-                    actions.innerHTML = '';
-                    desc.innerText = resultMsg;
-                    
-                    const btnLeave = document.createElement('button');
-                    btnLeave.innerText = `Continuar`;
-                    btnLeave.onclick = () => advanceFloor();
-                    actions.appendChild(btnLeave);
-                };
-            }
-            actions.appendChild(btn);
-        });
+        initMysteryEvent();
     } else {
-        // Evento genérico
-        title.innerText = "Evento Desconocido";
-        desc.innerText = "No hay nada útil aquí por ahora.";
-        const btn = document.createElement('button');
-        btn.innerText = `Avanzar`;
-        btn.onclick = () => advanceFloor();
-        actions.appendChild(btn);
+        initGenericEvent();
     }
+}
+
+function initChestEvent() {
+    const actions = document.getElementById('event-actions');
+    if (!actions) return;
+    
+    let isWeapon = Math.random() < 0.5;
+    let rewardObj = null;
+    let rewardType = isWeapon ? 'WEAPON' : 'CHIP';
+    
+    let cardContentHtml = '';
+    let elemClass = '';
+    let elemBadgeClass = '';
+    let rewardName = '';
+    let rewardEmoji = '';
+    let rarityBadgeText = '';
+    
+    if (isWeapon) {
+        const weapon = generateRandomWeapon();
+        weapon.isUpgraded = true;
+        weapon.name += " +1";
+        if (weapon.type === WEAPON_TYPES.DAGA) weapon.desc = '40% prob. doble ataque';
+        if (weapon.type === WEAPON_TYPES.HACHA) weapon.desc = 'Perfora 75% de barreras y defensas';
+        if (weapon.type === WEAPON_TYPES.BACULO) weapon.desc = 'Cura 7% HP al final del turno';
+        if (weapon.type === WEAPON_TYPES.ESPADA) weapon.desc = '+30% Daño + 20% Crítico en Básicos';
+        
+        rewardObj = weapon;
+        rewardName = weapon.name;
+        rewardEmoji = WEAPON_EMOJIS[weapon.type];
+        elemClass = `elem-${weapon.element}`;
+        elemBadgeClass = `elem-badge-${weapon.element}`;
+        rarityBadgeText = `⭐ ARMA MEJORADA (+1) // ${weapon.element}`;
+        
+        cardContentHtml = `
+            <div class="chest-card-top">
+                <span class="chest-badge ${elemBadgeClass}">${rarityBadgeText}</span>
+                <span class="chest-type-tag">⚔️ MÓDULO DE COMBATE</span>
+            </div>
+            <div class="chest-hero-visual">
+                <div class="chest-holo-pedestal platform-${weapon.element}">
+                    <div class="chest-reward-icon ${elemClass}">${rewardEmoji}</div>
+                </div>
+                <div class="chest-reward-title ${elemClass}">${weapon.name}</div>
+            </div>
+            <div class="chest-reward-desc">
+                ${weapon.desc}
+            </div>
+        `;
+    } else {
+        let chipKeys = Object.keys(ITEM_TYPES).filter(k => k.includes('CHIP'));
+        let randomChipType = ITEM_TYPES[chipKeys[Math.floor(Math.random() * chipKeys.length)]];
+        let item = { type: randomChipType, ...ITEM_DEFS[randomChipType] };
+        let chipElement = randomChipType.replace('CHIP_', '');
+        
+        rewardObj = item;
+        rewardName = item.name;
+        rewardEmoji = item.emoji;
+        elemClass = `elem-${chipElement}`;
+        elemBadgeClass = `elem-badge-${chipElement}`;
+        rarityBadgeText = `💾 CHIP DE HABILIDAD // ${chipElement}`;
+        
+        let skillName = 'Técnica';
+        if (randomChipType === 'CHIP_FUEGO') skillName = 'Lanzallamas';
+        if (randomChipType === 'CHIP_AGUA') skillName = 'Geyser';
+        if (randomChipType === 'CHIP_TIERRA') skillName = 'Fisura';
+        if (randomChipType === 'CHIP_AIRE') skillName = 'Tornado';
+        
+        cardContentHtml = `
+            <div class="chest-card-top">
+                <span class="chest-badge ${elemBadgeClass}">${rarityBadgeText}</span>
+                <span class="chest-type-tag">💾 EXPANSIÓN MODULAR</span>
+            </div>
+            <div class="chest-hero-visual">
+                <div class="chest-holo-pedestal platform-${chipElement}">
+                    <div class="chest-reward-icon ${elemClass}">${rewardEmoji}</div>
+                </div>
+                <div class="chest-reward-title ${elemClass}">${item.name}</div>
+            </div>
+            <div class="chest-reward-desc">
+                Enseña la habilidad <strong>${skillName}</strong> (${chipElement}, CD 3, Potencia 2.0x). Aplica Marca de ${chipElement}.
+            </div>
+        `;
+    }
+    
+    pendingChestReward = { type: rewardType, data: rewardObj };
+    
+    actions.innerHTML = `
+        <div class="event-panel-container">
+            <div class="event-header-panel">
+                <div class="event-header-badge">🎁 BÚNKER DE RECURSOS // ALMACÉN ABANDONADO</div>
+                <h1 class="event-main-title">COFRE ABANDONADO</h1>
+                <p class="event-subtitle">Has abierto un contenedor sellado de alta tecnología intacto en el sector.</p>
+            </div>
+            
+            <div class="chest-showcase-box">
+                <div class="chest-reward-card card-${elemClass}">
+                    ${cardContentHtml}
+                </div>
+            </div>
+            
+            <div class="event-bottom-actions">
+                <button class="btn-event-cta btn-chest-claim" onclick="claimPendingChestReward()">
+                    <span class="btn-icon">🎒</span> GUARDAR EN MOCHILA Y CONTINUAR <span class="btn-arrow">➔</span>
+                </button>
+            </div>
+        </div>
+    `;
+    
+    updateTeamUI();
+}
+
+function claimPendingChestReward() {
+    if (pendingChestReward) {
+        const { type, data } = pendingChestReward;
+        if (type === 'WEAPON') {
+            GAME_STATE.inventory.weapons.push(data);
+        } else {
+            GAME_STATE.inventory.items.push(data);
+        }
+        pendingChestReward = null;
+    }
+    advanceFloor();
+}
+
+function initCampEvent() {
+    const actions = document.getElementById('event-actions');
+    if (!actions) return;
+    
+    let healPct = (typeof SkillsManager !== 'undefined') ? SkillsManager.getRepairShopHealPct() : 0.30;
+    let revivePct = (typeof SkillsManager !== 'undefined') ? SkillsManager.getReviveHpPct() : 0.10;
+    let healPctStr = Math.round(healPct * 100);
+    let revivePctStr = Math.round(revivePct * 100);
+    
+    actions.innerHTML = `
+        <div class="event-panel-container">
+            <div class="event-header-panel">
+                <div class="event-header-badge">⛺ REFUGIO SECTORIAL // TALLER DE CAMPO</div>
+                <h1 class="event-main-title">CAMPAMENTO TÁCTICO</h1>
+                <p class="event-subtitle">Estación segura de mantenimiento. Selecciona una operación para tu escuadrón:</p>
+            </div>
+            
+            <div class="camp-operations-grid">
+                <!-- Tarjeta 1: Reparar -->
+                <div class="camp-op-card">
+                    <div class="camp-op-top">
+                        <span class="camp-op-badge badge-green">RESTAURACIÓN</span>
+                        <div class="camp-op-stat">+${healPctStr}% HP</div>
+                    </div>
+                    <div class="camp-op-icon">🔧</div>
+                    <div class="camp-op-title">Reparación Integral</div>
+                    <div class="camp-op-desc">
+                        Restaura un <strong>${healPctStr}% de salud máxima</strong> a todo el escuadrón y reactiva a los aliados caídos con <strong>${revivePctStr}% HP</strong>.
+                    </div>
+                    <div class="camp-op-footer">
+                        <button class="btn-camp-action btn-camp-heal" onclick="executeCampRepair(${healPct}, ${revivePct})">
+                            <span class="btn-icon">🔧</span> Reparar Escuadrón
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Tarjeta 2: Entrenar -->
+                <div class="camp-op-card">
+                    <div class="camp-op-top">
+                        <span class="camp-op-badge badge-purple">ENTRENAMIENTO</span>
+                        <div class="camp-op-stat">+300 XP</div>
+                    </div>
+                    <div class="camp-op-icon">💪</div>
+                    <div class="camp-op-title">Calibración de Datos</div>
+                    <div class="camp-op-desc">
+                        Inyecta simulaciones de combate en un robot aliado, otorgándole <strong>300 puntos de Experiencia (XP)</strong> inmediatos.
+                    </div>
+                    <div class="camp-op-footer">
+                        <button class="btn-camp-action btn-camp-train" onclick="showCampTrainingPicker()">
+                            <span class="btn-icon">💪</span> Seleccionar Robot
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Tarjeta 3: Forjar -->
+                <div class="camp-op-card">
+                    <div class="camp-op-top">
+                        <span class="camp-op-badge badge-gold">HERRERÍA</span>
+                        <div class="camp-op-stat">MEJORA +1</div>
+                    </div>
+                    <div class="camp-op-icon">⚒️</div>
+                    <div class="camp-op-title">Forja de Blindaje</div>
+                    <div class="camp-op-desc">
+                        Mejora un arma equipada que no haya sido forjada al grado <strong>+1</strong>, incrementando sus pasivas y letalidad.
+                    </div>
+                    <div class="camp-op-footer">
+                        <button class="btn-camp-action btn-camp-forge" onclick="showCampForgePicker()">
+                            <span class="btn-icon">⚒️</span> Mejorar Arma
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    updateTeamUI();
+}
+
+function executeCampRepair(healPct, revivePct) {
+    GAME_STATE.team.forEach(r => {
+        if (r.isOffline) {
+            r.isOffline = false;
+            r.hp = Math.max(1, Math.floor(r.maxHp * revivePct));
+        } else {
+            r.heal(r.maxHp * healPct);
+        }
+    });
+    renderEventResultUI("Campamento de Reparación", `🔧 Los sistemas de soporte vital restauraron a tu escuadrón. Todos los robots recuperaron energía y están listos para continuar.`);
+}
+
+function showCampTrainingPicker() {
+    const actions = document.getElementById('event-actions');
+    if (!actions) return;
+    
+    const unitCards = GAME_STATE.team.map((r, idx) => {
+        const xpPercent = Math.max(0, Math.min(100, Math.round(((r.xp || 0) / (r.xpToNext || 100)) * 100)));
+        return `
+            <div class="camp-select-card" onclick="executeCampTraining(${idx})">
+                <div class="camp-select-header">
+                    <span class="member-elem-badge elem-${r.element}">${r.element}</span>
+                    <span class="member-lvl-badge">NV. ${r.level}</span>
+                </div>
+                <div class="camp-select-emoji elem-${r.element}">${r.emoji}</div>
+                <div class="camp-select-name">${r.name}</div>
+                <div class="camp-select-xp-row">
+                    <span>XP: ${r.xp}/${r.xpToNext}</span>
+                </div>
+                <div class="member-track">
+                    <div class="member-fill member-xp-fill" style="width: ${xpPercent}%;"></div>
+                </div>
+                <button class="btn-camp-select-cta">
+                    <span>💪 Otorgar +300 XP</span>
+                </button>
+            </div>
+        `;
+    }).join('');
+    
+    actions.innerHTML = `
+        <div class="event-panel-container">
+            <div class="event-header-panel">
+                <div class="event-header-badge">💪 ENTRENAMIENTO // CALIBRACIÓN DE DATOS</div>
+                <h1 class="event-main-title">SELECCIONA UN ROBOT</h1>
+                <p class="event-subtitle">Elige qué unidad recibirá los 300 puntos de experiencia técnica:</p>
+            </div>
+            
+            <div class="camp-select-grid">
+                ${unitCards}
+            </div>
+            
+            <div class="event-bottom-actions">
+                <button class="btn-camp-back" onclick="initCampEvent()">
+                    <span>◀ Volver a Opciones</span>
+                </button>
+            </div>
+        </div>
+    `;
+}
+
+function executeCampTraining(robotIndex) {
+    const robot = GAME_STATE.team[robotIndex];
+    if (!robot) return;
+    let leveledUp = robot.gainXp(300);
+    let msg = `💪 [${robot.name}] absorbió los paquetes de datos y ganó <strong>+300 XP</strong>.${leveledUp ? ` ¡Subió al <strong>Nivel ${robot.level}</strong>!` : ''}`;
+    renderEventResultUI("Calibración Completada", msg);
+}
+
+function showCampForgePicker() {
+    const actions = document.getElementById('event-actions');
+    if (!actions) return;
+    
+    const eligible = GAME_STATE.team.filter(r => r.equippedWeapon && !r.equippedWeapon.isUpgraded);
+    
+    if (eligible.length === 0) {
+        actions.innerHTML = `
+            <div class="event-panel-container">
+                <div class="event-header-panel">
+                    <div class="event-header-badge">⚒️ FORJA // MEJORA DE ARMAMENTO</div>
+                    <h1 class="event-main-title">SIN ARMAS DISPONIBLES</h1>
+                    <p class="event-subtitle">Ningún robot de tu escuadrón tiene un arma equipada que pueda mejorarse (o ya están al nivel +1).</p>
+                </div>
+                <div class="event-bottom-actions">
+                    <button class="btn-camp-back" onclick="initCampEvent()">
+                        <span>◀ Volver a Opciones</span>
+                    </button>
+                </div>
+            </div>
+        `;
+        return;
+    }
+    
+    const weaponCards = eligible.map(r => {
+        const w = r.equippedWeapon;
+        return `
+            <div class="camp-select-card card-elem-${w.element}" onclick="executeCampForge('${r.id}')">
+                <div class="camp-select-header">
+                    <span class="member-elem-badge elem-${w.element}">${w.element}</span>
+                    <span class="member-lvl-badge">Equipada en ${r.name}</span>
+                </div>
+                <div class="camp-select-emoji elem-${w.element}">${WEAPON_EMOJIS[w.type]}</div>
+                <div class="camp-select-name elem-${w.element}">${w.name} ➔ ${w.name} +1</div>
+                <div class="camp-select-desc">${w.desc}</div>
+                <button class="btn-camp-select-cta">
+                    <span>⚒️ Mejorar a +1</span>
+                </button>
+            </div>
+        `;
+    }).join('');
+    
+    actions.innerHTML = `
+        <div class="event-panel-container">
+            <div class="event-header-panel">
+                <div class="event-header-badge">⚒️ FORJA // MEJORA DE ARMAMENTO</div>
+                <h1 class="event-main-title">SELECCIONA EL ARMA A FORJAR</h1>
+                <p class="event-subtitle">Elige el arma equipada que deseas potenciar al nivel +1:</p>
+            </div>
+            
+            <div class="camp-select-grid">
+                ${weaponCards}
+            </div>
+            
+            <div class="event-bottom-actions">
+                <button class="btn-camp-back" onclick="initCampEvent()">
+                    <span>◀ Volver a Opciones</span>
+                </button>
+            </div>
+        </div>
+    `;
+}
+
+function executeCampForge(robotId) {
+    const robot = GAME_STATE.team.find(r => r.id === robotId);
+    if (!robot || !robot.equippedWeapon) return;
+    
+    const w = robot.equippedWeapon;
+    w.isUpgraded = true;
+    w.name += ' +1';
+    if (w.type === WEAPON_TYPES.DAGA) w.desc = '40% prob. doble ataque';
+    if (w.type === WEAPON_TYPES.HACHA) w.desc = 'Perfora 75% de barreras y defensas';
+    if (w.type === WEAPON_TYPES.BACULO) w.desc = 'Cura 7% HP al final del turno';
+    if (w.type === WEAPON_TYPES.ESPADA) w.desc = '+30% Daño + 20% Crítico en Básicos';
+    robot.recalculateStats();
+    
+    let msg = `⚒️ ¡El arma <strong>${w.name}</strong> de <strong>${robot.name}</strong> ha sido forjada con éxito al grado +1!`;
+    renderEventResultUI("Forja Exitosa", msg);
+}
+
+function initMysteryEvent() {
+    const actions = document.getElementById('event-actions');
+    if (!actions) return;
+    
+    let event = MYSTERY_EVENTS[Math.floor(Math.random() * MYSTERY_EVENTS.length)];
+    
+    const choicesHtml = event.choices.map((choice, cIdx) => {
+        const canExecute = !choice.condition || choice.condition();
+        return `
+            <button class="btn-mystery-choice ${canExecute ? 'can-choose' : 'cannot-choose'}" 
+                    ${canExecute ? `onclick="executeMysteryChoice(${cIdx})"` : 'disabled'}>
+                <div class="choice-content">
+                    <span class="choice-icon">${canExecute ? '⚡' : '🔒'}</span>
+                    <span class="choice-label">${choice.label}</span>
+                </div>
+                ${!canExecute ? '<span class="choice-locked-tag">Requisito no cumplido</span>' : '<span class="choice-arrow">➔</span>'}
+            </button>
+        `;
+    }).join('');
+    
+    currentMysteryEvent = event;
+    
+    actions.innerHTML = `
+        <div class="event-panel-container">
+            <div class="event-header-panel">
+                <div class="event-header-badge">❓ ANOMALÍA DETECTADA // REGISTRO SECTORIAL</div>
+                <h1 class="event-main-title">${event.title}</h1>
+            </div>
+            
+            <div class="mystery-terminal-card">
+                <div class="mystery-terminal-header">
+                    <span class="terminal-dot green"></span>
+                    <span class="terminal-dot yellow"></span>
+                    <span class="terminal-dot red"></span>
+                    <span class="terminal-title">ENLACE SENSORIAL SECTORIAL // EVENTO ACTIVO</span>
+                </div>
+                <div class="mystery-terminal-body">
+                    <div class="mystery-narrative-text">
+                        "${event.desc}"
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mystery-choices-grid">
+                ${choicesHtml}
+            </div>
+        </div>
+    `;
+    
+    updateTeamUI();
+}
+
+function executeMysteryChoice(choiceIndex) {
+    if (!currentMysteryEvent) return;
+    const choice = currentMysteryEvent.choices[choiceIndex];
+    if (!choice) return;
+    
+    let resultMsg = choice.action();
+    renderEventResultUI(currentMysteryEvent.title, resultMsg);
+    currentMysteryEvent = null;
+}
+
+function renderEventResultUI(title, resultMsg) {
+    const actions = document.getElementById('event-actions');
+    if (!actions) return;
+    
+    actions.innerHTML = `
+        <div class="event-panel-container">
+            <div class="event-header-panel">
+                <div class="event-header-badge">✓ RESOLUCIÓN DEL ENCUENTRO</div>
+                <h1 class="event-main-title">${title}</h1>
+            </div>
+            
+            <div class="event-resolution-box">
+                <div class="resolution-icon">📡</div>
+                <div class="resolution-text">${resultMsg}</div>
+            </div>
+            
+            <div class="event-bottom-actions">
+                <button class="btn-event-cta" onclick="advanceFloor()">
+                    <span class="btn-icon">⚡</span> CONTINUAR INCURSIÓN <span class="btn-arrow">➔</span>
+                </button>
+            </div>
+        </div>
+    `;
+    
+    updateTeamUI();
+}
+
+function initGenericEvent() {
+    const actions = document.getElementById('event-actions');
+    if (!actions) return;
+    
+    actions.innerHTML = `
+        <div class="event-panel-container">
+            <div class="event-header-panel">
+                <div class="event-header-badge">⚡ SECTOR DESPEJADO</div>
+                <h1 class="event-main-title">ZONA ESTABLE</h1>
+                <p class="event-subtitle">No se detectaron anomalías en este sector.</p>
+            </div>
+            <div class="event-bottom-actions">
+                <button class="btn-event-cta" onclick="advanceFloor()">
+                    <span>Avanzar ➔</span>
+                </button>
+            </div>
+        </div>
+    `;
+    updateTeamUI();
 }
 
 let currentShopItems = [];

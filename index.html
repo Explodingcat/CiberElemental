@@ -11,9 +11,15 @@
     <div id="game-container">
         <!-- Barra superior genérica -->
         <div id="top-bar">
-            <button id="btn-inventory" class="inventory-btn" onclick="openInventory()">🎒 Inventario</button>
-            <button id="btn-account-top" class="account-btn" onclick="openAccountModal('tab-account')">👤 Cuenta / Historial</button>
-            <div id="scrap-display">Chatarra: 0 ⚙️</div>
+            <div class="top-bar-left">
+                <div id="top-bar-status" class="session-status-badge">
+                    <span class="status-indicator offline"></span> OFFLINE
+                </div>
+            </div>
+            <div class="top-bar-right">
+                <button id="btn-inventory" class="inventory-btn" onclick="openInventory()" title="Abrir Mochila e Inventario">🎒 Inventario</button>
+                <div id="scrap-display">Chatarra: 0 ⚙️</div>
+            </div>
         </div>
 
         <!-- Menú Principal -->
@@ -196,32 +202,22 @@
                 </div>
             </div>
 
-            <!-- Botones de Acción -->
-            <div id="combat-actions" class="combat-actions-bar">
-                <!-- Habilidades del robot activo -->
-            </div>
-            
-            <!-- Panel Inferior: Log de Combate + Botón Historial -->
-            <div class="combat-bottom-panel">
-                <div class="combat-log-container">
-                    <div class="combat-log-header">
-                        <span class="log-terminal-icon">📟</span> REGISTRO TÁCTICO DE COMBATE
-                    </div>
-                    <div id="combat-log" class="log-box-styled"></div>
-                </div>
-                <button class="btn-history-styled" onclick="openCombatHistory()" title="Ver historial completo">
-                    <span class="history-icon">📜</span>
-                    <span class="history-text">HISTORIAL</span>
-                </button>
+            <!-- Consola Táctica de Acciones de Combate -->
+            <div id="combat-actions" class="combat-tactical-box">
+                <!-- Generado dinámicamente por renderCombatActions() -->
             </div>
         </div>
 
         <!-- Modal del Historial de Combate -->
         <div id="combat-history-modal" class="modal" style="display:none;">
-            <div class="modal-content">
-                <span class="close-btn" onclick="closeCombatHistory()">×</span>
-                <h2>Historial del Combate</h2>
-                <div id="history-log-list" style="max-height: 50vh; overflow-y: auto; text-align: left; padding: 10px; background: rgba(0,0,0,0.5); border-radius: 4px; font-size: 14px;">
+            <div class="modal-content account-modal-box">
+                <button class="close-btn" onclick="closeCombatHistory()" title="Cerrar ventana">&times;</button>
+                <div class="account-modal-header">
+                    <div class="account-header-badge">📜 REGISTRO TÁCTICO // TELEMETRÍA DE COMBATE</div>
+                    <h2 class="account-modal-title">HISTORIAL DE BATALLA</h2>
+                </div>
+                <div id="history-log-list" class="combat-history-log-container">
+                    <!-- Registro dinámico de turnos -->
                 </div>
             </div>
         </div>

@@ -175,7 +175,7 @@ function initGame() {
         let wName = '';
         if (wKey === 'DAGA') { wName = 'Daga'; desc = '25% prob. de doble ataque consecutivo (40% con +1).'; }
         if (wKey === 'HACHA') { wName = 'Hacha'; desc = 'Perfora el 50% de las defensas y barreras enemigas (75% con +1).'; }
-        if (wKey === 'BACULO') { wName = 'Báculo'; desc = 'Regenera un 3% del HP máximo al finalizar cada turno (5% con +1).'; }
+        if (wKey === 'BACULO') { wName = 'Báculo'; desc = 'Regenera un 5% del HP máximo al finalizar cada turno (7% con +1).'; }
         if (wKey === 'ESPADA') { wName = 'Espada'; desc = '+15% de daño base pasivo + 10% Crítico en Básicos (+30% daño y +20% Crítico con +1).'; }
         
         weaponPreview.innerHTML = `
@@ -267,7 +267,7 @@ function initGame() {
         weapon.name = `${selectedWeaponType.charAt(0) + selectedWeaponType.slice(1).toLowerCase()} de ${playerRobot.element}`;
         if (weapon.type === WEAPON_TYPES.DAGA) weapon.desc = '25% prob. doble ataque (40% con +1)';
         if (weapon.type === WEAPON_TYPES.HACHA) weapon.desc = 'Perfora 50% de barreras y defensas (75% con +1)';
-        if (weapon.type === WEAPON_TYPES.BACULO) weapon.desc = 'Cura 3% HP al final del turno (5% con +1)';
+        if (weapon.type === WEAPON_TYPES.BACULO) weapon.desc = 'Cura 5% HP al final del turno (7% con +1)';
         if (weapon.type === WEAPON_TYPES.ESPADA) weapon.desc = '+15% Daño + 10% Crítico en Básicos (+30% Daño y +20% Crítico con +1)';
         
         playerRobot.equipWeapon(weapon);

@@ -15,7 +15,6 @@ const delay = ms => new Promise(res => setTimeout(res, ms));
 
 function startCombat(nodeType) {
     showScreen('screen-combat');
-    document.getElementById('combat-log').innerHTML = '';
     combatState.fullLog = [];
     combatState.isProcessing = false;
     combatState.isGameOver = false;
@@ -35,6 +34,16 @@ function startCombat(nodeType) {
         arenaBg.classList.add(Math.random() > 0.5 ? 'bg-normal' : 'bg-normal-alt');
     }
     
+    // Limpiar estados previos, marcas, debuffs y cooldowns de todo el escuadrón
+    if (GAME_STATE && GAME_STATE.team) {
+        GAME_STATE.team.forEach(robot => {
+            if (robot.clearStatuses) robot.clearStatuses();
+            else robot.statuses = [];
+            if (robot.resetCooldowns) robot.resetCooldowns();
+            else if (robot.skills) robot.skills.forEach(s => s.currentCd = 0);
+        });
+    }
+
     // Aplicar ventajas de inicio de combate de meta-progresión si están desbloqueadas
     if (typeof SkillsManager !== 'undefined' && GAME_STATE && GAME_STATE.team) {
         GAME_STATE.team.forEach(robot => {
@@ -83,10 +92,12 @@ function buildInitiativeQueue() {
         });
     }
     
-    // 3. Ordenar estrictamente de mayor a menor Velocidad (SPD)
+    // 3. Ordenar estrictamente de mayor a menor Velocidad efectiva (SPD)
     queue.sort((a, b) => {
-        if (b.robot.spd !== a.robot.spd) {
-            return b.robot.spd - a.robot.spd;
+        let spdA = a.robot.getEffectiveSpeed ? a.robot.getEffectiveSpeed() : a.robot.spd;
+        let spdB = b.robot.getEffectiveSpeed ? b.robot.getEffectiveSpeed() : b.robot.spd;
+        if (spdB !== spdA) {
+            return spdB - spdA;
         }
         // Desempate: los aliados tienen prioridad sobre el enemigo
         return a.type === 'PLAYER' ? -1 : 1;
@@ -226,12 +237,13 @@ function renderTurnQueue(currentActor) {
         const name = item.robot.name.replace('Salvaje ', '').replace('ÉLITE ', '');
         const currentClass = isCurrent ? 'is-current' : '';
         const typeClass = isEnemy ? 'is-enemy' : 'is-player';
+        const effectiveSpd = item.robot.getEffectiveSpeed ? item.robot.getEffectiveSpeed() : item.robot.spd;
         
         return `
-            <div class="turn-queue-item ${typeClass} ${currentClass}" title="${item.robot.name} (Velocidad: ${item.robot.spd})">
+            <div class="turn-queue-item ${typeClass} ${currentClass}" title="${item.robot.name} (Velocidad: ${effectiveSpd})">
                 <span class="turn-queue-avatar">${elemIcon}</span>
                 <span class="turn-queue-name">${name}</span>
-                <span class="turn-queue-spd">⚡${item.robot.spd}</span>
+                <span class="turn-queue-spd">⚡${effectiveSpd}</span>
             </div>
         `;
     }).join('');
@@ -248,8 +260,12 @@ function formatStatusLabel(type) {
         case 'BURN': return 'Quemadura';
         case 'STUN': return 'Aturdimiento';
         case 'BARRIER': return 'Barrera Plasma';
+        case 'SHIELD': return 'Escudo';
         case 'DEFENDIENDO': return 'Defendiendo';
-        case 'SLOW': return 'Ralentizado';
+        case 'SLOW': return 'Ralentización (-50% VEL)';
+        case 'FROST': return 'Congelación (-20% PREC)';
+        case 'BLIND': return 'Ceguera (-50% PREC)';
+        case 'ARMOR_BREAK': return 'Rompearmaduras (-25% DEF)';
         default: 
             if (type && type.startsWith('MARCA_')) {
                 return `Marca de ${type.replace('MARCA_', '')}`;
@@ -264,7 +280,7 @@ function renderStatusesSplitted(buffId, debuffId, statuses) {
     
     if (!buffContainer || !debuffContainer) return;
     
-    const isDebuff = (s) => ['BURN', 'STUN', 'SLOW'].includes(s.type) || s.type.startsWith('MARCA_');
+    const isDebuff = (s) => ['BURN', 'STUN', 'SLOW', 'FROST', 'BLIND', 'ARMOR_BREAK'].includes(s.type) || s.type.startsWith('MARCA_');
     
     let buffs = (statuses || []).filter(s => !isDebuff(s));
     let debuffs = (statuses || []).filter(s => isDebuff(s));
@@ -276,6 +292,9 @@ function renderStatusesSplitted(buffId, debuffId, statuses) {
         if (type === 'BURN') return '🔥';
         if (type === 'STUN') return '⚡';
         if (type === 'SLOW') return '❄️';
+        if (type === 'FROST') return '🧊';
+        if (type === 'BLIND') return '👁️';
+        if (type === 'ARMOR_BREAK') return '💔';
         
         if (type === 'MARCA_FUEGO') return '🔥';
         if (type === 'MARCA_AGUA') return '💧';
@@ -285,12 +304,21 @@ function renderStatusesSplitted(buffId, debuffId, statuses) {
         return '✨';
     };
 
-    const getStatusPill = (s, isBuff) => `
-        <div class="status-pill ${isBuff ? 'pill-buff' : 'pill-debuff'} status-${s.type.toLowerCase().replace('_', '-')}" data-tooltip="${formatStatusLabel(s.type)}: ${s.duration} turnos">
-            <span class="status-pill-icon">${getIcon(s.type)}</span>
-            <span class="status-pill-turns">${s.duration}</span>
-        </div>
-    `;
+    const getStatusPill = (s, isBuff) => {
+        let labelText = formatStatusLabel(s.type);
+        let tooltipText = `${labelText}: ${s.duration} turnos`;
+        if (s.type === 'SHIELD' && s.amount !== undefined) {
+            tooltipText = `${labelText} (${s.amount} HP): ${s.duration} turnos`;
+        } else if (s.type === 'DEFENDIENDO') {
+            tooltipText = `${labelText}: Activo hasta tu próximo turno`;
+        }
+        return `
+            <div class="status-pill ${isBuff ? 'pill-buff' : 'pill-debuff'} status-${s.type.toLowerCase().replace('_', '-')}" data-tooltip="${tooltipText}">
+                <span class="status-pill-icon">${getIcon(s.type)}</span>
+                ${s.type === 'DEFENDIENDO' ? '' : `<span class="status-pill-turns">${s.duration}</span>`}
+            </div>
+        `;
+    };
 
     if (buffs.length > 0) {
         buffContainer.style.display = 'flex';
@@ -395,6 +423,12 @@ async function advanceTurnQueue() {
         return advanceTurnQueue();
     }
     
+    // Al iniciar el turno del combatiente, baja su postura defensiva previa si estaba defendiendo
+    if (currentActor.robot.hasStatus('DEFENDIENDO')) {
+        currentActor.robot.removeStatus('DEFENDIENDO');
+        logCombat(`🛡️ [${currentActor.robot.name}] finaliza su postura defensiva.`);
+    }
+
     // Renderizar la UI destacando al robot activo
     renderPartyCombatUI();
     
@@ -408,11 +442,12 @@ async function advanceTurnQueue() {
     
     // 6. Ejecutar turno según el bando
     if (currentActor.type === 'PLAYER') {
-        logCombat(`👉 Turno de [${currentActor.robot.name}] (⚡Velocidad: ${currentActor.robot.spd})`);
+        const effSpd = currentActor.robot.getEffectiveSpeed ? currentActor.robot.getEffectiveSpeed() : currentActor.robot.spd;
+        logCombat(`👉 Turno de [${currentActor.robot.name}] (⚡Velocidad: ${effSpd})`);
         renderCombatActions(currentActor.robot, currentActor.allyIndex);
         // Espera a que el jugador haga clic en una acción
     } else if (currentActor.type === 'ENEMY') {
-        document.getElementById('combat-actions').innerHTML = '';
+        showWaitingCombatActions(`TURNO DE [${currentActor.robot.name.toUpperCase()}] // EJECUTANDO ACCIÓN...`);
         await delay(800);
         await executeEnemyTurn(currentActor.robot);
         combatState.queueIndex++;
@@ -420,57 +455,185 @@ async function advanceTurnQueue() {
     }
 }
 
-function renderCombatActions(playerRobot, allyIndex) {
+function showWaitingCombatActions(msg = 'TURNO ENEMIGO EN PROCESO // CALCULANDO TELEMETRÍA...') {
+    const container = document.getElementById('combat-actions');
+    if (!container) return;
+    container.innerHTML = `
+        <div class="tactical-waiting-card">
+            <span class="tactical-waiting-spinner">⏳</span>
+            <span class="tactical-waiting-text">${msg}</span>
+        </div>
+    `;
+}
+
+function renderCombatActions(playerRobot, allyIndex, view = 'MAIN') {
     const actionsContainer = document.getElementById('combat-actions');
+    if (!actionsContainer) return;
     actionsContainer.innerHTML = '';
     
     if (combatState.isGameOver || !combatState.enemy || combatState.enemy.hp <= 0) return;
     
-    // Habilidades del aliado activo
-    playerRobot.skills.forEach((skill, skillIdx) => {
-        const btn = document.createElement('button');
-        btn.className = 'btn-combat-skill' + (skillIdx > 0 ? ' btn-special-skill' : '');
-        let cdText = skill.currentCd > 0 ? `<span class="btn-cd-tag">⏳ ${skill.currentCd}</span>` : '';
-        btn.innerHTML = `<span class="skill-btn-name">${skill.name}</span>${cdText}`;
-        btn.title = skill.desc;
-        btn.disabled = (skill.currentCd > 0 || combatState.isProcessing);
-        btn.onclick = () => executePlayerTurn(skillIdx, allyIndex);
-        actionsContainer.appendChild(btn);
-    });
+    const consumableCount = (GAME_STATE && GAME_STATE.inventory && GAME_STATE.inventory.items) ? GAME_STATE.inventory.items.length : 0;
+    const effSpd = playerRobot.getEffectiveSpeed ? playerRobot.getEffectiveSpeed() : playerRobot.spd;
     
-    // Defender
-    const btnDefend = document.createElement('button');
-    btnDefend.className = 'btn-combat-skill btn-combat-defend';
-    btnDefend.innerHTML = `<span>🛡️ Defender</span>`;
-    btnDefend.title = "Cura 5% HP y reduce el daño a la mitad este turno.";
-    btnDefend.disabled = combatState.isProcessing;
-    btnDefend.onclick = () => executeDefend(allyIndex);
-    actionsContainer.appendChild(btnDefend);
+    let headerHtml = `
+        <div class="tactical-box-header">
+            <div class="tactical-header-left">
+                <span class="tactical-indicator-pulse"></span>
+                <span class="tactical-header-title">CONSOLA TÁCTICA // TURNO DE ${playerRobot.name.toUpperCase()}</span>
+            </div>
+            <div class="tactical-header-right">
+                <span class="member-elem-badge elem-${playerRobot.element}">(${playerRobot.element})</span>
+                <span class="member-lvl-badge">NV. ${playerRobot.level || 1}</span>
+                <span class="tactical-spd-badge">⚡ ${effSpd} VEL</span>
+            </div>
+        </div>
+    `;
 
-    // Usar Objeto de Mochila
-    if (GAME_STATE.inventory.items.length > 0) {
-        const btnItem = document.createElement('button');
-        btnItem.className = 'btn-combat-skill btn-combat-item';
-        btnItem.innerHTML = `<span>🎒 Objeto (${GAME_STATE.inventory.items.length})</span>`;
-        btnItem.disabled = combatState.isProcessing;
-        btnItem.onclick = () => showItemsMenu(actionsContainer, allyIndex);
-        actionsContainer.appendChild(btnItem);
+    if (view === 'MAIN') {
+        actionsContainer.innerHTML = `
+            ${headerHtml}
+            <div class="tactical-main-grid">
+                <!-- 1. ATACAR -->
+                <button class="tactical-cmd-btn cmd-attack" onclick="renderCombatActions(GAME_STATE.team[${allyIndex}], ${allyIndex}, 'ATTACK')">
+                    <div class="cmd-icon">⚔️</div>
+                    <div class="cmd-texts">
+                        <span class="cmd-title">ATACAR</span>
+                        <span class="cmd-sub">Básicos & Especiales</span>
+                    </div>
+                </button>
+
+                <!-- 2. DEFENDER -->
+                <button class="tactical-cmd-btn cmd-defend" onclick="executeDefend(${allyIndex})">
+                    <div class="cmd-icon">🛡️</div>
+                    <div class="cmd-texts">
+                        <span class="cmd-title">DEFENDER</span>
+                        <span class="cmd-sub">-50% Daño Recibido</span>
+                    </div>
+                </button>
+
+                <!-- 3. INVENTARIO -->
+                <button class="tactical-cmd-btn cmd-inventory" onclick="renderCombatActions(GAME_STATE.team[${allyIndex}], ${allyIndex}, 'ITEMS')">
+                    <div class="cmd-icon">🎒</div>
+                    <div class="cmd-texts">
+                        <span class="cmd-title">INVENTARIO</span>
+                        <span class="cmd-sub">${consumableCount} Consumibles</span>
+                    </div>
+                </button>
+
+                <!-- 4. HISTORIAL -->
+                <button class="tactical-cmd-btn cmd-history" onclick="openCombatHistory()">
+                    <div class="cmd-icon">📜</div>
+                    <div class="cmd-texts">
+                        <span class="cmd-title">HISTORIAL</span>
+                        <span class="cmd-sub">Registro de Batalla</span>
+                    </div>
+                </button>
+            </div>
+        `;
+    } 
+    else if (view === 'ATTACK') {
+        const skillsHtml = playerRobot.skills.map((skill, skillIdx) => {
+            const isBasic = (skillIdx === 0);
+            const isChip = (skillIdx > 1);
+            const isSpecial = (skillIdx === 1);
+            
+            const isLocked = (skill.currentCd > 0 || combatState.isProcessing);
+            const cdBadge = skill.currentCd > 0 
+                ? `<span class="skill-card-cd">⏳ ENFRIAMIENTO (${skill.currentCd})</span>` 
+                : `<span class="skill-card-ready">⚡ LISTA</span>`;
+            
+            let typeTag = 'BÁSICO';
+            let cardClass = 'skill-card-basic';
+            let elemTag = playerRobot.element;
+            
+            if (isSpecial) {
+                typeTag = 'ESPECIAL';
+                cardClass = 'skill-card-special';
+                elemTag = skill.elementOverride || playerRobot.element;
+            } else if (isChip) {
+                typeTag = 'CHIP MODULAR';
+                cardClass = 'skill-card-chip';
+                elemTag = skill.elementOverride || playerRobot.element;
+            }
+
+            return `
+                <div class="tactical-skill-card ${cardClass} ${isLocked ? 'is-disabled' : ''}" 
+                     ${isLocked ? '' : `onclick="executePlayerTurn(${skillIdx}, ${allyIndex})"`}>
+                    <div class="skill-card-top">
+                        <span class="skill-type-badge elem-${elemTag}">${typeTag}</span>
+                        ${cdBadge}
+                    </div>
+                    <div class="skill-card-name-row">
+                        <span class="skill-name-text">${skill.name}</span>
+                        <span class="member-elem-badge elem-${elemTag}">(${elemTag})</span>
+                    </div>
+                    <div class="skill-card-desc">${skill.desc || 'Ataque ofensivo.'}</div>
+                </div>
+            `;
+        }).join('');
+
+        actionsContainer.innerHTML = `
+            ${headerHtml}
+            <div class="tactical-sub-panel">
+                <div class="tactical-sub-header">
+                    <button class="btn-tactical-back" onclick="renderCombatActions(GAME_STATE.team[${allyIndex}], ${allyIndex}, 'MAIN')">
+                        <span>◀ VOLVER AL MENÚ</span>
+                    </button>
+                    <span class="tactical-sub-title">SELECCIONAR ACCIÓN OFENSIVA</span>
+                </div>
+                <div class="tactical-skills-grid">
+                    ${skillsHtml}
+                </div>
+            </div>
+        `;
     }
-}
+    else if (view === 'ITEMS') {
+        const items = (GAME_STATE && GAME_STATE.inventory && GAME_STATE.inventory.items) ? GAME_STATE.inventory.items : [];
+        let itemsHtml = '';
+        
+        if (items.length === 0) {
+            itemsHtml = `
+                <div class="tactical-items-empty">
+                    <div class="empty-icon">🎒</div>
+                    <div class="empty-text">No tienes objetos consumibles en la mochila para usar en combate.</div>
+                    <button class="btn-open-full-inv" onclick="openInventory()">
+                        <span>🎒 Abrir Mochila Completa</span>
+                    </button>
+                </div>
+            `;
+        } else {
+            itemsHtml = `
+                <div class="tactical-items-grid">
+                    ${items.map((item, idx) => `
+                        <div class="tactical-item-card">
+                            <div class="tactical-item-top">
+                                <span class="tactical-item-emoji">${item.emoji}</span>
+                                <span class="tactical-item-name">${item.name}</span>
+                            </div>
+                            <div class="tactical-item-desc">${item.desc}</div>
+                            <button class="btn-use-item-cta" onclick="useCombatItem(${idx}, ${allyIndex})">
+                                <span>⚡ Usar Objeto</span>
+                            </button>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        }
 
-function showItemsMenu(container, allyIndex) {
-    container.innerHTML = '<p style="margin:4px 0; font-size:12px; color:#66fcf1;">Usar objeto de mochila (Acción gratuita):</p>';
-    GAME_STATE.inventory.items.forEach((item, idx) => {
-        const btn = document.createElement('button');
-        btn.innerText = `${item.emoji} ${item.name}`;
-        btn.title = item.desc;
-        btn.onclick = () => useCombatItem(idx, allyIndex);
-        container.appendChild(btn);
-    });
-    const btnCancel = document.createElement('button');
-    btnCancel.innerText = "Cancelar";
-    btnCancel.onclick = () => renderCombatActions(GAME_STATE.team[allyIndex], allyIndex);
-    container.appendChild(btnCancel);
+        actionsContainer.innerHTML = `
+            ${headerHtml}
+            <div class="tactical-sub-panel">
+                <div class="tactical-sub-header">
+                    <button class="btn-tactical-back" onclick="renderCombatActions(GAME_STATE.team[${allyIndex}], ${allyIndex}, 'MAIN')">
+                        <span>◀ VOLVER AL MENÚ</span>
+                    </button>
+                    <span class="tactical-sub-title">SUMINISTROS TÁCTICOS (OBJETOS DE MOCHILA)</span>
+                </div>
+                ${itemsHtml}
+            </div>
+        `;
+    }
 }
 
 async function useCombatItem(idx, activeAllyIndex) {
@@ -486,17 +649,17 @@ async function useCombatItem(idx, activeAllyIndex) {
         logCombat(`- ${activeRobot.name} recupera ${healed} HP.`);
         GAME_STATE.inventory.items.splice(idx, 1);
         renderPartyCombatUI();
-        renderCombatActions(activeRobot, activeAllyIndex);
+        renderCombatActions(activeRobot, activeAllyIndex, 'ITEMS');
     } else if (item.type === ITEM_TYPES.PEM) {
         // Bomba PEM: Gasta acción de turno | Aturde por 1 turno
         combatState.isProcessing = true;
         enemy.addStatus({ type: 'STUN', duration: 1 });
         logCombat(`- ¡${enemy.name} es aturdido por 1 turno!`);
         GAME_STATE.inventory.items.splice(idx, 1);
-        document.getElementById('combat-actions').innerHTML = '';
+        showWaitingCombatActions('⚡ DETONANDO BOMBA PEM...');
         triggerCombatAnim(true, 'ATTACK', activeAllyIndex);
         setTimeout(() => triggerCombatAnim(false, 'HIT', activeAllyIndex), 100);
-        showHitAnimation('SHIELD', true, activeAllyIndex);
+        showHitAnimation('PEM', true, activeAllyIndex);
         await delay(500);
         renderPartyCombatUI();
         await delay(600);
@@ -519,16 +682,13 @@ async function useCombatItem(idx, activeAllyIndex) {
         }
         GAME_STATE.inventory.items.splice(idx, 1);
         renderPartyCombatUI();
-        renderCombatActions(activeRobot, activeAllyIndex);
+        renderCombatActions(activeRobot, activeAllyIndex, 'ITEMS');
     }
 }
 
 async function executePlayerTurn(skillIndex, allyIndex) {
     if (combatState.isGameOver || combatState.isProcessing) return;
     combatState.isProcessing = true;
-    
-    // Ocultar botones durante la animación
-    document.getElementById('combat-actions').innerHTML = '';
     
     const ally = GAME_STATE.team[allyIndex];
     const skill = ally.skills[skillIndex];
@@ -537,6 +697,8 @@ async function executePlayerTurn(skillIndex, allyIndex) {
         combatState.isProcessing = false;
         return;
     }
+    
+    showWaitingCombatActions(`⚡ [${ally.name.toUpperCase()}] EJECUTANDO ${skill.name.toUpperCase()}...`);
     
     // Ejecutar la acción del aliado contra el enemigo (dispara el dash de ataque)
     executeTurn(ally, skill, combatState.enemy, true, allyIndex);
@@ -555,10 +717,9 @@ async function executeDefend(allyIndex) {
     if (combatState.isGameOver || combatState.isProcessing) return;
     combatState.isProcessing = true;
     
-    document.getElementById('combat-actions').innerHTML = '';
     const ally = GAME_STATE.team[allyIndex];
-    let healed = ally.heal(ally.maxHp * 0.05);
-    logCombat(`[${ally.name}] toma posición defensiva. Recupera ${healed} HP.`);
+    showWaitingCombatActions(`🛡️ [${ally.name.toUpperCase()}] ESTABLECIENDO POSTURA DEFENSIVA...`);
+    logCombat(`[${ally.name}] toma posición defensiva (reduce 50% el daño recibido).`);
     ally.addStatus({ type: 'DEFENDIENDO', duration: 1 });
     
     showHitAnimation('SHIELD', false, allyIndex);
@@ -656,72 +817,97 @@ function processElementalCombo(attackElement, defender, attacker, baseDmg) {
     // 1. Reacciones sobre MARCA_AGUA
     if (defender.hasStatus('MARCA_AGUA')) {
         if (attackElement === ELEMENTS.FUEGO) {
-            finalDmg = Math.floor(baseDmg * 2.0);
-            reaction = { name: '¡VAPORIZACIÓN!', desc: '¡Daño crítico x2.0!', color: '#ff6b6b' };
+            // Vaporización (💦 + 🔥): 1.5x Daño (antes 2.0x)
+            finalDmg = Math.floor(baseDmg * 1.5);
+            reaction = { name: '¡VAPORIZACIÓN!', desc: '¡Daño térmico x1.5!', color: '#ff6b6b' };
             defender.removeStatus('MARCA_AGUA');
         } else if (attackElement === ELEMENTS.TIERRA) {
-            defender.addStatus({ type: 'STUN', duration: 1 });
-            finalDmg = Math.floor(baseDmg * 1.3);
-            reaction = { name: '¡LODO!', desc: '¡Aturde 1 turno!', color: '#feca57' };
+            // Lodo (💦 + 🪨): 1.2x Daño + Ralentización (-50% Vel por 2 turnos) (reemplaza el Stun)
+            finalDmg = Math.floor(baseDmg * 1.2);
+            defender.addStatus({ type: 'SLOW', duration: 2 });
+            reaction = { name: '¡LODO!', desc: '¡Daño x1.2 + Ralentiza (-50% VEL 2T)!', color: '#feca57' };
             defender.removeStatus('MARCA_AGUA');
         } else if (attackElement === ELEMENTS.AIRE) {
-            finalDmg = Math.floor(baseDmg * 1.5);
-            reaction = { name: '¡VENTISCA!', desc: '¡Impacto gélido x1.5!', color: '#48dbfb' };
+            // Ventisca (💦 + 💨): 1.35x Daño + Congelación leve (-20% Precisión rival)
+            finalDmg = Math.floor(baseDmg * 1.35);
+            defender.addStatus({ type: 'FROST', duration: 2 });
+            reaction = { name: '¡VENTISCA!', desc: '¡Daño x1.35 + Congelación (-20% PREC)!', color: '#48dbfb' };
             defender.removeStatus('MARCA_AGUA');
         }
     }
     // 2. Reacciones sobre MARCA_FUEGO
     else if (defender.hasStatus('MARCA_FUEGO')) {
         if (attackElement === ELEMENTS.AIRE) {
-            finalDmg = Math.floor(baseDmg * 1.4);
-            defender.addStatus({ type: 'BURN', duration: 2 });
-            reaction = { name: '¡TORMENTA ÍGNEA!', desc: '¡Quemadura Grave!', color: '#ff4757' };
+            // Tormenta Ígnea (🔥 + 💨): 1.3x Daño + Renueva la Quemadura a 3 turnos
+            finalDmg = Math.floor(baseDmg * 1.3);
+            defender.removeStatus('BURN');
+            defender.addStatus({ type: 'BURN', duration: 3 });
+            reaction = { name: '¡TORMENTA ÍGNEA!', desc: '¡Daño x1.3 + Renueva Quemadura (3T)!', color: '#ff4757' };
             defender.removeStatus('MARCA_FUEGO');
         } else if (attackElement === ELEMENTS.AGUA) {
-            finalDmg = Math.floor(baseDmg * 1.75);
-            reaction = { name: '¡CHOQUE TÉRMICO!', desc: '¡Extinción x1.75!', color: '#48dbfb' };
+            // Choque Térmico (🔥 + 💦): 1.45x Daño + Remueve ventajas/bufos del rival
+            finalDmg = Math.floor(baseDmg * 1.45);
+            if (defender.removeBuffs) {
+                defender.removeBuffs();
+            } else {
+                const buffTypes = ['BARRIER', 'SHIELD', 'DEFENDIENDO', 'EVADE'];
+                defender.statuses = defender.statuses.filter(s => !buffTypes.includes(s.type));
+            }
+            reaction = { name: '¡CHOQUE TÉRMICO!', desc: '¡Daño x1.45 + Purga ventajas enemigas!', color: '#48dbfb' };
             defender.removeStatus('MARCA_FUEGO');
         } else if (attackElement === ELEMENTS.TIERRA) {
-            finalDmg = Math.floor(baseDmg * 1.5);
-            defender.addStatus({ type: 'BURN', duration: 1 });
-            reaction = { name: '¡ERUPCIÓN DE MAGMA!', desc: '¡Daño x1.5 + Quemadura!', color: '#ffa502' };
+            // Erupción (🔥 + 🪨): 1.4x Daño + Rompearmaduras (-25% Defensa enemiga)
+            finalDmg = Math.floor(baseDmg * 1.4);
+            defender.addStatus({ type: 'ARMOR_BREAK', duration: 2 });
+            reaction = { name: '¡ERUPCIÓN!', desc: '¡Daño x1.4 + Rompearmaduras (-25% DEF)!', color: '#ffa502' };
             defender.removeStatus('MARCA_FUEGO');
         }
     }
     // 3. Reacciones sobre MARCA_TIERRA
     else if (defender.hasStatus('MARCA_TIERRA')) {
         if (attackElement === ELEMENTS.FUEGO) {
-            finalDmg = Math.floor(baseDmg * 1.3);
-            attacker.addStatus({ type: 'BARRIER', duration: 2 });
-            reaction = { name: '¡CRISTALIZACIÓN!', desc: '¡Gana Barrera de Plasma!', color: '#feca57' };
+            // Cristalización (🪨 + 🔥): 1.2x Daño + Escudo equivalente al 25% de la vida actual (antes 100% de barrera)
+            finalDmg = Math.floor(baseDmg * 1.2);
+            let shieldAmt = Math.max(1, Math.floor(attacker.hp * 0.25));
+            attacker.removeStatus('SHIELD');
+            attacker.addStatus({ type: 'SHIELD', duration: 2, amount: shieldAmt });
+            reaction = { name: '¡CRISTALIZACIÓN!', desc: `¡Daño x1.2 + Escudo ${shieldAmt} HP (25% Vida)!`, color: '#feca57' };
             defender.removeStatus('MARCA_TIERRA');
         } else if (attackElement === ELEMENTS.AGUA) {
-            finalDmg = Math.floor(baseDmg * 1.5);
-            let healed = attacker.heal(attacker.maxHp * 0.15);
-            reaction = { name: '¡EROSIÓN!', desc: `¡Absorbe ${healed} HP!`, color: '#2ed573' };
+            // Erosión (🪨 + 💦): 1.3x Daño + Cura al usuario el 30% del daño infligido (antes 15% HP Máx plano)
+            finalDmg = Math.floor(baseDmg * 1.3);
+            reaction = { name: '¡EROSIÓN!', desc: '¡Daño x1.3 + Drena 30% del daño en HP!', color: '#2ed573', lifesteal: 0.30 };
             defender.removeStatus('MARCA_TIERRA');
         } else if (attackElement === ELEMENTS.AIRE) {
-            finalDmg = Math.floor(baseDmg * 1.4);
-            defender.addStatus({ type: 'STUN', duration: 1 });
-            reaction = { name: '¡TORMENTA DE ARENA!', desc: '¡Ciega y aturde al objetivo!', color: '#eccc68' };
+            // Tormenta de Arena (🪨 + 💨): 1.3x Daño + Ceguera (-50% Precisión en el siguiente ataque rival) (reemplaza el Stun)
+            finalDmg = Math.floor(baseDmg * 1.3);
+            defender.addStatus({ type: 'BLIND', duration: 1 });
+            reaction = { name: '¡TORMENTA DE ARENA!', desc: '¡Daño x1.3 + Ceguera (-50% PREC próx. ataque)!', color: '#eccc68' };
             defender.removeStatus('MARCA_TIERRA');
         }
     }
     // 4. Reacciones sobre MARCA_AIRE
     else if (defender.hasStatus('MARCA_AIRE')) {
         if (attackElement === ELEMENTS.FUEGO) {
-            finalDmg = Math.floor(baseDmg * 1.6);
-            defender.addStatus({ type: 'BURN', duration: 2 });
-            reaction = { name: '¡DEFLAGRACIÓN!', desc: '¡Explosión x1.6 + Quemadura!', color: '#ff6348' };
+            // Deflagración (💨 + 🔥): 1.45x Daño directo puro (sin quemadura adicional)
+            finalDmg = Math.floor(baseDmg * 1.45);
+            reaction = { name: '¡DEFLAGRACIÓN!', desc: '¡Daño puro x1.45!', color: '#ff6348' };
             defender.removeStatus('MARCA_AIRE');
         } else if (attackElement === ELEMENTS.AGUA) {
-            finalDmg = Math.floor(baseDmg * 1.6);
-            reaction = { name: '¡CICLÓN TORMENTOSO!', desc: '¡Vórtice acuático x1.6!', color: '#70a1ff' };
+            // Ciclón (💨 + 💦): 1.35x Daño + Retrasa el turno del rival al final de la ronda
+            finalDmg = Math.floor(baseDmg * 1.35);
+            reaction = { name: '¡CICLÓN!', desc: '¡Daño x1.35 + Retrasa turno rival!', color: '#70a1ff', delayTurn: true };
             defender.removeStatus('MARCA_AIRE');
         } else if (attackElement === ELEMENTS.TIERRA) {
-            finalDmg = Math.floor(baseDmg * 1.5);
-            defender.addStatus({ type: 'STUN', duration: 1 });
-            reaction = { name: '¡COLAPSO SÍSMICO!', desc: '¡Derriba y aturde al objetivo!', color: '#a4b0be' };
+            // Colapso Sísmico (💨 + 🪨): 1.4x Daño + Aturdimiento condicional con 40% de probabilidad (antes 100%)
+            finalDmg = Math.floor(baseDmg * 1.4);
+            let stunSuccess = Math.random() < 0.40;
+            if (stunSuccess) {
+                defender.addStatus({ type: 'STUN', duration: 1 });
+                reaction = { name: '¡COLAPSO SÍSMICO!', desc: '¡Daño x1.4 + Aturdimiento (40%)!', color: '#a4b0be' };
+            } else {
+                reaction = { name: '¡COLAPSO SÍSMICO!', desc: '¡Daño x1.4 (Aturdimiento resistido)!', color: '#a4b0be' };
+            }
             defender.removeStatus('MARCA_AIRE');
         }
     }
@@ -742,9 +928,16 @@ function executeTurn(attacker, skill, defender, isAttackerAlly, allyIndex = 0) {
 
     // 1. Daño
     if (skill.type.includes('DAMAGE')) {
-        let hitChance = attacker.acc - defender.dodge;
+        let attackerAcc = attacker.getEffectiveAcc ? attacker.getEffectiveAcc() : attacker.acc;
+        if (attacker.hasStatus('BLIND')) {
+            attacker.removeStatus('BLIND');
+            logCombat(`👁️ ¡[${attacker.name}] sufre Ceguera (-50% Precisión en este ataque)!`);
+        }
+        let hitChance = attackerAcc - defender.dodge;
         if (Math.random() * 100 > hitChance) {
             logCombat(`¡${defender.name} esquivó el ataque!`);
+            triggerCombatAnim(!isAttackerAlly, 'DODGE', allyIndex);
+            showDodgePopup(isAttackerAlly, allyIndex);
         } else {
             // Animar retroceso del defensor
             setTimeout(() => triggerCombatAnim(!isAttackerAlly, 'HIT', allyIndex), 100);
@@ -814,6 +1007,25 @@ function executeTurn(attacker, skill, defender, isAttackerAlly, allyIndex = 0) {
             let multMsg = mult > 1 ? " ¡Súper efectivo!" : (mult < 1 ? " Poco efectivo..." : "");
             logCombat(`- Inflige ${dmgDealt} de daño a ${defender.name}.${multMsg}`);
             
+            // Erosión: Cura al atacante el 30% del daño infligido
+            if (reaction && reaction.lifesteal && dmgDealt > 0) {
+                let healAmt = Math.max(1, Math.floor(dmgDealt * reaction.lifesteal));
+                let actualHealed = attacker.heal(healAmt);
+                logCombat(`- 🌿 [${attacker.name}] absorbe y recupera ${actualHealed} HP (30% del daño infligido).`);
+            }
+
+            // Ciclón: Retrasa el turno del rival al final de la ronda
+            if (reaction && reaction.delayTurn && defender.hp > 0) {
+                let defQueueIdx = combatState.initiativeQueue.findIndex((item, idx) => idx > combatState.queueIndex && item.robot === defender);
+                if (defQueueIdx !== -1) {
+                    let [delayedItem] = combatState.initiativeQueue.splice(defQueueIdx, 1);
+                    combatState.initiativeQueue.push(delayedItem);
+                    logCombat(`💨 ¡[${defender.name}] fue empujado al final de la ronda de turnos!`);
+                    const currentActor = combatState.initiativeQueue[combatState.queueIndex];
+                    renderTurnQueue(currentActor);
+                }
+            }
+
             // Mostrar número de daño (Rojo si es crítico o reacción elemental de marcas, Amarillo si es estándar)
             let isRedDamage = isCrit || (reaction !== null);
             showDamagePopup(dmgDealt, isAttackerAlly, allyIndex, isRedDamage, isCrit);
@@ -849,9 +1061,11 @@ function executeTurn(attacker, skill, defender, isAttackerAlly, allyIndex = 0) {
             if (daggerProb > 0 && Math.random() < daggerProb) {
                 if (defender.hp > 0) {
                     logCombat(`¡Doble Golpe de Daga!`);
-                    let hitChance2 = attacker.acc - defender.dodge;
+                    let hitChance2 = (attacker.getEffectiveAcc ? attacker.getEffectiveAcc() : attacker.acc) - defender.dodge;
                     if (Math.random() * 100 > hitChance2) {
                         logCombat(`¡${defender.name} esquivó el segundo golpe!`);
+                        triggerCombatAnim(!isAttackerAlly, 'DODGE', allyIndex);
+                        showDodgePopup(isAttackerAlly, allyIndex);
                     } else {
                         let daggerBaseDmg = baseDmg;
                         let isDaggerCrit = false;
@@ -877,9 +1091,11 @@ function executeTurn(attacker, skill, defender, isAttackerAlly, allyIndex = 0) {
     
     // 2. Estados alterados sobre el defensor
     if (skill.type.includes('STATUS')) {
-        let hitChance = attacker.acc - defender.dodge;
+        let hitChance = (attacker.getEffectiveAcc ? attacker.getEffectiveAcc() : attacker.acc) - defender.dodge;
         if (Math.random() * 100 > hitChance) {
             logCombat(`¡${defender.name} evadió el efecto!`);
+            triggerCombatAnim(!isAttackerAlly, 'DODGE', allyIndex);
+            showDodgePopup(isAttackerAlly, allyIndex);
         } else {
             if (!skill.type.includes('DAMAGE')) {
                 setTimeout(() => triggerCombatAnim(!isAttackerAlly, 'HIT', allyIndex), 100);
@@ -935,6 +1151,17 @@ function executeTurn(attacker, skill, defender, isAttackerAlly, allyIndex = 0) {
 
 async function endCombat(victory) {
     combatState.isGameOver = true;
+
+    // Limpiar estados, marcas, buffs, debuffs y cooldowns de todos los aliados al terminar el combate
+    if (GAME_STATE && GAME_STATE.team) {
+        GAME_STATE.team.forEach(robot => {
+            if (robot.clearStatuses) robot.clearStatuses();
+            else robot.statuses = [];
+            if (robot.resetCooldowns) robot.resetCooldowns();
+            else if (robot.skills) robot.skills.forEach(s => s.currentCd = 0);
+        });
+    }
+
     if (victory) {
         logCombat("🏆 ¡Victoria Táctica del Escuadrón!");
         await delay(1400);
@@ -950,15 +1177,12 @@ function logCombat(msg) {
     if (!combatState.fullLog) combatState.fullLog = [];
     combatState.fullLog.push(msg);
     
-    const log = document.getElementById('combat-log');
-    if (log) {
-        log.innerHTML += `<div>${msg}</div>`;
-        log.scrollTop = log.scrollHeight;
-    }
-    
     const historyModalList = document.getElementById('history-log-list');
-    if (historyModalList) {
-        historyModalList.innerHTML += `<div>${msg}</div>`;
+    if (historyModalList && document.getElementById('combat-history-modal')?.style.display === 'flex') {
+        const itemDiv = document.createElement('div');
+        itemDiv.className = 'history-log-item';
+        itemDiv.innerHTML = msg;
+        historyModalList.appendChild(itemDiv);
         historyModalList.scrollTop = historyModalList.scrollHeight;
     }
 }
@@ -967,7 +1191,18 @@ function openCombatHistory() {
     const modal = document.getElementById('combat-history-modal');
     const list = document.getElementById('history-log-list');
     if (modal && list) {
-        list.innerHTML = (combatState.fullLog || []).map(msg => `<div>${msg}</div>`).join('');
+        const logs = combatState.fullLog || [];
+        if (logs.length === 0) {
+            list.innerHTML = `
+                <div class="history-empty-state">
+                    <div class="empty-icon">📜</div>
+                    <div class="empty-title">SIN REGISTROS EN ESTE ENCUENTRO</div>
+                    <div class="empty-desc">Los eventos y cálculos de batalla se registrarán aquí en tiempo real a medida que avance el combate.</div>
+                </div>
+            `;
+        } else {
+            list.innerHTML = logs.map(msg => `<div class="history-log-item">${msg}</div>`).join('');
+        }
         modal.style.display = 'flex';
         setTimeout(() => list.scrollTop = list.scrollHeight, 10);
     }
@@ -988,32 +1223,51 @@ function triggerCombatAnim(isPlayer, animType, allyIndex = 0) {
         animClass = isPlayer ? 'anim-attack-player' : 'anim-attack-enemy';
     } else if (animType === 'HIT') {
         animClass = isPlayer ? 'anim-hit-player' : 'anim-hit-enemy';
+    } else if (animType === 'DODGE') {
+        animClass = isPlayer ? 'anim-dodge-player' : 'anim-dodge-enemy';
     }
     
     if (animClass) {
-        graphic.classList.remove('anim-attack-player', 'anim-attack-enemy', 'anim-hit-player', 'anim-hit-enemy');
+        graphic.classList.remove('anim-attack-player', 'anim-attack-enemy', 'anim-hit-player', 'anim-hit-enemy', 'anim-dodge-player', 'anim-dodge-enemy');
         void graphic.offsetWidth;
         graphic.classList.add(animClass);
         setTimeout(() => {
             graphic.classList.remove(animClass);
-        }, 400);
+        }, 450);
     }
 }
 
-function showHitAnimation(attackerElement, isPlayerAttacking, allyIndex = 0) {
-    let emoji = '💥';
-    if (attackerElement === ELEMENTS.FUEGO) emoji = '🔥';
-    else if (attackerElement === ELEMENTS.AGUA) emoji = '💦';
-    else if (attackerElement === ELEMENTS.TIERRA) emoji = '🪨';
-    else if (attackerElement === ELEMENTS.AIRE) emoji = '💨';
-    else if (attackerElement === ELEMENTS.NEUTRO) emoji = '⚔️';
-    else if (attackerElement === 'SHIELD') emoji = '🛡️';
-
-    let targetId = isPlayerAttacking ? 'enemy-hit-container' : `player-hit-container-${allyIndex}`;
-    if (attackerElement === 'SHIELD') {
-        targetId = isPlayerAttacking ? `player-hit-container-${allyIndex}` : 'enemy-hit-container';
-    }
+function showDodgePopup(isTargetEnemy, targetIndex = 0) {
+    let containerId = isTargetEnemy ? 'enemy-hit-container' : `player-hit-container-${targetIndex}`;
+    const container = document.getElementById(containerId);
+    if (!container) return;
     
+    const popup = document.createElement('div');
+    popup.className = 'dodge-popup-banner';
+    popup.innerHTML = `
+        <span class="dodge-popup-tag">💨 ¡ESQUIVADO!</span>
+        <span class="dodge-popup-sub">Evasión 0 Daño</span>
+    `;
+    container.appendChild(popup);
+    
+    setTimeout(() => {
+        if (container.contains(popup)) {
+            popup.remove();
+        }
+    }, 1100);
+}
+
+function showHitAnimation(effectType, isTargetEnemy, allyIndex = 0) {
+    let emoji = '💥';
+    if (effectType === ELEMENTS.FUEGO) emoji = '🔥';
+    else if (effectType === ELEMENTS.AGUA) emoji = '💦';
+    else if (effectType === ELEMENTS.TIERRA) emoji = '🪨';
+    else if (effectType === ELEMENTS.AIRE) emoji = '💨';
+    else if (effectType === ELEMENTS.NEUTRO) emoji = '⚔️';
+    else if (effectType === 'SHIELD') emoji = '🛡️';
+    else if (effectType === 'PEM') emoji = '💥';
+
+    let targetId = isTargetEnemy ? 'enemy-hit-container' : `player-hit-container-${allyIndex}`;
     const container = document.getElementById(targetId);
     if (!container) return;
 

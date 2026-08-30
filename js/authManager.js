@@ -213,44 +213,87 @@ const AuthManager = {
             </div>
         `;
 
-        const runs = await this.getHistory();
+        try {
+            const runs = await this.getHistory();
 
-        if (!runs || runs.length === 0) {
-            container.innerHTML = `
+            if (!runs || !Array.isArray(runs) || runs.length === 0) {
+                container.innerHTML = `
+                    <div class="history-empty-state">
+                        <div class="empty-icon">📂</div>
+                        <div class="empty-title">SIN REGISTROS DE INCURSIÓN</div>
+                        <div class="empty-desc">No hay partidas registradas aún. ¡Comienza una incursión para generar tu historial táctico!</div>
+                    </div>
+                `;
+                return;
+            }
+
+            const cardsHtml = runs.map(run => {
+                try {
+                    return this.renderRunCard(run);
+                } catch (cardErr) {
+                    console.error('[AuthManager] Error renderizando tarjeta de historial:', cardErr, run);
+                    return '';
+                }
+            }).filter(Boolean).join('');
+
+            container.innerHTML = cardsHtml || `
                 <div class="history-empty-state">
                     <div class="empty-icon">📂</div>
                     <div class="empty-title">SIN REGISTROS DE INCURSIÓN</div>
-                    <div class="empty-desc">No hay partidas registradas aún. ¡Comienza una incursión para generar tu historial táctico!</div>
+                    <div class="empty-desc">No se pudieron procesar los registros locales/remotos.</div>
                 </div>
             `;
-            return;
+        } catch (err) {
+            console.error('[AuthManager] Error inesperado en loadAndRenderHistory:', err);
+            container.innerHTML = `
+                <div class="history-empty-state">
+                    <div class="empty-icon">⚠️</div>
+                    <div class="empty-title">ERROR AL CARGAR HISTORIAL</div>
+                    <div class="empty-desc">Ocurrió un error al procesar el historial táctico.</div>
+                    <button class="btn-refresh-history" onclick="AuthManager.loadAndRenderHistory()" style="margin-top: 10px; padding: 6px 14px;">
+                        🔄 Reintentar
+                    </button>
+                </div>
+            `;
         }
-
-        container.innerHTML = runs.map(run => this.renderRunCard(run)).join('');
     },
 
     renderRunCard(run) {
+        if (!run) return '';
         const isWin = !!run.won;
-        const minutes = Math.floor((run.duration_seconds || 0) / 60);
-        const seconds = (run.duration_seconds || 0) % 60;
+        const durationNum = Number(run.duration_seconds) || 0;
+        const minutes = Math.floor(durationNum / 60);
+        const seconds = durationNum % 60;
         const durationFormatted = `${minutes}m ${seconds.toString().padStart(2, '0')}s`;
         
         let dateFormatted = 'Reciente';
         if (run.created_at) {
             try {
                 const d = new Date(run.created_at);
-                dateFormatted = d.toLocaleDateString('es-ES', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
+                if (!isNaN(d.getTime())) {
+                    dateFormatted = d.toLocaleDateString('es-ES', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
+                }
             } catch (e) {}
         }
 
-        const squad = Array.isArray(run.squad) ? run.squad : [];
+        let squad = run.squad;
+        if (typeof squad === 'string') {
+            try { squad = JSON.parse(squad); } catch (e) { squad = []; }
+        }
+        if (!Array.isArray(squad)) squad = [];
+
         const squadHtml = squad.map(r => {
-            const elemEmoji = (typeof ELEMENT_EMOJIS !== 'undefined' && ELEMENT_EMOJIS[r.element]) ? ELEMENT_EMOJIS[r.element] : '🤖';
-            const weaponText = r.equippedWeapon ? `${r.equippedWeapon.name || 'Arma'}` : 'Sin Arma';
-            const chipsText = (r.chips && r.chips.length > 0) ? r.chips.map(c => `💾 ${c}`).join(' ') : '';
+            if (!r) return '';
+            const rElem = (r.element && typeof r.element === 'string') ? r.element : 'NEUTRO';
+            const elemEmoji = (typeof ELEMENT_EMOJIS !== 'undefined' && ELEMENT_EMOJIS[rElem]) ? ELEMENT_EMOJIS[rElem] : '🤖';
+            const weaponText = (r.equippedWeapon && typeof r.equippedWeapon === 'object' && r.equippedWeapon.name)
+                ? r.equippedWeapon.name
+                : (typeof r.equippedWeapon === 'string' ? r.equippedWeapon : 'Sin Arma');
+            const chips = Array.isArray(r.chips) ? r.chips : [];
+            const chipsText = (chips.length > 0) ? chips.map(c => `💾 ${c}`).join(' ') : '';
 
             return `
-                <div class="run-member-pill elem-${r.element || 'NEUTRO'}">
+                <div class="run-member-pill elem-${rElem}">
                     <div class="member-info-top">
                         <span class="member-avatar">${elemEmoji}</span>
                         <span class="member-name">${r.name || 'Robot'}</span>
@@ -262,7 +305,7 @@ const AuthManager = {
                     </div>
                 </div>
             `;
-        }).join('');
+        }).filter(Boolean).join('');
 
         return `
             <div class="run-history-card ${isWin ? 'run-win' : 'run-loss'}">
@@ -343,23 +386,59 @@ const AuthManager = {
             return;
         }
 
-        const runs = await this.getTop10Speedruns();
+        try {
+            const runs = await this.getTop10Speedruns();
 
-        if (!runs || runs.length === 0) {
+            if (!runs || !Array.isArray(runs) || runs.length === 0) {
+                container.innerHTML = `
+                    <div class="history-empty-state">
+                        <div class="empty-icon">👑</div>
+                        <div class="empty-title">SALÓN DE LA FAMA VACÍO</div>
+                        <div class="empty-desc">Aún ningún comandante ha registrado una victoria sobre TITAN-X con su cuenta. ¡Sé el primero en derrotarlo!</div>
+                    </div>
+                `;
+                return;
+            }
+
+            const cardsHtml = runs.map((run, index) => {
+                try {
+                    return this.renderLeaderboardCard(run, index + 1);
+                } catch (cardErr) {
+                    console.error('[AuthManager] Error al renderizar tarjeta de leaderboard individual:', cardErr, run);
+                    return '';
+                }
+            }).filter(Boolean).join('');
+
+            if (!cardsHtml) {
+                container.innerHTML = `
+                    <div class="history-empty-state">
+                        <div class="empty-icon">👑</div>
+                        <div class="empty-title">SALÓN DE LA FAMA VACÍO</div>
+                        <div class="empty-desc">No se pudieron procesar las partidas del Top 10.</div>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = cardsHtml;
+        } catch (err) {
+            console.error('[AuthManager] Error inesperado en loadAndRenderLeaderboard:', err);
             container.innerHTML = `
                 <div class="history-empty-state">
-                    <div class="empty-icon">👑</div>
-                    <div class="empty-title">SALÓN DE LA FAMA VACÍO</div>
-                    <div class="empty-desc">Aún ningún comandante ha registrado una victoria sobre TITAN-X con su cuenta. ¡Sé el primero en derrotarlo!</div>
+                    <div class="empty-icon">⚠️</div>
+                    <div class="empty-title">ERROR AL SINCRONIZAR CLASIFICACIÓN</div>
+                    <div class="empty-desc">Ocurrió una anomalía al recuperar el Top 10 global.</div>
+                    <button class="btn-refresh-history" onclick="AuthManager.loadAndRenderLeaderboard()" style="margin-top: 12px; padding: 8px 16px;">
+                        🔄 Reintentar conexión
+                    </button>
                 </div>
             `;
-            return;
         }
-
-        container.innerHTML = runs.map((run, index) => this.renderLeaderboardCard(run, index + 1)).join('');
     },
 
     renderLeaderboardCard(run, rank) {
+        if (!run) return '';
+
         let tierClass = 'tier-silver';
         let tierBadgeIcon = '🥈';
         let tierName = 'PLATEADO';
@@ -374,30 +453,45 @@ const AuthManager = {
             tierName = 'DORADO';
         }
 
-        const minutes = Math.floor((run.duration_seconds || 0) / 60);
-        const seconds = (run.duration_seconds || 0) % 60;
+        const durationNum = Number(run.duration_seconds) || 0;
+        const minutes = Math.floor(durationNum / 60);
+        const seconds = durationNum % 60;
         const durationFormatted = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
         
         let dateFormatted = 'Reciente';
         if (run.created_at) {
             try {
                 const d = new Date(run.created_at);
-                dateFormatted = d.toLocaleDateString('es-ES', { day: '2-digit', month: 'short' });
+                if (!isNaN(d.getTime())) {
+                    dateFormatted = d.toLocaleDateString('es-ES', { day: '2-digit', month: 'short' });
+                }
             } catch (e) {}
         }
 
         const commanderName = run.player_name || 'Comandante Anónimo';
 
-        const squad = Array.isArray(run.squad) ? run.squad : [];
+        let squad = run.squad;
+        if (typeof squad === 'string') {
+            try { squad = JSON.parse(squad); } catch (e) { squad = []; }
+        }
+        if (!Array.isArray(squad)) squad = [];
+
         const squadHtml = squad.map(r => {
-            const elemEmoji = (typeof ELEMENT_EMOJIS !== 'undefined' && ELEMENT_EMOJIS[r.element]) ? ELEMENT_EMOJIS[r.element] : '🤖';
-            const weaponName = r.equippedWeapon ? `${r.equippedWeapon.name || 'Arma'}` : '';
+            if (!r) return '';
+            const rElem = (r.element && typeof r.element === 'string') ? r.element : 'NEUTRO';
+            const elemEmoji = (typeof ELEMENT_EMOJIS !== 'undefined' && ELEMENT_EMOJIS[rElem]) ? ELEMENT_EMOJIS[rElem] : '🤖';
+            const rName = r.name || 'Robot';
+            const rLevel = r.level || 1;
+            const weaponName = (r.equippedWeapon && typeof r.equippedWeapon === 'object' && r.equippedWeapon.name) 
+                ? r.equippedWeapon.name 
+                : (typeof r.equippedWeapon === 'string' ? r.equippedWeapon : '');
+            const tooltipTitle = weaponName ? `${rName} (Nv.${rLevel}) - ${weaponName}` : `${rName} (Nv.${rLevel})`;
             return `
-                <span class="leaderboard-squad-member elem-${r.element || 'NEUTRO'}" title="${r.name} (Nv.${r.level || 1}) - ${weaponName}">
-                    ${elemEmoji} <span class="squad-robot-name">${r.name}</span>
+                <span class="leaderboard-squad-member elem-${rElem}" title="${tooltipTitle}">
+                    ${elemEmoji} <span class="squad-robot-name">${rName}</span>
                 </span>
             `;
-        }).join('');
+        }).filter(Boolean).join('');
 
         return `
             <div class="leaderboard-card ${tierClass}">
@@ -417,7 +511,7 @@ const AuthManager = {
 
                     <div class="leaderboard-squad-row">
                         <span class="squad-label">ESCUADRÓN:</span>
-                        <div class="squad-chips-wrap">${squadHtml}</div>
+                        <div class="squad-chips-wrap">${squadHtml || '<span class="no-squad" style="font-size: 11px; color: #8395a7;">Sin datos</span>'}</div>
                     </div>
                 </div>
 
@@ -435,7 +529,7 @@ const AuthManager = {
     },
 
     updateAuthUI() {
-        const topBarBtn = document.getElementById('btn-account-top');
+        const topBarStatus = document.getElementById('top-bar-status') || document.getElementById('btn-account-top');
         const startScreenBtn = document.getElementById('btn-account-start');
         const userEmailDisplay = document.getElementById('account-user-email');
         const authLoggedOutView = document.getElementById('auth-logged-out-view');
@@ -445,20 +539,19 @@ const AuthManager = {
         const isLogged = !!this.currentUser;
         const isConfigured = isSupabaseConfigured();
 
-        const btnLabel = isLogged 
-            ? `🟢 ${this.currentUser.email.split('@')[0]}` 
-            : `👤 CUENTA / HISTORIAL`;
+        const indicatorClass = isLogged ? 'online' : 'offline';
+        const statusText = isLogged ? 'ONLINE' : 'OFFLINE';
 
-        if (topBarBtn) topBarBtn.innerHTML = `<span>${btnLabel}</span>`;
-        if (startScreenBtn) startScreenBtn.innerHTML = `<span class="btn-icon">${isLogged ? '🟢' : '👤'}</span> ${btnLabel}`;
+        if (topBarStatus) {
+            topBarStatus.innerHTML = `<span class="status-indicator ${indicatorClass}"></span> <span>${statusText}</span>`;
+        }
+        if (startScreenBtn) {
+            startScreenBtn.innerHTML = `<span class="btn-icon">${isLogged ? '🟢' : '👤'}</span> ${isLogged ? this.currentUser.email.split('@')[0] : 'CUENTA / HISTORIAL'}`;
+        }
 
         const mainMenuStatus = document.getElementById('main-menu-status');
         if (mainMenuStatus) {
-            if (isLogged) {
-                mainMenuStatus.innerHTML = `<span class="status-indicator online"></span> ONLINE`;
-            } else {
-                mainMenuStatus.innerHTML = `<span class="status-indicator offline"></span> OFFLINE`;
-            }
+            mainMenuStatus.innerHTML = `<span class="status-indicator ${indicatorClass}"></span> ${statusText}`;
         }
 
         if (userEmailDisplay && this.currentUser) {

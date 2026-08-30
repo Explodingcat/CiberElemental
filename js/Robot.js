@@ -153,6 +153,27 @@ class Robot {
                 return 0; // Daño completamente bloqueado
             }
         }
+
+        // Absorción de Escudo numérico (ej. Cristalización)
+        const shieldIndex = this.statuses.findIndex(s => s.type === 'SHIELD');
+        if (shieldIndex !== -1) {
+            let shield = this.statuses[shieldIndex];
+            if (shield.amount >= finalDamage) {
+                shield.amount -= finalDamage;
+                if (shield.amount <= 0) {
+                    this.statuses.splice(shieldIndex, 1);
+                }
+                return 0; // Daño completamente absorbido por el escudo
+            } else {
+                finalDamage -= shield.amount;
+                this.statuses.splice(shieldIndex, 1);
+            }
+        }
+
+        // Rompearmaduras: incrementa el daño recibido un +25%
+        if (this.hasStatus('ARMOR_BREAK')) {
+            finalDamage = Math.floor(finalDamage * 1.25);
+        }
         
         if (!ignoreDefense && this.hasStatus('DEFENDIENDO')) {
             let baseReduction = 0.50;
@@ -208,8 +229,42 @@ class Robot {
         this.statuses.push(status);
     }
 
+    clearStatuses() {
+        this.statuses = [];
+    }
+
+    resetCooldowns() {
+        if (this.skills) {
+            this.skills.forEach(s => s.currentCd = 0);
+        }
+    }
+
     removeStatus(type) {
         this.statuses = this.statuses.filter(s => s.type !== type);
+    }
+
+    removeBuffs() {
+        const isDebuff = (s) => ['BURN', 'STUN', 'SLOW', 'FROST', 'BLIND', 'ARMOR_BREAK'].includes(s.type) || s.type.startsWith('MARCA_');
+        this.statuses = this.statuses.filter(s => isDebuff(s));
+    }
+
+    getEffectiveSpeed() {
+        let speed = this.spd;
+        if (this.hasStatus('SLOW')) {
+            speed = Math.max(1, Math.floor(speed * 0.5));
+        }
+        return speed;
+    }
+
+    getEffectiveAcc() {
+        let accuracy = this.acc;
+        if (this.hasStatus('FROST')) {
+            accuracy -= 20;
+        }
+        if (this.hasStatus('BLIND')) {
+            accuracy -= 50;
+        }
+        return Math.max(5, accuracy);
     }
 
     updateStatuses() {
@@ -219,6 +274,11 @@ class Robot {
         for (let i = this.statuses.length - 1; i >= 0; i--) {
             let status = this.statuses[i];
             
+            // DEFENDIENDO no se expira en fin de ronda global, sino al inicio del siguiente turno de acción de esta unidad
+            if (status.type === 'DEFENDIENDO') {
+                continue;
+            }
+
             if (status.type === 'BURN') {
                 let burnRed = (this.isAlly && typeof SkillsManager !== 'undefined') 
                     ? SkillsManager.getModifier('burn_damage_reduction', 0) 
@@ -238,12 +298,12 @@ class Robot {
             }
         }
         
-        // Efecto Báculo: cura 3% max hp (5% si mejorado) + pasiva Báculos de Regeneración
+        // Efecto Báculo: cura 5% max hp (7% si mejorado) + pasiva Báculos de Regeneración
         if (this.equippedWeapon && this.equippedWeapon.type === WEAPON_TYPES.BACULO && this.hp > 0 && this.hp < this.maxHp) {
             let staffExtra = (this.isAlly && typeof SkillsManager !== 'undefined') 
                 ? SkillsManager.getModifier('staff_extra_heal', 0) 
                 : 0;
-            let healRate = (this.equippedWeapon.isUpgraded ? 0.05 : 0.03) + staffExtra;
+            let healRate = (this.equippedWeapon.isUpgraded ? 0.07 : 0.05) + staffExtra;
             let healAmount = Math.max(1, Math.floor(this.maxHp * healRate));
             let actualHeal = this.heal(healAmount);
             messages.push(`${this.name} se cura ${actualHeal} gracias a su Báculo.`);
