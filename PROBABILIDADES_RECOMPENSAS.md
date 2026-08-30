@@ -1,10 +1,96 @@
-# 📊 Tabla de Probabilidades y Tasas de Aparición (Cofres, Mercado Negro y Eventos Aleatorios)
+# 📊 Tabla de Probabilidades y Tasas de Aparición (Cofres, Mercado Negro, Eventos y Dropeo de Enemigos)
 
-Guía técnica detallada sobre las probabilidades matemáticas, tiradas de generación, catálogo de objetos, eventos aleatorios y fórmulas de precios en **CiberElemental**.
+Guía técnica detallada sobre las probabilidades matemáticas, tiradas de generación, catálogo de objetos, eventos aleatorios, fórmulas de precios y **tasas de dropeo de enemigos** en **CiberElemental**.
 
 ---
 
-## 🎁 1. Nodos de Tesoro / Cofres (`NODE_TYPES.CHEST`)
+## 👾 1. Tasas de Dropeo y Recompensas Post-Combate
+
+Al neutralizar a un robot enemigo en nodos de combate normal, élite o jefe, el sistema calcula automáticamente las recompensas de botín, experiencia, chatarra y opciones tácticas.
+
+```
+                         [⚔️ ENEMIGO NEUTRALIZADO]
+                                     │
+         ┌───────────────────────────┼───────────────────────────┐
+         │                           │                           │
+         ▼                           ▼                           ▼
+  [👾 ENEMIGO NORMAL]         [💀 ENEMIGO ÉLITE]         [👑 JEFE TITAN-X]
+  • Chatarra: 10-19 ⚙️         • Chatarra: 20-38 ⚙️ (x2)   • Chatarra: 20-38 ⚙️ (x2)
+  • XP: Nivel x 50            • XP: Nivel x 50            • XP: 500 XP
+  • Arma: 1.00%               • Botín 1 (50% Arma+1 /     • Botín 1 (50% Arma+1 /
+  • Consumible: 30.00%           50% Chip): 100%             50% Chip): 100%
+                              • Botín 2 (Consumible):     • Botín 2 (Consumible):
+                                 100% Garantizado            100% Garantizado
+```
+
+### 📋 Tabla Comparativa de Dropeo por Tipo de Enemigo
+
+| Tipo de Encuentro | Chatarra Base | XP Base Grupal | Dropeo de Arma | Dropeo de Chip | Dropeo de Consumible | Reclutamiento |
+| :--- | :---: | :---: | :---: | :---: | :---: | :---: |
+| 👾 **Combate Normal** | $10 - 19$ ⚙️ | $\text{Nivel} \times 50$ | **1.00%** *(Base)* | 0.00% | **30.00%** | **100% Éxito** *(50% HP)* |
+| 💀 **Combate Élite** | $20 - 38$ ⚙️ *(x2)* | $(\text{Piso}+2) \times 50$ | **50.00%** *(Forjada +1)* | **50.00%** | **100.00%** *(Garantizado)* | **50% Éxito / 50% 💥** |
+| 👑 **Jefe TITAN-X (Piso 10)** | $20 - 38$ ⚙️ *(x2)* | $500\text{ XP}$ | **50.00%** *(Forjada +1)* | **50.00%** | **100.00%** *(Garantizado)* | — *(Victoria)* |
+
+---
+
+### 👾 Desglose de Dropeos en Combate Normal
+
+1. **⚙️ Chatarra:** $\text{random}(10, 19) \text{ ⚙️}$ (afectada por talentos de *Imanes de Chatarrero*).
+2. **⭐ Experiencia:** $\text{Nivel del Robot} \times 50 \text{ XP}$ para cada miembro activo.
+3. **⚔️ Dropeo de Arma Rara (1.00% de probabilidad):**
+   * El arma obtenida es de **nivel base** y **siempre coincide con el elemento del enemigo derrotado**:
+     * 🗡️ Daga: **0.25%**
+     * 🪓 Hacha: **0.25%**
+     * 🪄 Báculo: **0.25%**
+     * ⚔️ Espada: **0.25%**
+4. **🧪 Dropeo de Consumible (30.00% de probabilidad):**
+   * Selecciona 1 consumible táctico del pool:
+     * 🩹 **Kit de Nanobots:** **10.00%** global.
+     * 💥 **Bomba PEM:** **10.00%** global.
+     * 🔋 **Núcleo de Sobrecarga:** **10.00%** global.
+5. **Decisión Post-Combate:**
+   * **🤖 Reclutar:** **100% de éxito garantizado** (entra con el $50\%$ de HP, hasta 3 aliados).
+   * **⚙️ Desmantelar:** Otorga **+30 ⚙️ Chatarra** y **+10% Curación** a todo el equipo.
+
+---
+
+### 💀 Desglose de Dropeos en Combate Élite
+
+Los robots Élite tienen **+2 niveles**, **+30% de HP Máximo** y un **Mutador Cibernético** activo (*Espinas*, *Regenerador* o *Rabia*). Al vencerlos, otorgan **botín doble garantizado**:
+
+1. **⚙️ Doble Chatarra:** $2 \times \text{random}(10, 19) = \mathbf{20\text{ a }38\text{ ⚙️}}$.
+2. **🎁 Recompensa 1: Equipo Superior (100% de probabilidad):**
+   * **50.00% de probabilidad:** **Arma Mejorada (+1)** con el mismo elemento del Élite (25% Daga +1, 25% Hacha +1, 25% Báculo +1, 25% Espada +1).
+   * **50.00% de probabilidad:** **Chip Elemental (💾)** (25% Fuego, 25% Agua, 25% Tierra, 25% Aire).
+3. **🧪 Recompensa 2: Consumible Táctico (100% garantizado):**
+   * 🩹 Kit de Nanobots: **33.33%**
+   * 💥 Bomba PEM: **33.33%**
+   * 🔋 Núcleo de Sobrecarga: **33.33%**
+4. **⚠️ Reclutamiento Élite de Alto Riesgo:**
+   * **50.00% de Éxito Base:** Reprograma al robot Élite con sus estadísticas aumentadas y su Mutador de combate.
+   * **50.00% de Fallo (💥 Sobrecarga Crítica):** El núcleo del Élite detona e inflige **10% de daño de HP Máximo a todo el escuadrón** (puede causar Game Over si la salud es crítica).
+   * *(La habilidad pasiva Hackeo de Núcleos en el árbol de talentos permite elevar el éxito hasta un 65%).*
+
+---
+
+### 🛡️ Probabilidad de Enemigos con Armas Equipadas en Combate
+
+Los robots enemigos salvajes pueden spawnear con armas ya equipadas desde el inicio de la batalla:
+
+| Piso de la Torre | Probabilidad en Enemigo Normal | Probabilidad en Enemigo Élite | Probabilidad en Jefe TITAN-X |
+| :---: | :---: | :---: | :---: |
+| **Piso 1** | **30.00%** | **100.00%** | — |
+| **Piso 2** | **40.00%** | **100.00%** | — |
+| **Piso 3** | **50.00%** | **100.00%** | — |
+| **Piso 4** | **60.00%** | **100.00%** | — |
+| **Piso 5** | *(Puro Tesoro)* | *(Puro Tesoro)* | — |
+| **Piso 6** | **80.00%** | **100.00%** | — |
+| **Piso 7** | **90.00%** | **100.00%** | — |
+| **Pisos 8 - 10** | **100.00%** | **100.00%** | **100.00%** |
+
+---
+
+## 🎁 2. Nodos de Tesoro / Cofres (`NODE_TYPES.CHEST`)
 
 Los cofres sellados de alta tecnología aparecen de forma garantizada en el **Piso 5 (Cámara del Tesoro)** y recompensan al escuadrón con equipo de alta gama sin necesidad de combatir.
 
@@ -84,7 +170,7 @@ $$\text{Probabilidad por Chip} = 50\% \times 25\% = \mathbf{12.50\%} \quad (1 \t
 
 ---
 
-## 🛒 2. Nodos de Mercado Negro (`NODE_TYPES.SHOP`)
+## 🛒 3. Nodos de Mercado Negro (`NODE_TYPES.SHOP`)
 
 El Mercado Negro ofrece una selección fija de **4 artículos aleatorios** (1 unidad en stock de cada uno) más un **servicio de desguace táctico**.
 
@@ -148,7 +234,7 @@ El Mercado Negro ofrece una selección fija de **4 artículos aleatorios** (1 un
 
 ---
 
-## ❓ 3. Nodos de Eventos Misteriosos (`NODE_TYPES.MYSTERY`)
+## ❓ 4. Nodos de Eventos Misteriosos (`NODE_TYPES.MYSTERY`)
 
 Al acceder a un nodo de misterio (`❓`), se selecciona aleatoriamente **1 evento** del pool total de 21 eventos interactivos.
 
@@ -364,7 +450,7 @@ $$\text{Probabilidad de aparición de cada evento} = \frac{1}{21} \approx \mathb
 
 ---
 
-## 🗺️ 4. Estructura General de Pisos de la Torre (10 Pisos)
+## 🗺️ 5. Estructura General de Pisos de la Torre (10 Pisos)
 
 | Piso | Nodos Disponibles | Mercados Garantizados | Tesoros Garantizados |
 | :---: | :--- | :---: | :---: |
