@@ -17,8 +17,8 @@ Al neutralizar a un robot enemigo en nodos de combate normal, élite o jefe, el 
   [👾 ENEMIGO NORMAL]         [💀 ENEMIGO ÉLITE]         [👑 JEFE TITAN-X]
   • Chatarra: 10-19 ⚙️         • Chatarra: 20-38 ⚙️ (x2)   • Chatarra: 20-38 ⚙️ (x2)
   • XP: Nivel x 50            • XP: Nivel x 50            • XP: 500 XP
-  • Arma: 1.00%               • Botín 1 (50% Arma+1 /     • Botín 1 (50% Arma+1 /
-  • Consumible: 30.00%           50% Chip): 100%             50% Chip): 100%
+  • Arma: 1.00%               • Botín 1 (33% Arma+1 /     • Botín 1 (50% Arma+1 /
+  • Consumible: 30.00%           33% Chip / 34% Nada)        50% Chip): 100%
                               • Botín 2 (Consumible):     • Botín 2 (Consumible):
                                  100% Garantizado            100% Garantizado
 ```
@@ -28,7 +28,7 @@ Al neutralizar a un robot enemigo en nodos de combate normal, élite o jefe, el 
 | Tipo de Encuentro | Chatarra Base | XP Base Grupal | Dropeo de Arma | Dropeo de Chip | Dropeo de Consumible | Reclutamiento |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: |
 | 👾 **Combate Normal** | $10 - 19$ ⚙️ | $\text{Nivel} \times 50$ | **1.00%** *(Base)* | 0.00% | **30.00%** | **100% Éxito** *(50% HP)* |
-| 💀 **Combate Élite** | $20 - 38$ ⚙️ *(x2)* | $(\text{Piso}+2) \times 50$ | **50.00%** *(Forjada +1)* | **50.00%** | **100.00%** *(Garantizado)* | **50% Éxito / 50% 💥** |
+| 💀 **Combate Élite** | $20 - 38$ ⚙️ *(x2)* | $(\text{Piso}+2) \times 50$ | **33.00%** *(Forjada +1)* | **33.00%** | **100.00%** *(Garantizado)* | **50% Éxito / 50% 💥** |
 | 👑 **Jefe TITAN-X (Piso 10)** | $20 - 38$ ⚙️ *(x2)* | $500\text{ XP}$ | **50.00%** *(Forjada +1)* | **50.00%** | **100.00%** *(Garantizado)* | — *(Victoria)* |
 
 ---
@@ -56,12 +56,13 @@ Al neutralizar a un robot enemigo en nodos de combate normal, élite o jefe, el 
 
 ### 💀 Desglose de Dropeos en Combate Élite
 
-Los robots Élite tienen **+2 niveles**, **+30% de HP Máximo** y un **Mutador Cibernético** activo (*Espinas*, *Regenerador* o *Rabia*). Al vencerlos, otorgan **botín doble garantizado**:
+Los robots Élite tienen **+2 niveles**, **+30% de HP Máximo** y un **Mutador Cibernético** activo (*Espinas*, *Regenerador* o *Rabia*). Al vencerlos, otorgan:
 
 1. **⚙️ Doble Chatarra:** $2 \times \text{random}(10, 19) = \mathbf{20\text{ a }38\text{ ⚙️}}$.
-2. **🎁 Recompensa 1: Equipo Superior (100% de probabilidad):**
-   * **50.00% de probabilidad:** **Arma Mejorada (+1)** con el mismo elemento del Élite (25% Daga +1, 25% Hacha +1, 25% Báculo +1, 25% Espada +1).
-   * **50.00% de probabilidad:** **Chip Elemental (💾)** (25% Fuego, 25% Agua, 25% Tierra, 25% Aire).
+2. **🎁 Recompensa 1: Equipo Superior (66.00% probabilidad global de botín):**
+   * **33.00% de probabilidad:** **Arma Mejorada (+1)** con el mismo elemento del Élite (8.25% Daga +1, 8.25% Hacha +1, 8.25% Báculo +1, 8.25% Espada +1).
+   * **33.00% de probabilidad:** **Chip Elemental (💾)** (8.25% Fuego, 8.25% Agua, 8.25% Tierra, 8.25% Aire).
+   * **34.00% de probabilidad:** **Sin equipamiento adicional** (no suelta ni Arma +1 ni Chip).
 3. **🧪 Recompensa 2: Consumible Táctico (100% garantizado):**
    * 🩹 Kit de Nanobots: **33.33%**
    * 💥 Bomba PEM: **33.33%**

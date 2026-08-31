@@ -13,6 +13,7 @@ Esta carpeta contiene los scripts SQL necesarios para configurar o restaurar la 
   4. Índices de aceleración para la consulta del **Top 10 Speedrun**.
   5. Políticas de seguridad **Row Level Security (RLS)** que protegen la privacidad de los usuarios mientras permiten el Leaderboard público de victorias y la meta-progresión personal.
 * **[`reset_meta_progression.sql`](./reset_meta_progression.sql):** Script administrativo para reiniciar la **Chatarra Global a 0** y vaciar el **Árbol de Pasivas (`[]`)** de todas las cuentas de jugadores en la base de datos.
+* **[`reset_leaderboard.sql`](./reset_leaderboard.sql):** Script administrativo para **borrar el Top 10** o purgar registros sospechosos del ranking de Speedrunners (`match_runs`).
 
 ---
 

@@ -62,6 +62,9 @@ function startCombat(nodeType) {
     // Renderizar la arena completa y el escuadrón
     renderPartyCombatUI();
     logCombat('¡Incursión de combate iniciada! Todos los aliados desplegados en formación.');
+    if (combatState.enemy && combatState.enemy.mutator) {
+        logCombat(`⚠️ [ALERTA ÉLITE] ${combatState.enemy.name} porta la mutación [${combatState.enemy.mutator.name}]: ${combatState.enemy.mutator.desc}`);
+    }
     
     // Iniciar el bucle de turnos por iniciativa
     advanceTurnQueue();
@@ -267,9 +270,15 @@ function formatStatusLabel(type) {
         case 'FROST': return 'Congelación (-20% PREC)';
         case 'BLIND': return 'Ceguera (-50% PREC)';
         case 'ARMOR_BREAK': return 'Rompearmaduras (-25% DEF)';
+        case 'MUTACION_ESPINAS': return 'Mutación: Espinas';
+        case 'MUTACION_REGENERADOR': return 'Mutación: Regenerador';
+        case 'MUTACION_RABIA': return 'Mutación: Rabia';
         default: 
             if (type && type.startsWith('MARCA_')) {
                 return `Marca de ${type.replace('MARCA_', '')}`;
+            }
+            if (type && type.startsWith('MUTACION_')) {
+                return `Mutación: ${type.replace('MUTACION_', '')}`;
             }
             return type;
     }
@@ -302,6 +311,11 @@ function renderStatusesSplitted(buffId, debuffId, statuses) {
         if (type === 'MARCA_AGUA') return '💧';
         if (type === 'MARCA_TIERRA') return '🪨';
         if (type === 'MARCA_AIRE') return '💨';
+
+        if (type === 'MUTACION_ESPINAS') return '🌵';
+        if (type === 'MUTACION_REGENERADOR') return '💚';
+        if (type === 'MUTACION_RABIA') return '💢';
+        if (type && type.startsWith('MUTACION_')) return '🧬';
         
         return '✨';
     };
@@ -318,11 +332,27 @@ function renderStatusesSplitted(buffId, debuffId, statuses) {
         } else if (s.type === 'BARRIER') {
             let casterText = s.casterName ? ` (Invocada por ${s.casterName})` : '';
             tooltipText = `${labelText}${casterText}: Bloquea 100% del daño recibido hasta el próximo turno del invocador`;
+        } else if (s.type === 'MUTACION_ESPINAS') {
+            tooltipText = `[Mutación Élite] Espinas: Devuelve 15% del daño recibido al atacante (Permanente)`;
+        } else if (s.type === 'MUTACION_REGENERADOR') {
+            tooltipText = `[Mutación Élite] Regenerador: Recupera 5% HP al final de cada ronda (Permanente)`;
+        } else if (s.type === 'MUTACION_RABIA') {
+            tooltipText = `[Mutación Élite] Rabia: El ataque (ATQ) aumenta 5% al final de cada ronda (Permanente)`;
+        } else if (s.type && s.type.startsWith('MUTACION_')) {
+            tooltipText = `[Mutación Élite] ${s.desc || labelText} (Permanente)`;
         }
+
+        const isPermanent = s.isPermanent || s.duration === Infinity || (s.type && s.type.startsWith('MUTACION_'));
+        const turnsHtml = (s.type === 'DEFENDIENDO' || s.type === 'CORAZA_ESPINAS' || s.type === 'BARRIER')
+            ? ''
+            : (isPermanent ? '<span class="status-pill-turns pill-perm">∞</span>' : `<span class="status-pill-turns">${s.duration}</span>`);
+
+        const mutationClass = isPermanent ? ' pill-mutation' : '';
+
         return `
-            <div class="status-pill ${isBuff ? 'pill-buff' : 'pill-debuff'} status-${s.type.toLowerCase().replace('_', '-')}" data-tooltip="${tooltipText}">
+            <div class="status-pill ${isBuff ? 'pill-buff' : 'pill-debuff'} status-${s.type.toLowerCase().replace('_', '-')}${mutationClass}" data-tooltip="${tooltipText}">
                 <span class="status-pill-icon">${getIcon(s.type)}</span>
-                ${(s.type === 'DEFENDIENDO' || s.type === 'CORAZA_ESPINAS' || s.type === 'BARRIER') ? '' : `<span class="status-pill-turns">${s.duration}</span>`}
+                ${turnsHtml}
             </div>
         `;
     };
@@ -419,6 +449,22 @@ async function advanceTurnQueue() {
                 logCombat(`💀 [Élite] Rabia incrementó el ATQ de ${enemy.name}.`);
             }
         }
+
+        // Mutadores de robots aliados reclutados al final de ronda
+        GAME_STATE.team.forEach((ally, idx) => {
+            if (!ally.isOffline && ally.hp > 0 && ally.mutator) {
+                if (ally.mutator.type === 'REGENERADOR') {
+                    let healAmt = ally.heal(ally.maxHp * 0.05);
+                    if (healAmt > 0) {
+                        showHealPopup(healAmt, false, idx);
+                    }
+                    logCombat(`🤖 [Mutación Aliada] Regenerador curó ${healAmt} HP a [${ally.name}].`);
+                } else if (ally.mutator.type === 'RABIA') {
+                    ally.atk = Math.floor(ally.atk * 1.05);
+                    logCombat(`🤖 [Mutación Aliada] Rabia incrementó el ATQ de [${ally.name}].`);
+                }
+            }
+        });
         
         // Comprobar muertes por estados (Quemadura)
         if (enemy.hp <= 0) {
@@ -479,6 +525,15 @@ async function advanceTurnQueue() {
                 logCombat(`🌊 La Barrera de Plasma sobre [${combatState.enemy.name}] ha expirado.`);
             }
         }
+    }
+
+    // Reducir cooldowns del combatiente activo al inicio de su propio turno
+    if (currentActor.robot.reduceCooldowns) {
+        currentActor.robot.reduceCooldowns(1);
+    } else if (currentActor.robot.skills) {
+        currentActor.robot.skills.forEach(skill => {
+            if (skill.currentCd > 0) skill.currentCd--;
+        });
     }
 
     // Renderizar la UI destacando al robot activo

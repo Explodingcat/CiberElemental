@@ -29,8 +29,20 @@ class Robot {
         // Habilidades
         this.skills = template.skills ? JSON.parse(JSON.stringify(template.skills)) : [];
         
+        // Mutador de Élite
+        this.mutator = template.mutator || null;
+        
         // Estados alterados
         this.statuses = [];
+        if (this.mutator) {
+            this.statuses.push({
+                type: `MUTACION_${this.mutator.type}`,
+                name: `Mutación: ${this.mutator.name}`,
+                desc: this.mutator.desc,
+                isPermanent: true,
+                duration: Infinity
+            });
+        }
 
         // Armas
         this.equippedWeapon = null;
@@ -232,11 +244,30 @@ class Robot {
 
     clearStatuses() {
         this.statuses = [];
+        if (this.mutator) {
+            this.statuses.push({
+                type: `MUTACION_${this.mutator.type}`,
+                name: `Mutación: ${this.mutator.name}`,
+                desc: this.mutator.desc,
+                isPermanent: true,
+                duration: Infinity
+            });
+        }
     }
 
     resetCooldowns() {
         if (this.skills) {
             this.skills.forEach(s => s.currentCd = 0);
+        }
+    }
+
+    reduceCooldowns(amount = 1) {
+        if (this.skills) {
+            this.skills.forEach(skill => {
+                if (skill.currentCd > 0) {
+                    skill.currentCd = Math.max(0, skill.currentCd - amount);
+                }
+            });
         }
     }
 
@@ -246,7 +277,7 @@ class Robot {
 
     removeBuffs() {
         const isDebuff = (s) => ['BURN', 'STUN', 'SLOW', 'FROST', 'BLIND', 'ARMOR_BREAK'].includes(s.type) || s.type.startsWith('MARCA_');
-        this.statuses = this.statuses.filter(s => isDebuff(s));
+        this.statuses = this.statuses.filter(s => isDebuff(s) || s.isPermanent || (s.type && s.type.startsWith('MUTACION_')));
     }
 
     getEffectiveSpeed() {
@@ -277,8 +308,8 @@ class Robot {
         for (let i = this.statuses.length - 1; i >= 0; i--) {
             let status = this.statuses[i];
             
-            // DEFENDIENDO, CORAZA_ESPINAS y BARRIER no expiran en fin de ronda global, sino al inicio del siguiente turno de su invocador
-            if (status.type === 'DEFENDIENDO' || status.type === 'CORAZA_ESPINAS' || status.type === 'BARRIER') {
+            // DEFENDIENDO, CORAZA_ESPINAS, BARRIER y Mutaciones permanentes no expiran en fin de ronda global
+            if (status.type === 'DEFENDIENDO' || status.type === 'CORAZA_ESPINAS' || status.type === 'BARRIER' || status.isPermanent || status.duration === Infinity || (status.type && status.type.startsWith('MUTACION_'))) {
                 continue;
             }
 
@@ -315,11 +346,6 @@ class Robot {
                 messages.push(`${this.name} se cura ${actualHeal} gracias a su Báculo.`);
             }
         }
-
-        // Reducir cooldowns
-        this.skills.forEach(skill => {
-            if (skill.currentCd > 0) skill.currentCd--;
-        });
         
         messages.damage = totalDamage;
         messages.heal = totalHeal;

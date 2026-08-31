@@ -284,8 +284,16 @@ function generateWildRobot(floor, isElite = false) {
         robot.maxHp = Math.floor(robot.maxHp * 1.3);
         robot.hp = robot.maxHp;
         
-        // Asignar mutador
+        // Asignar mutador y añadir estado permanente
         robot.mutator = MUTATORS[Math.floor(Math.random() * MUTATORS.length)];
+        robot.statuses = robot.statuses.filter(s => !s.type.startsWith('MUTACION_'));
+        robot.addStatus({
+            type: `MUTACION_${robot.mutator.type}`,
+            name: `Mutación: ${robot.mutator.name}`,
+            desc: robot.mutator.desc,
+            isPermanent: true,
+            duration: Infinity
+        });
     }
     
     // Probabilidad de arma: 30% en piso 1, sube 10% por piso. Élites 100%.

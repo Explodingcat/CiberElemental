@@ -287,6 +287,46 @@ function renderInventory() {
             });
         }
     }
+
+    // 5. Renderizar Pasivas del Árbol de Habilidades Activas
+    const passivesList = document.getElementById('inventory-passives-list');
+    const passivesBadge = document.getElementById('inv-passives-badge');
+    
+    if (passivesList) {
+        let activeSkills = [];
+        if (typeof SkillsManager !== 'undefined' && SkillsManager.unlockedSkills && typeof SKILLS_CATALOG !== 'undefined') {
+            activeSkills = SKILLS_CATALOG.filter(skill => SkillsManager.hasSkill(skill.id));
+        }
+        
+        if (passivesBadge) {
+            passivesBadge.innerText = `${activeSkills.length} Activas`;
+        }
+        
+        if (activeSkills.length === 0) {
+            passivesList.innerHTML = `
+                <div class="inv-empty-state" style="padding: 12px 10px; grid-column: 1 / -1;">
+                    <span class="empty-state-icon">🧬</span>
+                    <span class="empty-state-text">No hay habilidades pasivas desbloqueadas en esta incursión. Desbloquéalas en el Menú Principal con Chatarra Global.</span>
+                </div>
+            `;
+        } else {
+            passivesList.innerHTML = activeSkills.map(skill => {
+                const branch = (typeof SKILL_BRANCHES !== 'undefined' && SKILL_BRANCHES[skill.branch]) 
+                    ? SKILL_BRANCHES[skill.branch] 
+                    : { themeClass: '', name: skill.branch || '' };
+                
+                return `
+                    <div class="inv-passive-card ${branch.themeClass || ''}" title="${skill.name}: ${skill.desc}">
+                        <span class="inv-passive-icon">${skill.icon || '🧬'}</span>
+                        <div class="inv-passive-info">
+                            <span class="inv-passive-title">${skill.name}</span>
+                            <span class="inv-passive-desc">${skill.desc}</span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+    }
 }
 
 function unequipWeaponFrom(robotIndex) {

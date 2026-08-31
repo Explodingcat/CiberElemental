@@ -4,6 +4,15 @@ let defeatedRobot = null;
 let droppedWeapon = null;
 
 function initPostBattle(enemy) {
+    const postContainer = document.querySelector('.post-battle-container') || document.getElementById('screen-post-battle');
+    if (postContainer) {
+        postContainer.classList.remove('anim-explosion-shake');
+    }
+    const screenPost = document.getElementById('screen-post-battle');
+    if (screenPost) {
+        screenPost.classList.remove('anim-explosion-shake');
+    }
+    
     showScreen('screen-post-battle');
     defeatedRobot = enemy;
     
@@ -37,8 +46,8 @@ function initPostBattle(enemy) {
     let droppedItem = null;
     let isBoss = enemy.name.includes('Jefe');
 
-    if (isElite || isBoss) {
-        // Elite/Boss drop: 50% Upgraded Weapon, 50% Chip
+    if (isBoss) {
+        // Boss drop: 50% Upgraded Weapon, 50% Chip
         if (Math.random() < 0.5) {
             droppedWeapon = generateRandomWeapon(enemy.element);
             droppedWeapon.isUpgraded = true;
@@ -52,6 +61,29 @@ function initPostBattle(enemy) {
             let randomChipType = ITEM_TYPES[chipKeys[Math.floor(Math.random() * chipKeys.length)]];
             droppedItem = { type: randomChipType, ...ITEM_DEFS[randomChipType] };
         }
+        
+        let consumableKeys = Object.keys(ITEM_TYPES).filter(k => !k.includes('CHIP'));
+        let randomConsumableType = ITEM_TYPES[consumableKeys[Math.floor(Math.random() * consumableKeys.length)]];
+        var droppedConsumable = { type: randomConsumableType, ...ITEM_DEFS[randomConsumableType] };
+        GAME_STATE.inventory.items.push(droppedConsumable);
+        
+    } else if (isElite) {
+        // Elite drop: 33% Upgraded Weapon (+1), 33% Chip, 34% Nada
+        let eliteRoll = Math.random();
+        if (eliteRoll < 0.33) {
+            droppedWeapon = generateRandomWeapon(enemy.element);
+            droppedWeapon.isUpgraded = true;
+            droppedWeapon.name += " +1";
+            if (droppedWeapon.type === WEAPON_TYPES.DAGA) droppedWeapon.desc = '40% prob. doble ataque';
+            if (droppedWeapon.type === WEAPON_TYPES.HACHA) droppedWeapon.desc = 'Perfora 75% de barreras y defensas';
+            if (droppedWeapon.type === WEAPON_TYPES.BACULO) droppedWeapon.desc = 'Cura 7% HP al final del turno';
+            if (droppedWeapon.type === WEAPON_TYPES.ESPADA) droppedWeapon.desc = '+30% Daño + 20% Crítico en Básicos';
+        } else if (eliteRoll < 0.66) {
+            let chipKeys = Object.keys(ITEM_TYPES).filter(k => k.includes('CHIP'));
+            let randomChipType = ITEM_TYPES[chipKeys[Math.floor(Math.random() * chipKeys.length)]];
+            droppedItem = { type: randomChipType, ...ITEM_DEFS[randomChipType] };
+        }
+        // 34% (eliteRoll >= 0.66): Nada (no droppedWeapon, no droppedItem)
         
         let consumableKeys = Object.keys(ITEM_TYPES).filter(k => !k.includes('CHIP'));
         let randomConsumableType = ITEM_TYPES[consumableKeys[Math.floor(Math.random() * consumableKeys.length)]];
@@ -184,6 +216,9 @@ function handleRecruitElite(enemy, actionsContainer, desc) {
             postContainer.classList.remove('anim-explosion-shake');
             void postContainer.offsetWidth;
             postContainer.classList.add('anim-explosion-shake');
+            setTimeout(() => {
+                postContainer.classList.remove('anim-explosion-shake');
+            }, 600);
         }
         
         const defeatedEmoji = document.getElementById('defeated-emoji');
