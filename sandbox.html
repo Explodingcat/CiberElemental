@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Cyber-Elemental // Sandbox de Pruebas y Balance</title>
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="sandbox.css">
+</head>
+<body class="sandbox-app-wrapper">
+
+    <!-- Barra de Navegación Superior del Sandbox -->
+    <header class="sandbox-navbar">
+        <div class="sandbox-brand">
+            <span class="sandbox-logo-icon">🛠️</span>
+            <div class="sandbox-title-group">
+                <h1>CYBER-ELEMENTAL // SANDBOX</h1>
+                <div class="sandbox-tag">ENTORNO AISLADO DE PRUEBAS Y BALANCEO</div>
+            </div>
+        </div>
+
+        <!-- 3 Botones / Modos Principales -->
+        <div class="sandbox-nav-modes">
+            <button id="tab-btn-combat" class="sandbox-tab-btn active" onclick="switchSandboxTab('combat')">
+                <span>⚔️</span> SIMULADOR DE COMBATE
+            </button>
+            <button id="tab-btn-events" class="sandbox-tab-btn" onclick="switchSandboxTab('events')">
+                <span>🎲</span> EVENTOS ALEATORIOS
+            </button>
+            <button id="tab-btn-balance" class="sandbox-tab-btn" onclick="switchSandboxTab('balance')">
+                <span>⚖️</span> BALANCEADOR DE STATS
+            </button>
+        </div>
+
+        <div class="sandbox-status-bar">
+            <span class="sandbox-pill" style="color: #66fcf1; border-color: rgba(102, 252, 241, 0.4);">
+                <span class="status-indicator online"></span> MODO TEST ACTIVO
+            </span>
+        </div>
+    </header>
+
+    <!-- Contenido Principal -->
+    <main class="sandbox-main-content">
+        
+        <!-- ====================================================================
+             1. MODO SIMULADOR DE COMBATE
+             ==================================================================== -->
+        <section id="view-combat" class="sandbox-view active">
+            
+            <!-- Editor y Configuración de Equipos -->
+            <div id="combat-editor-container" style="display: flex; flex-direction: column; gap: 20px;">
+                
+                <!-- Barra de Presets Rápidos -->
+                <div class="combat-presets-bar">
+                    <span class="presets-label">⚡ PRESETS RÁPIDOS:</span>
+                    <button class="btn-preset" onclick="applyCombatPreset('1V1')">1v1 Básico</button>
+                    <button class="btn-preset" onclick="applyCombatPreset('3V3_STARTERS')">3v3 Clásico (Starters vs Salvajes)</button>
+                    <button class="btn-preset" onclick="applyCombatPreset('VS_BOSS')">3 Starters vs TITAN-X (Jefe)</button>
+                    <button class="btn-preset" onclick="applyCombatPreset('VS_3_ELITES')">3 Starters vs 3 Élites</button>
+                    <button class="btn-preset" onclick="applyCombatPreset('BOSS_DUEL')">Duelo de Jefes (TITAN vs TITAN)</button>
+                    <button class="btn-preset" onclick="applyCombatPreset('MIRROR')">🔁 Espejo (Copiar Aliados)</button>
+                </div>
+
+                <!-- Grid Dual: Aliados vs Enemigos -->
+                <div class="teams-builder-grid">
+                    
+                    <!-- Columna Izquierda: Escuadrón Aliado (1 a 3) -->
+                    <div class="team-builder-column">
+                        <div class="column-header-allies">
+                            <h2 class="team-col-title allies">
+                                <span>🔵 ESCUADRÓN ALIADO</span>
+                                <span style="font-size: 0.85rem; color: #8395a7;">(1 a 3 Personajes)</span>
+                            </h2>
+                        </div>
+                        <div id="slots-allies" class="slots-container">
+                            <!-- Slots generados por renderTeamBuilder('allies') -->
+                        </div>
+                    </div>
+
+                    <!-- Columna Derecha: Escuadrón Enemigo (1 a 3) -->
+                    <div class="team-builder-column">
+                        <div class="column-header-enemies">
+                            <h2 class="team-col-title enemies">
+                                <span>🔴 ESCUADRÓN ENEMIGO</span>
+                                <span style="font-size: 0.85rem; color: #8395a7;">(1 a 3 Personajes)</span>
+                            </h2>
+                        </div>
+                        <div id="slots-enemies" class="slots-container">
+                            <!-- Slots generados por renderTeamBuilder('enemies') -->
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Barra de Parámetros Globales e Inicio de Combate -->
+                <div class="combat-launch-bar">
+                    <div class="launch-options-group">
+                        <div class="form-group" style="min-width: 170px;">
+                            <label>Escenario / Arena</label>
+                            <select class="form-control" onchange="Sandbox.combatConfig.options.arenaBg = this.value">
+                                <option value="bg-normal">🏟️ Sector Estándar</option>
+                                <option value="bg-elite">💀 Sector Élite</option>
+                                <option value="bg-boss">👑 Cámara del Jefe Final</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group" style="min-width: 140px;">
+                            <label>Chatarra Inicial</label>
+                            <input type="number" class="form-control" value="100" min="0" max="9999" onchange="Sandbox.combatConfig.options.startingScrap = parseInt(this.value) || 0">
+                        </div>
+
+                        <div style="display: flex; flex-direction: column; gap: 6px;">
+                            <label style="font-size: 0.8rem; font-weight: 700; color: #8395a7; text-transform: uppercase;">Consumibles en Mochila</label>
+                            <div style="display: flex; gap: 14px;">
+                                <label class="option-checkbox-label">
+                                    <input type="checkbox" checked onchange="Sandbox.combatConfig.options.hasPem = this.checked">
+                                    💥 PEM
+                                </label>
+                                <label class="option-checkbox-label">
+                                    <input type="checkbox" checked onchange="Sandbox.combatConfig.options.hasNanobots = this.checked">
+                                    🩹 Nanobots
+                                </label>
+                                <label class="option-checkbox-label">
+                                    <input type="checkbox" checked onchange="Sandbox.combatConfig.options.hasSobrecarga = this.checked">
+                                    🔋 Sobrecarga
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button class="btn-launch-combat" onclick="launchSandboxCombat()">
+                        <span>⚡ INICIAR COMBATE DE PRUEBA</span>
+                        <span>➔</span>
+                    </button>
+                </div>
+
+            </div>
+
+            <!-- Contenedor del Combate Activo en Vivo (Se muestra al iniciar el combate) -->
+            <div id="combat-live-container" style="display: none; flex-direction: column; width: 100%;">
+                
+                <!-- Barra de Control del Combate en Vivo -->
+                <div class="combat-live-header-bar">
+                    <div class="live-controls-left">
+                        <button class="btn-sandbox-live" onclick="exitCombatToEditor()">
+                            <span>⚙️</span> Modificar Equipos
+                        </button>
+                        <button class="btn-sandbox-live" onclick="restartSameCombat()">
+                            <span>🔄</span> Reiniciar Mismo Combate
+                        </button>
+                        <button class="btn-sandbox-live" onclick="openCombatHistory()">
+                            <span>📜</span> Registro Táctico
+                        </button>
+                    </div>
+
+                    <div class="live-controls-right">
+                        <span style="font-size: 0.85rem; font-weight: 700; color: #8395a7;">VELOCIDAD:</span>
+                        <div class="speed-control-group">
+                            <button id="btn-speed-1x" class="btn-speed active" onclick="setCombatSpeed(1)">1x</button>
+                            <button id="btn-speed-2x" class="btn-speed" onclick="setCombatSpeed(2)">2x</button>
+                            <button id="btn-speed-4x" class="btn-speed" onclick="setCombatSpeed(4)">4x</button>
+                            <button id="btn-speed-8x" class="btn-speed" onclick="setCombatSpeed(8)">8x</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Pantalla del Combate Real del Motor -->
+                <div id="screen-combat" class="screen active" style="display: flex;">
+                    <div id="combat-arena-bg" class="combat-arena">
+                        <div class="arena-floor-grid"></div>
+                        <div id="combat-turn-queue" class="combat-turn-queue"></div>
+                        <div id="combat-player-team" class="combat-player-team"></div>
+                        <div id="combat-enemy-team" class="combat-enemy-team"></div>
+                    </div>
+                    <div id="combat-actions" class="combat-tactical-box"></div>
+                </div>
+
+            </div>
+
+        </section>
+
+        <!-- ====================================================================
+             2. MODO PROBADOR DE EVENTOS
+             ==================================================================== -->
+        <section id="view-events" class="sandbox-view">
+            
+            <div class="events-sandbox-layout">
+                
+                <!-- Panel Izquierdo: Catálogo y Buscador de Eventos -->
+                <div class="events-catalog-panel">
+                    <div class="catalog-header">
+                        <h3 class="catalog-title">📜 CATÁLOGO DE EVENTOS</h3>
+                        <input type="text" class="form-control events-search-input" placeholder="🔍 Buscar por nombre o texto..." oninput="filterEventsCatalog(this.value)">
+                        
+                        <div style="display: flex; gap: 6px; margin-top: 4px;">
+                            <button id="btn-cat-all" class="btn-hp-preset btn-cat-filter active" onclick="setEventsCategory('ALL')">Todos</button>
+                            <button id="btn-cat-mystery" class="btn-hp-preset btn-cat-filter" onclick="setEventsCategory('MYSTERY')">Misterio (❓)</button>
+                            <button id="btn-cat-special" class="btn-hp-preset btn-cat-filter" onclick="setEventsCategory('SPECIAL')">Especiales (⭐)</button>
+                        </div>
+                    </div>
+
+                    <div id="events-catalog-list" class="events-list-scroll">
+                        <!-- Generado por renderEventsCatalog() -->
+                    </div>
+                </div>
+
+                <!-- Panel Derecho: Controlador de Estado de Prueba y Terminal -->
+                <div class="events-interactive-panel">
+                    
+                    <!-- Controlador de Estado de la Partida Sandbox -->
+                    <div class="sandbox-state-controller-card">
+                        <div class="state-ctrl-group">
+                            <span class="state-ctrl-label">⚙️ Chatarra de Prueba:</span>
+                            <div class="scrap-stepper">
+                                <button class="btn-stepper" onclick="adjustSandboxScrap(-20)">-20</button>
+                                <button class="btn-stepper" onclick="adjustSandboxScrap(-10)">-10</button>
+                                <input type="number" id="sandbox-scrap-input" class="scrap-input-val" value="50" onchange="Sandbox.eventsState.sandboxScrap = parseInt(this.value) || 0; syncSandboxGameStateTeam(); renderEventStage();">
+                                <button class="btn-stepper" onclick="adjustSandboxScrap(10)">+10</button>
+                                <button class="btn-stepper" onclick="adjustSandboxScrap(20)">+20</button>
+                            </div>
+                        </div>
+
+                        <div class="state-ctrl-group">
+                            <span class="state-ctrl-label">❤️ HP del Equipo:</span>
+                            <div class="hp-quick-presets">
+                                <button class="btn-hp-preset" onclick="setSandboxHpPct(100)">100% Full</button>
+                                <button class="btn-hp-preset" onclick="setSandboxHpPct(50)">50% Medio</button>
+                                <button class="btn-hp-preset" onclick="setSandboxHpPct(20)">20% Crítico</button>
+                                <button class="btn-hp-preset" onclick="setSandboxHpPct(1)">1 HP</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Escenario y Terminal Interactiva del Evento -->
+                    <div class="event-stage-container">
+                        <div id="event-sandbox-stage">
+                            <!-- Generado por renderEventStage() -->
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+
+        </section>
+
+        <!-- ====================================================================
+             3. MODO BALANCEADOR DE STATS
+             ==================================================================== -->
+        <section id="view-balance" class="sandbox-view">
+            <!-- Barra Superior de Acciones de Balance -->
+            <div class="balance-toolbar">
+                <div class="balance-toolbar-actions">
+                    <button class="btn-balance-cta btn-save-disk" onclick="handleSaveToDisk()" title="Modificar y sobrescribir directamente el archivo js/constants.js en tu disco duro">
+                        <span>💾</span> Guardar en js/constants.js
+                    </button>
+                    <button class="btn-balance-cta btn-save-mem" onclick="handleSaveToMemory()" title="Guardar en localStorage del navegador y aplicar en memoria">
+                        <span>⚡</span> Guardar en Navegador
+                    </button>
+                    <button class="btn-balance-cta btn-code" onclick="BalanceManager.downloadConstantsFile()" title="Descargar constants.js modificado">
+                        <span>📥</span> Descargar Archivo
+                    </button>
+                    <button class="btn-balance-cta btn-reset" onclick="handleResetDefaults()" title="Restablecer valores oficiales originales">
+                        <span>🔄</span> Restablecer Originales
+                    </button>
+                </div>
+
+                <div class="balance-toolbar-actions">
+                    <button class="btn-balance-cta btn-code" onclick="openCodeModal()" title="Ver código JavaScript generado">
+                        <span>📋</span> Ver Código JS
+                    </button>
+                    <button class="btn-balance-cta btn-code" onclick="openExportModal()" title="Exportar configuración JSON">
+                        <span>📤</span> Exportar JSON
+                    </button>
+                    <button class="btn-balance-cta btn-code" onclick="openImportModal()" title="Importar configuración JSON">
+                        <span>📥</span> Importar JSON
+                    </button>
+                    <button class="btn-balance-cta btn-save-mem" style="background: rgba(254, 202, 87, 0.15); border-color: #feca57; color: #feca57;" onclick="testBalanceInCombat()" title="Ir al simulador de combate">
+                        <span>⚔️</span> Probar en Combate
+                    </button>
+                </div>
+            </div>
+
+            <!-- Contenido dinámico del editor de balance -->
+            <div id="balance-editor-content">
+                <!-- Generado por renderBalanceEditor() -->
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Modal de Resultado de Combate Sandbox -->
+    <div id="sandbox-result-modal" class="sandbox-modal-overlay" style="display: none;">
+        <div class="sandbox-result-box">
+            <div id="sandbox-result-badge" class="result-badge">TELEMETRÍA DE COMBATE</div>
+            <h2 id="sandbox-result-title" class="result-title victory">¡VICTORIA TÁCTICA!</h2>
+            
+            <div class="result-stats-grid">
+                <div class="result-stat-item">
+                    <span class="result-stat-label">Rondas Jugadas</span>
+                    <span id="sandbox-stat-rounds" class="result-stat-val">3</span>
+                </div>
+                <div class="result-stat-item">
+                    <span class="result-stat-label">Aliados Supervivientes</span>
+                    <span id="sandbox-stat-allies-alive" class="result-stat-val">3 / 3</span>
+                </div>
+                <div class="result-stat-item">
+                    <span class="result-stat-label">Enemigos Supervivientes</span>
+                    <span id="sandbox-stat-enemies-alive" class="result-stat-val">0 / 3</span>
+                </div>
+                <div class="result-stat-item">
+                    <span class="result-stat-label">Modo</span>
+                    <span class="result-stat-val" style="color: #66fcf1;">SANDBOX TEST</span>
+                </div>
+            </div>
+
+            <div class="result-actions-row">
+                <button class="btn-sandbox-live" style="background: var(--accent-color); color: #0b0c10; font-size: 1rem; padding: 10px 20px;" onclick="restartSameCombat()">
+                    🔄 Repetir Mismo Combate
+                </button>
+                <button class="btn-sandbox-live" style="font-size: 1rem; padding: 10px 20px;" onclick="exitCombatToEditor()">
+                    ⚙️ Volver al Editor
+                </button>
+                <button class="btn-sandbox-live" style="font-size: 1rem; padding: 10px 20px;" onclick="openCombatHistory()">
+                    📜 Ver Registro
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Historial Táctico de Combate (Reutilizado del motor) -->
+    <div id="combat-history-modal" class="modal" style="display:none;">
+        <div class="modal-content account-modal-box">
+            <button class="close-btn" onclick="closeCombatHistory()" title="Cerrar ventana">&times;</button>
+            <div class="account-modal-header">
+                <div class="account-header-badge">📜 REGISTRO TÁCTICO // TELEMETRÍA DE COMBATE</div>
+                <h2 class="account-modal-title">HISTORIAL DE BATALLA</h2>
+            </div>
+            <div id="history-log-list" class="combat-history-log-container"></div>
+        </div>
+    </div>
+
+    <!-- Modal de Código / JSON Export -->
+    <div id="code-modal" class="sandbox-modal-overlay" style="display: none;">
+        <div class="sandbox-result-box" style="max-width: 750px; text-align: left;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                <h3 id="code-modal-title" style="margin: 0; color: #66fcf1; font-size: 1.3rem;">📋 CÓDIGO GENERADO DE CONSTANTS.JS</h3>
+                <button class="close-btn" style="background: none; border: none; color: #fff; font-size: 1.5rem; cursor: pointer;" onclick="closeCodeModal()">&times;</button>
+            </div>
+            <textarea id="code-modal-content" class="code-modal-textarea" readonly></textarea>
+            <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 14px;">
+                <button class="btn-balance-cta btn-save-disk" onclick="copyCodeToClipboard()">📋 Copiar al Portapapeles</button>
+                <button class="btn-balance-cta btn-code" onclick="closeCodeModal()">Cerrar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts del Motor del Juego -->
+    <script src="js/constants.js"></script>
+    <script src="js/balanceManager.js"></script>
+    <script src="js/database.js"></script>
+    <script src="js/eventsDatabase.js"></script>
+    <script src="js/Robot.js"></script>
+    <script src="js/teamManager.js"></script>
+    <script src="js/inventory.js"></script>
+    <script src="js/skillsData.js"></script>
+    <script src="js/skillsManager.js"></script>
+    <script src="js/combatSystem.js"></script>
+    <script src="js/eventHandler.js"></script>
+    <script src="js/postBattle.js"></script>
+
+    <!-- Script del Sandbox -->
+    <script src="js/sandbox.js"></script>
+</body>
+</html>

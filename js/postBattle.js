@@ -1,9 +1,9 @@
 // postBattle.js
 
-let defeatedRobot = null;
+let defeatedRobots = [];
 let droppedWeapon = null;
 
-function initPostBattle(enemy) {
+function initPostBattle(enemies) {
     const postContainer = document.querySelector('.post-battle-container') || document.getElementById('screen-post-battle');
     if (postContainer) {
         postContainer.classList.remove('anim-explosion-shake');
@@ -14,107 +14,136 @@ function initPostBattle(enemy) {
     }
     
     showScreen('screen-post-battle');
-    defeatedRobot = enemy;
     
-    // Siempre da chatarra base (modificada por pasivas de Imanes de Chatarrero)
+    // Normalizar a arreglo
+    defeatedRobots = Array.isArray(enemies) ? enemies : [enemies];
+    
     let scrapGainMult = (typeof SkillsManager !== 'undefined') ? SkillsManager.getScrapGainMultiplier() : 1;
-    let baseScrap = Math.floor((Math.floor(Math.random() * 10) + 10) * scrapGainMult);
-
-    // Si es Élite, doble chatarra
-    let isElite = !!enemy.isElite || enemy.name.includes('ÉLITE');
-    if (isElite) {
-        baseScrap *= 2;
-    }
-    addScrap(baseScrap);
-
-    // Repartir XP (modificada por pasivas de Chips de Aprendizaje)
     let xpGainMult = (typeof SkillsManager !== 'undefined') ? SkillsManager.getXpGainMultiplier() : 1;
-    const xpGained = Math.floor(enemy.level * 50 * xpGainMult);
+    
+    let totalScrap = 0;
+    let totalXp = 0;
+    let hasElite = false;
+    let hasBoss = false;
+    let logsHTML = [];
+    
+    droppedWeapon = null;
+    let allDroppedWeapons = [];
+    let allDroppedItems = [];
+    let allDroppedConsumables = [];
+
+    // Procesar recompensas de cada robot derrotado
+    defeatedRobots.forEach(enemy => {
+        let isElite = !!enemy.isElite || enemy.name.includes('ÉLITE');
+        let isBoss = enemy.name.includes('Jefe');
+        if (isElite) hasElite = true;
+        if (isBoss) hasBoss = true;
+
+        // Chatarra
+        let baseScrap = Math.floor((Math.floor(Math.random() * 10) + 10) * scrapGainMult);
+        if (isElite) baseScrap *= 2;
+        totalScrap += baseScrap;
+
+        // XP
+        let enemyXp = Math.floor(enemy.level * 50 * xpGainMult);
+        totalXp += enemyXp;
+
+        logsHTML.push(`<div class="post-log-item log-neutralized">⚔️ El enemigo <strong>${enemy.name}</strong> ha sido completamente neutralizado.</div>`);
+
+        // Botín por robot
+        if (isBoss) {
+            // Boss drop: 50% Upgraded Weapon, 50% Chip
+            if (Math.random() < 0.5) {
+                let wp = generateRandomWeapon(enemy.element);
+                wp.isUpgraded = true;
+                wp.name += " +1";
+                if (wp.type === WEAPON_TYPES.DAGA) wp.desc = '40% prob. doble ataque';
+                if (wp.type === WEAPON_TYPES.HACHA) wp.desc = 'Perfora 75% de barreras y defensas';
+                if (wp.type === WEAPON_TYPES.BACULO) wp.desc = 'Cura 7% HP al final del turno';
+                if (wp.type === WEAPON_TYPES.ESPADA) wp.desc = '+30% Daño + 20% Crítico en Básicos';
+                allDroppedWeapons.push(wp);
+            } else {
+                let chipKeys = Object.keys(ITEM_TYPES).filter(k => k.includes('CHIP'));
+                let randomChipType = ITEM_TYPES[chipKeys[Math.floor(Math.random() * chipKeys.length)]];
+                allDroppedItems.push({ type: randomChipType, ...ITEM_DEFS[randomChipType] });
+            }
+            
+            let consumableKeys = Object.keys(ITEM_TYPES).filter(k => !k.includes('CHIP'));
+            let randomConsumableType = ITEM_TYPES[consumableKeys[Math.floor(Math.random() * consumableKeys.length)]];
+            let cons = { type: randomConsumableType, ...ITEM_DEFS[randomConsumableType] };
+            allDroppedConsumables.push(cons);
+            
+        } else if (isElite) {
+            // Elite drop: 33% Upgraded Weapon (+1), 33% Chip, 34% Nada
+            let eliteRoll = Math.random();
+            if (eliteRoll < 0.33) {
+                let wp = generateRandomWeapon(enemy.element);
+                wp.isUpgraded = true;
+                wp.name += " +1";
+                if (wp.type === WEAPON_TYPES.DAGA) wp.desc = '40% prob. doble ataque';
+                if (wp.type === WEAPON_TYPES.HACHA) wp.desc = 'Perfora 75% de barreras y defensas';
+                if (wp.type === WEAPON_TYPES.BACULO) wp.desc = 'Cura 7% HP al final del turno';
+                if (wp.type === WEAPON_TYPES.ESPADA) wp.desc = '+30% Daño + 20% Crítico en Básicos';
+                allDroppedWeapons.push(wp);
+            } else if (eliteRoll < 0.66) {
+                let chipKeys = Object.keys(ITEM_TYPES).filter(k => k.includes('CHIP'));
+                let randomChipType = ITEM_TYPES[chipKeys[Math.floor(Math.random() * chipKeys.length)]];
+                allDroppedItems.push({ type: randomChipType, ...ITEM_DEFS[randomChipType] });
+            }
+            
+            let consumableKeys = Object.keys(ITEM_TYPES).filter(k => !k.includes('CHIP'));
+            let randomConsumableType = ITEM_TYPES[consumableKeys[Math.floor(Math.random() * consumableKeys.length)]];
+            let cons = { type: randomConsumableType, ...ITEM_DEFS[randomConsumableType] };
+            allDroppedConsumables.push(cons);
+            
+        } else {
+            // Normal monster: 1% weapon, 30% consumable item
+            if (Math.random() < 0.01) {
+                allDroppedWeapons.push(generateRandomWeapon(enemy.element));
+            }
+            if (Math.random() < 0.3) {
+                let consumableKeys = Object.keys(ITEM_TYPES).filter(k => !k.includes('CHIP'));
+                let randomConsumableType = ITEM_TYPES[consumableKeys[Math.floor(Math.random() * consumableKeys.length)]];
+                allDroppedItems.push({ type: randomConsumableType, ...ITEM_DEFS[randomConsumableType] });
+            }
+        }
+    });
+
+    // Otorgar chatarra total
+    addScrap(totalScrap);
+
+    // Repartir XP total a los aliados vivos
     let xpMsgs = [];
     GAME_STATE.team.forEach(r => {
         if (!r.isOffline) {
-            let leveledUp = r.gainXp(xpGained);
+            let leveledUp = r.gainXp(totalXp);
             if (leveledUp) {
                 xpMsgs.push(`¡${r.name} subió al Nivel ${r.level}!`);
             }
         }
     });
-    
-    document.getElementById('defeated-emoji').innerHTML = enemy.getEmojiGraphic();
-    
-    droppedWeapon = null;
-    let droppedItem = null;
-    let isBoss = enemy.name.includes('Jefe');
 
-    if (isBoss) {
-        // Boss drop: 50% Upgraded Weapon, 50% Chip
-        if (Math.random() < 0.5) {
-            droppedWeapon = generateRandomWeapon(enemy.element);
-            droppedWeapon.isUpgraded = true;
-            droppedWeapon.name += " +1";
-            if (droppedWeapon.type === WEAPON_TYPES.DAGA) droppedWeapon.desc = '40% prob. doble ataque';
-            if (droppedWeapon.type === WEAPON_TYPES.HACHA) droppedWeapon.desc = 'Perfora 75% de barreras y defensas';
-            if (droppedWeapon.type === WEAPON_TYPES.BACULO) droppedWeapon.desc = 'Cura 7% HP al final del turno';
-            if (droppedWeapon.type === WEAPON_TYPES.ESPADA) droppedWeapon.desc = '+30% Daño + 20% Crítico en Básicos';
-        } else {
-            let chipKeys = Object.keys(ITEM_TYPES).filter(k => k.includes('CHIP'));
-            let randomChipType = ITEM_TYPES[chipKeys[Math.floor(Math.random() * chipKeys.length)]];
-            droppedItem = { type: randomChipType, ...ITEM_DEFS[randomChipType] };
-        }
-        
-        let consumableKeys = Object.keys(ITEM_TYPES).filter(k => !k.includes('CHIP'));
-        let randomConsumableType = ITEM_TYPES[consumableKeys[Math.floor(Math.random() * consumableKeys.length)]];
-        var droppedConsumable = { type: randomConsumableType, ...ITEM_DEFS[randomConsumableType] };
-        GAME_STATE.inventory.items.push(droppedConsumable);
-        
-    } else if (isElite) {
-        // Elite drop: 33% Upgraded Weapon (+1), 33% Chip, 34% Nada
-        let eliteRoll = Math.random();
-        if (eliteRoll < 0.33) {
-            droppedWeapon = generateRandomWeapon(enemy.element);
-            droppedWeapon.isUpgraded = true;
-            droppedWeapon.name += " +1";
-            if (droppedWeapon.type === WEAPON_TYPES.DAGA) droppedWeapon.desc = '40% prob. doble ataque';
-            if (droppedWeapon.type === WEAPON_TYPES.HACHA) droppedWeapon.desc = 'Perfora 75% de barreras y defensas';
-            if (droppedWeapon.type === WEAPON_TYPES.BACULO) droppedWeapon.desc = 'Cura 7% HP al final del turno';
-            if (droppedWeapon.type === WEAPON_TYPES.ESPADA) droppedWeapon.desc = '+30% Daño + 20% Crítico en Básicos';
-        } else if (eliteRoll < 0.66) {
-            let chipKeys = Object.keys(ITEM_TYPES).filter(k => k.includes('CHIP'));
-            let randomChipType = ITEM_TYPES[chipKeys[Math.floor(Math.random() * chipKeys.length)]];
-            droppedItem = { type: randomChipType, ...ITEM_DEFS[randomChipType] };
-        }
-        // 34% (eliteRoll >= 0.66): Nada (no droppedWeapon, no droppedItem)
-        
-        let consumableKeys = Object.keys(ITEM_TYPES).filter(k => !k.includes('CHIP'));
-        let randomConsumableType = ITEM_TYPES[consumableKeys[Math.floor(Math.random() * consumableKeys.length)]];
-        var droppedConsumable = { type: randomConsumableType, ...ITEM_DEFS[randomConsumableType] };
-        GAME_STATE.inventory.items.push(droppedConsumable);
-        
-    } else {
-        // Normal monster: 1% weapon, 30% consumable item
-        if (Math.random() < 0.01) {
-            droppedWeapon = generateRandomWeapon(enemy.element);
-        }
-        if (Math.random() < 0.3) {
-            let consumableKeys = Object.keys(ITEM_TYPES).filter(k => !k.includes('CHIP'));
-            let randomConsumableType = ITEM_TYPES[consumableKeys[Math.floor(Math.random() * consumableKeys.length)]];
-            droppedItem = { type: randomConsumableType, ...ITEM_DEFS[randomConsumableType] };
-        }
+    // Mostrar gráficos de enemigos derrotados
+    const defeatedEmojiContainer = document.getElementById('defeated-emoji');
+    if (defeatedEmojiContainer) {
+        defeatedEmojiContainer.innerHTML = `
+            <div style="display: flex; gap: 12px; justify-content: center; align-items: center; flex-wrap: wrap;">
+                ${defeatedRobots.map(e => `<div style="display: flex; flex-direction: column; align-items: center;"><span style="font-size: 2.2rem;">${e.emoji}</span><span style="font-size: 0.75rem; color: #a4b0be;">${e.name}</span></div>`).join('')}
+            </div>
+        `;
     }
 
+    // Badges de recompensas
     const badgesContainer = document.getElementById('post-rewards-badges');
     const desc = document.getElementById('post-battle-desc');
     
     let badgesHTML = `
-        <div class="reward-pill pill-scrap">⚙️ +${baseScrap} Chatarra</div>
-        <div class="reward-pill pill-xp">⭐ +${xpGained} XP</div>
+        <div class="reward-pill pill-scrap">⚙️ +${totalScrap} Chatarra Total</div>
+        <div class="reward-pill pill-xp">⭐ +${totalXp} XP Total</div>
     `;
-    if (isElite) badgesHTML += `<div class="reward-pill pill-elite">👑 BOTÍN ÉLITE</div>`;
-    if (isBoss) badgesHTML += `<div class="reward-pill pill-boss">🏆 JEFE DERROTADO</div>`;
+    if (hasElite) badgesHTML += `<div class="reward-pill pill-elite">👑 BOTÍN ÉLITE</div>`;
+    if (hasBoss) badgesHTML += `<div class="reward-pill pill-boss">🏆 JEFE DERROTADO</div>`;
     if (badgesContainer) badgesContainer.innerHTML = badgesHTML;
-    
-    let logsHTML = [];
-    logsHTML.push(`<div class="post-log-item log-neutralized">⚔️ El enemigo <strong>${enemy.name}</strong> ha sido completamente neutralizado.</div>`);
     
     if (xpMsgs.length > 0) {
         xpMsgs.forEach(msg => {
@@ -122,59 +151,70 @@ function initPostBattle(enemy) {
         });
     }
     
-    if (droppedWeapon) {
-        logsHTML.push(`<div class="post-log-item log-weapon">🎁 ¡Soltó un arma rara: <strong>${droppedWeapon.name}</strong> ${WEAPON_EMOJIS[droppedWeapon.type]}!</div>`);
-        GAME_STATE.inventory.weapons.push(droppedWeapon);
-    }
+    allDroppedWeapons.forEach(wp => {
+        logsHTML.push(`<div class="post-log-item log-weapon">🎁 ¡Soltó un arma: <strong>${wp.name}</strong> ${WEAPON_EMOJIS[wp.type]}!</div>`);
+        GAME_STATE.inventory.weapons.push(wp);
+        droppedWeapon = wp;
+    });
     
-    if (droppedItem) {
-        logsHTML.push(`<div class="post-log-item log-item">💾 ¡Soltó un objeto: <strong>${droppedItem.name}</strong> ${droppedItem.emoji}!</div>`);
-        GAME_STATE.inventory.items.push(droppedItem);
-    }
+    allDroppedItems.forEach(item => {
+        logsHTML.push(`<div class="post-log-item log-item">💾 ¡Soltó un objeto: <strong>${item.name}</strong> ${item.emoji}!</div>`);
+        GAME_STATE.inventory.items.push(item);
+    });
     
-    if (typeof droppedConsumable !== 'undefined' && droppedConsumable) {
-        logsHTML.push(`<div class="post-log-item log-item">🧪 ¡Soltó consumible: <strong>${droppedConsumable.name}</strong> ${droppedConsumable.emoji}!</div>`);
-    }
+    allDroppedConsumables.forEach(cons => {
+        logsHTML.push(`<div class="post-log-item log-item">🧪 ¡Soltó consumible: <strong>${cons.name}</strong> ${cons.emoji}!</div>`);
+        GAME_STATE.inventory.items.push(cons);
+    });
 
     if (desc) desc.innerHTML = logsHTML.join('');
 
     const actionsContainer = document.getElementById('post-battle-actions');
     actionsContainer.innerHTML = '';
     
-    // Botón Reclutar
-    const btnRecruit = document.createElement('button');
-    if (GAME_STATE.team.length >= 3) {
-        btnRecruit.className = 'btn-post-action btn-post-recruit';
-        btnRecruit.disabled = true;
-        btnRecruit.innerHTML = `<span>🤖 Reclutar (Equipo Completo 3/3)</span>`;
-    } else if (isElite) {
-        let eliteChance = (typeof SkillsManager !== 'undefined') ? SkillsManager.getEliteRecruitChance() : 0.50;
-        let successPct = Math.round(eliteChance * 100);
-        let failPct = 100 - successPct;
-        btnRecruit.className = 'btn-post-action btn-post-recruit-elite';
-        btnRecruit.innerHTML = `<span>⚠️ Reclutar Élite (${successPct}% Éxito / ${failPct}% 💥 Explosión)</span>`;
-        btnRecruit.title = `${successPct}% prob. de éxito. Si falla, el robot explotará e infligirá un 10% de daño de HP a todo el escuadrón (puede ser letal).`;
-        btnRecruit.onclick = () => handleRecruitElite(enemy, actionsContainer, desc);
-    } else {
-        btnRecruit.className = 'btn-post-action btn-post-recruit';
-        btnRecruit.innerHTML = `<span>🤖 Reclutar a ${enemy.name} (50% HP)</span>`;
-        btnRecruit.onclick = () => {
-            recruitRobot(enemy);
-            advanceFloor();
-        };
-    }
-    actionsContainer.appendChild(btnRecruit);
+    // Botones de Reclutar para cada enemigo derrotado (si no es Jefe)
+    defeatedRobots.forEach((enemy, idx) => {
+        if (enemy.name.includes('Jefe')) return;
+        
+        let isElite = !!enemy.isElite || enemy.name.includes('ÉLITE');
+        const btnRecruit = document.createElement('button');
+        
+        if (GAME_STATE.team.length >= 3) {
+            btnRecruit.className = 'btn-post-action btn-post-recruit';
+            btnRecruit.disabled = true;
+            btnRecruit.innerHTML = `<span>🤖 Reclutar ${enemy.name} (Equipo Completo 3/3)</span>`;
+        } else if (isElite) {
+            let eliteChance = (typeof SkillsManager !== 'undefined') ? SkillsManager.getEliteRecruitChance() : 0.50;
+            let successPct = Math.round(eliteChance * 100);
+            let failPct = 100 - successPct;
+            btnRecruit.className = 'btn-post-action btn-post-recruit-elite';
+            btnRecruit.innerHTML = `<span>⚠️ Reclutar Élite: ${enemy.name} (${successPct}% Éxito / ${failPct}% 💥 Explosión)</span>`;
+            btnRecruit.title = `${successPct}% prob. de éxito. Si falla, el robot explotará e infligirá un 10% de daño de HP a todo el escuadrón.`;
+            btnRecruit.onclick = () => handleRecruitElite(enemy, actionsContainer, desc);
+        } else {
+            btnRecruit.className = 'btn-post-action btn-post-recruit';
+            btnRecruit.innerHTML = `<span>🤖 Reclutar a ${enemy.name} (50% HP)</span>`;
+            btnRecruit.onclick = () => {
+                recruitRobot(enemy);
+                advanceFloor();
+            };
+        }
+        actionsContainer.appendChild(btnRecruit);
+    });
 
-    // Botón Desmantelar (beneficiado por Reciclaje Estructural)
-    const dismantleRewards = (typeof SkillsManager !== 'undefined') ? SkillsManager.getDismantleRewards() : { scrap: 30, healPct: 0.10 };
+    // Botón Desmantelar todo el botín derrotado
+    const dismantleBase = (typeof SkillsManager !== 'undefined') ? SkillsManager.getDismantleRewards() : { scrap: 30, healPct: 0.10 };
+    const dismantleScrap = dismantleBase.scrap * defeatedRobots.length;
+    const dismantleHeal = dismantleBase.healPct;
+    
     const btnScrap = document.createElement('button');
     btnScrap.className = 'btn-post-action btn-post-scrap';
-    btnScrap.innerHTML = `<span>⚙️ Desmantelar (+${dismantleRewards.scrap} Chatarra, +${Math.round(dismantleRewards.healPct * 100)}% Reparación)</span>`;
+    btnScrap.innerHTML = `<span>⚙️ Desmantelar Restos (+${dismantleScrap} Chatarra, +${Math.round(dismantleHeal * 100)}% Reparación)</span>`;
     btnScrap.onclick = () => {
-        addScrap(dismantleRewards.scrap);
+        addScrap(dismantleScrap);
         GAME_STATE.team.forEach(r => {
             if (!r.isOffline) {
-                r.heal(r.maxHp * dismantleRewards.healPct);
+                r.heal(r.maxHp * dismantleHeal);
             }
         });
         advanceFloor();
@@ -223,7 +263,7 @@ function handleRecruitElite(enemy, actionsContainer, desc) {
         
         const defeatedEmoji = document.getElementById('defeated-emoji');
         if (defeatedEmoji) {
-            defeatedEmoji.innerHTML = '💥';
+            defeatedEmoji.innerHTML = '<span style="font-size: 3rem;">💥</span>';
         }
         
         // Dañar 10% de HP máximo a todo el escuadrón

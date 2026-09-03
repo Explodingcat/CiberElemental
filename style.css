@@ -2199,6 +2199,25 @@ button:disabled {
     text-shadow: 0 0 5px #000;
 }
 
+.status-pill.status-pasiva-furia {
+    background: rgba(255, 71, 87, 0.25) !important;
+    border: 1px solid rgba(255, 71, 87, 0.85) !important;
+    color: #ff4757 !important;
+    box-shadow: 0 0 12px rgba(255, 71, 87, 0.5) !important;
+    animation: pulse-berserk 1.5s infinite alternate;
+}
+
+@keyframes pulse-berserk {
+    0% {
+        box-shadow: 0 0 8px rgba(255, 71, 87, 0.4);
+        border-color: rgba(255, 71, 87, 0.6);
+    }
+    100% {
+        box-shadow: 0 0 18px rgba(255, 71, 87, 0.9);
+        border-color: #ff4757;
+    }
+}
+
 .status-pill.pill-mutation:hover {
     box-shadow: 0 0 18px #ffd32a;
     border-color: #ffd32a;
@@ -2455,24 +2474,78 @@ button:disabled {
     100% { transform: translateX(-50%) scale(1.1); opacity: 1; }
 }
 
-/* Combatiente Enemigo */
-.combat-enemy-container {
-    width: 250px;
-    min-width: 220px;
-    max-width: 270px;
-    background-color: transparent;
-    border: none;
-    padding: 0;
-    text-align: center;
+/* Escuadrón Enemigo */
+.combat-enemy-team {
+    display: flex;
+    justify-content: space-evenly;
+    align-items: flex-end;
+    flex: 1;
+    max-width: 620px;
+    gap: 8px;
     position: relative;
     z-index: 2;
+}
+
+.combat-enemy-unit {
     display: flex;
     flex-direction: column;
     align-items: center;
+    flex: 1;
+    max-width: 195px;
+    min-width: 120px;
+    position: relative;
+    transition: all 0.3s ease;
     box-sizing: border-box;
+    text-align: center;
 }
 
-/* Tamaños Adaptativos de Emojis y Plataformas según cantidad de aliados */
+.combat-enemy-unit.is-offline {
+    opacity: 0.25;
+    filter: grayscale(1);
+    pointer-events: none;
+}
+
+.combat-enemy-unit .combat-avatar-emoji {
+    animation: float-enemy 2.8s ease-in-out infinite;
+    transform: scaleX(-1);
+}
+
+.combat-enemy-unit.acting-now .combat-avatar-emoji:not(.anim-attack-enemy):not(.anim-hit-enemy) {
+    animation: enemyActivePulse 0.75s ease-in-out infinite alternate;
+}
+
+.combat-enemy-unit.acting-now .enemy-platform {
+    box-shadow: 0 0 25px rgba(255, 51, 102, 0.8), inset 0 0 15px rgba(255, 51, 102, 0.6);
+    border-color: #ff3366;
+    animation: platformGlow 0.75s ease-in-out infinite alternate;
+}
+
+.combat-enemy-unit.acting-now .enemy-hud {
+    border-color: #ff3366 !important;
+    box-shadow: 0 0 20px rgba(255, 51, 102, 0.5), 0 8px 25px rgba(0,0,0,0.8) !important;
+}
+
+@keyframes enemyActivePulse {
+    0% { transform: scaleX(-1) translateY(0); }
+    100% { transform: scaleX(-1) translateY(-14px); }
+}
+
+/* Modo selección de objetivo interactivo en arena */
+.combat-enemy-unit.is-selectable-target {
+    cursor: pointer;
+}
+
+.combat-enemy-unit.is-selectable-target:hover .combat-avatar-emoji {
+    transform: scaleX(-1) scale(1.12);
+    filter: drop-shadow(0 0 22px rgba(255, 71, 87, 0.9));
+}
+
+.combat-enemy-unit.is-selectable-target:hover .enemy-hud {
+    border-color: #ff4757 !important;
+    box-shadow: 0 0 20px rgba(255, 71, 87, 0.7) !important;
+}
+
+/* Tamaños Adaptativos de Emojis y Plataformas según cantidad de combatientes */
 .combat-avatar-emoji {
     font-size: 72px;
     line-height: 1;
@@ -2487,11 +2560,9 @@ button:disabled {
 .team-count-2 .combat-avatar-emoji { font-size: 64px; }
 .team-count-3 .combat-avatar-emoji { font-size: 52px; }
 
-.combat-enemy-container .combat-avatar-emoji {
-    font-size: 78px;
-    animation: float-enemy 2.8s ease-in-out infinite;
-    transform: scaleX(-1);
-}
+.enemy-count-1 .combat-avatar-emoji { font-size: 78px; }
+.enemy-count-2 .combat-avatar-emoji { font-size: 64px; }
+.enemy-count-3 .combat-avatar-emoji { font-size: 52px; }
 
 .combat-holo-platform {
     position: absolute;
@@ -2508,6 +2579,10 @@ button:disabled {
 .team-count-1 .player-platform { width: 130px; height: 32px; }
 .team-count-2 .player-platform { width: 105px; height: 26px; }
 .team-count-3 .player-platform { width: 88px; height: 22px; }
+
+.enemy-count-1 .enemy-platform { width: 130px; height: 32px; }
+.enemy-count-2 .enemy-platform { width: 105px; height: 26px; }
+.enemy-count-3 .enemy-platform { width: 88px; height: 22px; }
 
 .player-platform {
     background: radial-gradient(ellipse at center, rgba(102, 252, 241, 0.45) 0%, rgba(102, 252, 241, 0.12) 55%, transparent 80%);
@@ -3259,6 +3334,48 @@ button:disabled {
     background: #48dbfb;
     color: #0b0c10;
     box-shadow: 0 0 15px rgba(72, 219, 251, 0.6);
+}
+
+.target-enemy-card {
+    background: rgba(22, 27, 34, 0.9);
+    border: 1px solid rgba(255, 71, 87, 0.35);
+    border-radius: 8px;
+    padding: 10px 12px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    transition: all 0.2s ease;
+}
+
+.target-enemy-card:hover {
+    border-color: #ff4757;
+    box-shadow: 0 0 16px rgba(255, 71, 87, 0.4);
+    background: rgba(30, 36, 48, 0.95);
+}
+
+.btn-target-enemy-cta {
+    background: rgba(255, 71, 87, 0.18);
+    border: 1px solid #ff4757;
+    color: #ff6b81;
+    padding: 7px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 800;
+    font-family: 'Rajdhani', sans-serif;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    margin: 0;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+}
+
+.btn-target-enemy-cta:hover {
+    background: #ff4757;
+    color: #fff;
+    box-shadow: 0 0 15px rgba(255, 71, 87, 0.6);
 }
 
 /* Estado de Espera / Procesando */
@@ -5260,30 +5377,28 @@ progress::-webkit-progress-value {
         font-size: 8.5px;
     }
 
-    .combat-player-team {
-        max-width: 62%;
+    .combat-player-team,
+    .combat-enemy-team {
+        max-width: 50%;
         gap: 4px;
     }
 
-    .combat-ally-unit {
+    .combat-ally-unit,
+    .combat-enemy-unit {
         min-width: 0;
         max-width: 140px;
-    }
-
-    .combat-enemy-container {
-        min-width: 0;
-        max-width: 38%;
-        width: 120px;
     }
 
     .combat-avatar-emoji {
         font-size: 46px;
     }
 
-    .team-count-1 .combat-avatar-emoji { font-size: 52px; }
-    .team-count-2 .combat-avatar-emoji { font-size: 40px; }
-    .team-count-3 .combat-avatar-emoji { font-size: 32px; }
-    .combat-enemy-container .combat-avatar-emoji { font-size: 50px; }
+    .team-count-1 .combat-avatar-emoji,
+    .enemy-count-1 .combat-avatar-emoji { font-size: 52px; }
+    .team-count-2 .combat-avatar-emoji,
+    .enemy-count-2 .combat-avatar-emoji { font-size: 40px; }
+    .team-count-3 .combat-avatar-emoji,
+    .enemy-count-3 .combat-avatar-emoji { font-size: 32px; }
 
     .combat-holo-platform {
         width: 70px;
@@ -5291,10 +5406,12 @@ progress::-webkit-progress-value {
         bottom: -3px;
     }
 
-    .team-count-1 .player-platform { width: 75px; height: 18px; }
-    .team-count-2 .player-platform { width: 60px; height: 16px; }
-    .team-count-3 .player-platform { width: 48px; height: 14px; }
-    .enemy-platform { width: 75px; height: 18px; }
+    .team-count-1 .player-platform,
+    .enemy-count-1 .enemy-platform { width: 75px; height: 18px; }
+    .team-count-2 .player-platform,
+    .enemy-count-2 .enemy-platform { width: 60px; height: 16px; }
+    .team-count-3 .player-platform,
+    .enemy-count-3 .enemy-platform { width: 48px; height: 14px; }
 
     .combat-hud-card {
         padding: 4px 6px;
@@ -5806,22 +5923,15 @@ progress::-webkit-progress-value {
         font-size: 8px;
     }
 
-    .combat-player-team {
-        max-width: 58%;
+    .combat-player-team,
+    .combat-enemy-team {
+        max-width: 48%;
         gap: 2px;
     }
 
-    .team-count-3 .combat-avatar-emoji {
+    .team-count-3 .combat-avatar-emoji,
+    .enemy-count-3 .combat-avatar-emoji {
         font-size: 26px;
-    }
-
-    .combat-enemy-container .combat-avatar-emoji {
-        font-size: 44px;
-    }
-
-    .combat-enemy-container {
-        max-width: 42%;
-        width: 95px;
     }
 
     .hud-robot-name {
@@ -8039,4 +8149,79 @@ progress::-webkit-progress-value {
         flex-direction: column;
         text-align: center;
     }
+}
+
+/* ==========================================================================
+   Efectos Visuales y Animaciones para los 4 Grandes Élites
+   ========================================================================== */
+
+/* 1. Berserker Térmico: Estela y Aura Roja Neón Creciente */
+@keyframes berserkPulse1 {
+    0%, 100% { filter: drop-shadow(0 0 12px rgba(255, 71, 87, 0.6)) brightness(1.1); }
+    50% { filter: drop-shadow(0 0 20px rgba(255, 71, 87, 0.9)) brightness(1.2); }
+}
+
+@keyframes berserkPulse2 {
+    0%, 100% { filter: drop-shadow(0 0 20px rgba(255, 71, 87, 0.8)) drop-shadow(0 0 35px rgba(255, 107, 107, 0.6)) brightness(1.25); transform: scale(1.03); }
+    50% { filter: drop-shadow(0 0 30px rgba(255, 71, 87, 1.0)) drop-shadow(0 0 50px rgba(255, 107, 107, 0.8)) brightness(1.35); transform: scale(1.06); }
+}
+
+@keyframes berserkPulse3 {
+    0%, 100% { filter: drop-shadow(0 0 30px rgba(255, 0, 50, 1.0)) drop-shadow(0 0 60px rgba(255, 71, 87, 0.9)) brightness(1.4); transform: scale(1.08) rotate(-1deg); }
+    50% { filter: drop-shadow(0 0 45px rgba(255, 0, 50, 1.0)) drop-shadow(0 0 80px rgba(255, 71, 87, 1.0)) brightness(1.55); transform: scale(1.12) rotate(1deg); }
+}
+
+.berserk-glow-1 {
+    animation: berserkPulse1 1.8s infinite ease-in-out !important;
+}
+
+.berserk-glow-2 {
+    animation: berserkPulse2 1.2s infinite ease-in-out !important;
+}
+
+.berserk-glow-3 {
+    animation: berserkPulse3 0.7s infinite ease-in-out !important;
+}
+
+/* 2. Cyber-Stalker: Desfase Cuántico (Holograma Translúcido / Glitch) */
+@keyframes quantumPhase {
+    0%, 100% { opacity: 0.35; filter: drop-shadow(0 0 15px rgba(102, 252, 241, 0.9)) blur(0.5px); transform: translate(0, 0); }
+    25% { opacity: 0.5; filter: drop-shadow(0 0 25px rgba(200, 214, 229, 1)) blur(0px); transform: translate(2px, -1px); }
+    50% { opacity: 0.25; filter: drop-shadow(0 0 10px rgba(102, 252, 241, 0.7)) blur(1px); transform: translate(-2px, 1px); }
+    75% { opacity: 0.45; filter: drop-shadow(0 0 20px rgba(102, 252, 241, 0.9)) blur(0px); transform: translate(1px, 2px); }
+}
+
+.is-desfase {
+    animation: quantumPhase 0.8s infinite ease-in-out !important;
+}
+
+/* 3. Coloso Sísmico: Temblor de Terremoto Cataclísmico */
+@keyframes quakeShake {
+    0% { transform: translate(0, 0) rotate(0deg); }
+    10% { transform: translate(-6px, 8px) rotate(-1deg); }
+    20% { transform: translate(8px, -6px) rotate(1.5deg); }
+    30% { transform: translate(-8px, 6px) rotate(-1deg); }
+    40% { transform: translate(6px, -8px) rotate(1deg); }
+    50% { transform: translate(-4px, 4px) rotate(-0.5deg); }
+    60% { transform: translate(5px, -4px) rotate(0.5deg); }
+    70% { transform: translate(-3px, 3px) rotate(0deg); }
+    80% { transform: translate(3px, -2px) rotate(0deg); }
+    100% { transform: translate(0, 0) rotate(0deg); }
+}
+
+.anim-quake-shake {
+    animation: quakeShake 0.65s cubic-bezier(0.36, 0.07, 0.19, 0.97) both !important;
+}
+
+/* 4. Estilos de Píldoras de Estado Especiales */
+.status-desfase-100 {
+    background: rgba(102, 252, 241, 0.25) !important;
+    border-color: rgba(102, 252, 241, 0.8) !important;
+    box-shadow: 0 0 10px rgba(102, 252, 241, 0.5) !important;
+}
+
+.status-slow-extreme {
+    background: rgba(72, 219, 251, 0.25) !important;
+    border-color: rgba(72, 219, 251, 0.9) !important;
+    box-shadow: 0 0 10px rgba(72, 219, 251, 0.6) !important;
 }

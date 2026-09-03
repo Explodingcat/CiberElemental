@@ -179,32 +179,9 @@
                     <!-- Unidades aliadas generadas dinámicamente -->
                 </div>
                 
-                <!-- Combatiente Enemigo -->
-                <div class="combatant combat-enemy-container" id="combat-enemy">
-                    <!-- Barras de estado -->
-                    <div class="status-bars">
-                        <div class="buff-bar" id="enemy-buffs"></div>
-                        <div class="debuff-bar" id="enemy-debuffs"></div>
-                    </div>
-
-                    <div class="hit-effect-container" id="enemy-hit-container">
-                        <div class="combat-holo-platform enemy-platform"></div>
-                        <div class="combat-avatar-emoji" id="enemy-robot-emoji">👾</div>
-                    </div>
-                    <div class="stats combat-hud-card enemy-hud">
-                        <div class="hud-name-row">
-                            <div class="hud-name-container">
-                                <span id="enemy-robot-name" class="hud-robot-name">Enemigo</span>
-                                <span id="enemy-weapon-badge" class="hud-weapon-icon" style="display: none;"></span>
-                            </div>
-                            <span id="enemy-element" class="hud-element-badge">🔥</span>
-                        </div>
-                        <div class="hud-hp-row">
-                            <span class="hud-hp-label">HP</span>
-                            <span id="enemy-robot-hp" class="hud-hp-val">0/0</span>
-                        </div>
-                        <progress id="enemy-robot-hp-bar" value="0" max="100"></progress>
-                    </div>
+                <!-- Escuadrón Enemigo (1 a 3 robots simultáneos) -->
+                <div id="combat-enemy-team" class="combat-enemy-team">
+                    <!-- Unidades enemigas generadas dinámicamente -->
                 </div>
             </div>
 
@@ -582,6 +559,7 @@
 
     <!-- Scripts del Juego -->
     <script src="js/constants.js"></script>
+    <script src="js/balanceManager.js"></script>
     <script src="js/database.js"></script>
     <script src="js/eventsDatabase.js"></script>
     <script src="js/Robot.js"></script>

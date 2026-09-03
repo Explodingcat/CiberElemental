@@ -39,13 +39,14 @@ const ROBOT_TEMPLATES = {
                 power: 1.0
             },
             {
-                name: 'Barrera de Plasma',
+                name: 'Rocío Reparador',
                 cd: 3,
                 currentCd: 0,
-                desc: 'Otorga una barrera a cualquier aliado: bloquea el 100% de daño recibido hasta el próximo turno del invocador y le restaura 5% de su HP máximo.',
-                type: 'BUFF',
+                desc: 'Cura a un aliado (o a sí mismo) un 10% de su HP máximo de inmediato. Envuelve al objetivo en rocío que salpica Marca de Agua (3 turnos) a quien lo ataque, y al próximo turno de Aqua le restaura otro 10% de HP.',
+                type: 'BUFF_HEAL',
                 target: 'ALLY',
-                status: { type: 'BARRIER', duration: 1 }
+                healPct: 0.10,
+                status: { type: 'REGENERACION', name: 'Rocío Reparador', duration: 1, healPct: 0.10 }
             }
         ]
     },
@@ -66,8 +67,9 @@ const ROBOT_TEMPLATES = {
                 name: 'Coraza de Espinas',
                 cd: 2,
                 currentCd: 0,
-                desc: 'Provocación: los enemigos solo pueden atacarlo a él (al de menor HP si hay varios). Reduce 50% el daño recibido, refleja 50% y adhiere 3 Marcas de Tierra al atacante.',
+                desc: 'Provocación: los enemigos son obligados a atacarlo a él. Reduce 50% el daño recibido, refleja 50% y adhiere Marca de Tierra (3 turnos) al atacante.',
                 type: 'BUFF',
+                target: 'SELF',
                 status: { type: 'CORAZA_ESPINAS', duration: 1 }
             }
         ]
@@ -93,6 +95,148 @@ const ROBOT_TEMPLATES = {
                 type: 'DAMAGE',
                 power: 1.4,
                 priority: true
+            }
+        ]
+    }
+};
+
+const ELITE_TEMPLATES = {
+    COLOSO_SISMICO: {
+        name: 'Coloso Sísmico',
+        element: ELEMENTS.TIERRA,
+        emoji: '🦍',
+        isElite: true,
+        baseStatsOverride: {
+            maxHp: 250,
+            atk: 20,
+            spd: 3,
+            dodge: 0,
+            acc: 95,
+            critChance: 15
+        },
+        skills: [
+            {
+                name: 'Impacto Tectónico',
+                cd: 0,
+                currentCd: 0,
+                desc: 'Golpe demoledor de masa tectónica (1.5x de daño).',
+                type: 'DAMAGE',
+                power: 1.5
+            },
+            {
+                name: 'Terremoto Cataclísmico',
+                cd: 4,
+                currentCd: 0,
+                desc: 'Onda sísmica devastadora que golpea a todos los contrincantes (1.2x de daño), aplica Aturdimiento por 1 turno y adhiere Marca de Tierra (3 turnos).',
+                type: 'DAMAGE_AOE_STATUS',
+                target: 'ALL_ENEMIES',
+                power: 1.2,
+                status: { type: 'STUN', duration: 1 },
+                marks: { type: 'MARCA_TIERRA', duration: 3 }
+            }
+        ]
+    },
+    BERSERKER_TERMICO: {
+        name: 'Berserker Térmico',
+        element: ELEMENTS.FUEGO,
+        emoji: '👹',
+        isElite: true,
+        passive: 'FURIA_SOBRECALENTADA',
+        baseStatsOverride: {
+            maxHp: 130,
+            atk: 22,
+            spd: 12,
+            dodge: 10,
+            acc: 100,
+            critChance: 15
+        },
+        skills: [
+            {
+                name: 'Sobrecarga de Furia',
+                cd: 99,
+                currentCd: 0,
+                desc: 'Sobrecarga su núcleo térmico al inicio del combate: sacrifica 20% de su HP para activar Furia Sobrecalentada de inmediato.',
+                type: 'BUFF',
+                target: 'SELF',
+                selfDamagePct: 0.20
+            },
+            {
+                name: 'Tajo Incandescente',
+                cd: 0,
+                currentCd: 0,
+                desc: 'Ataque feroz de fuego que escala en daño y probabilidad de crítico a menor porcentaje de HP.',
+                type: 'DAMAGE',
+                power: 1.3
+            }
+        ]
+    },
+    CYBER_STALKER: {
+        name: 'Cyber-Stalker',
+        element: ELEMENTS.AIRE,
+        emoji: '🥷',
+        isElite: true,
+        baseStatsOverride: {
+            maxHp: 75,
+            atk: 24,
+            spd: 22,
+            dodge: 40,
+            acc: 100,
+            critChance: 25
+        },
+        skills: [
+            {
+                name: 'Tajo Asesino',
+                cd: 0,
+                currentCd: 0,
+                desc: 'Tajo de frecuencia de alta potencia con perforación de defensas.',
+                type: 'DAMAGE',
+                power: 2.0,
+                penetrationRatio: 0.50
+            },
+            {
+                name: 'Desfase Cuántico',
+                cd: 3,
+                currentCd: 0,
+                desc: 'Desplaza su firma cuántica, otorgándole 100% de Probabilidad de Esquiva durante 1 turno.',
+                type: 'BUFF',
+                target: 'SELF',
+                status: { type: 'DESFASE_100', duration: 1 }
+            }
+        ]
+    },
+    CRIO_CENTINELA: {
+        name: 'Crio-Centinela',
+        element: ELEMENTS.AGUA,
+        emoji: '🧊',
+        isElite: true,
+        baseStatsOverride: {
+            maxHp: 170,
+            atk: 17,
+            spd: 8,
+            dodge: 5,
+            acc: 95,
+            critChance: 10
+        },
+        skills: [
+            {
+                name: 'Ráfaga Gélida',
+                cd: 0,
+                currentCd: 0,
+                desc: 'Disparo de viento cortante (Elemento Aire). Detona ¡Ventisca! si el objetivo tiene Marca de Agua.',
+                type: 'DAMAGE',
+                power: 1.1,
+                elementOverride: ELEMENTS.AIRE
+            },
+            {
+                name: 'Ventisca de Cero Absoluto',
+                cd: 3,
+                currentCd: 0,
+                desc: 'Golpea a todos los contrincantes, reduce su velocidad al mínimo (SPD 1) por 2 turnos y adhiere Marca de Agua (3 turnos).',
+                type: 'DAMAGE_AOE_STATUS',
+                target: 'ALL_ENEMIES',
+                power: 0.85,
+                status: { type: 'SLOW_EXTREME', duration: 2 },
+                marks: { type: 'MARCA_AGUA', duration: 3 }
             }
         ]
     }
@@ -261,43 +405,58 @@ function getRandomEnemyName(element) {
     return names[Math.floor(Math.random() * names.length)];
 }
 
-function generateWildRobot(floor, isElite = false) {
-    const templates = Object.keys(ROBOT_TEMPLATES);
-    const randomTemplate = ROBOT_TEMPLATES[templates[Math.floor(Math.random() * templates.length)]];
-    
-    // Nivel basado en el piso (élites tienen +2 niveles)
+function generateWildRobot(floor, isElite = false, equipWeapon = false) {
     let robotLevel = floor + (isElite ? 2 : 0);
     
+    if (isElite) {
+        const eliteKeys = Object.keys(ELITE_TEMPLATES);
+        const eliteTemplate = ELITE_TEMPLATES[eliteKeys[Math.floor(Math.random() * eliteKeys.length)]];
+        
+        let robot = new Robot({
+            ...eliteTemplate,
+            level: robotLevel,
+            isAlly: false,
+            isElite: true
+        });
+        
+        // Mutadores de élite: solo aparecen después del piso 5 (a partir del piso 6)
+        if (floor >= 6) {
+            robot.mutator = MUTATORS[Math.floor(Math.random() * MUTATORS.length)];
+            robot.statuses = robot.statuses.filter(s => !s.type.startsWith('MUTACION_'));
+            robot.addStatus({
+                type: `MUTACION_${robot.mutator.type}`,
+                name: `Mutación: ${robot.mutator.name}`,
+                desc: robot.mutator.desc,
+                isPermanent: true,
+                duration: Infinity
+            });
+        }
+        
+        // Élites por defecto no portan armas (luchan con sus stats y habilidades puras)
+        // Se mantiene la posibilidad opcional con el parámetro equipWeapon
+        if (equipWeapon) {
+            let weapon = generateRandomWeapon(robot.element);
+            robot.equipWeapon(weapon);
+        }
+        
+        return robot;
+    }
+    
+    const templates = Object.keys(ROBOT_TEMPLATES);
+    const randomTemplate = ROBOT_TEMPLATES[templates[Math.floor(Math.random() * templates.length)]];
     const baseEnemyName = getRandomEnemyName(randomTemplate.element);
     
     let robot = new Robot({
         ...randomTemplate,
         name: baseEnemyName,
-        emoji: isElite ? '💀' : '👾',
+        emoji: '👾',
         level: robotLevel,
         isAlly: false,
-        isElite: isElite
+        isElite: false
     });
     
-    if (isElite) {
-        // Aumentar HP máximo 30% extra para élites
-        robot.maxHp = Math.floor(robot.maxHp * 1.3);
-        robot.hp = robot.maxHp;
-        
-        // Asignar mutador y añadir estado permanente
-        robot.mutator = MUTATORS[Math.floor(Math.random() * MUTATORS.length)];
-        robot.statuses = robot.statuses.filter(s => !s.type.startsWith('MUTACION_'));
-        robot.addStatus({
-            type: `MUTACION_${robot.mutator.type}`,
-            name: `Mutación: ${robot.mutator.name}`,
-            desc: robot.mutator.desc,
-            isPermanent: true,
-            duration: Infinity
-        });
-    }
-    
-    // Probabilidad de arma: 30% en piso 1, sube 10% por piso. Élites 100%.
-    let weaponProb = isElite ? 1.0 : Math.min(0.3 + (floor - 1) * 0.1, 1.0);
+    // Probabilidad de arma: 30% en piso 1, sube 10% por piso.
+    let weaponProb = Math.min(0.3 + (floor - 1) * 0.1, 1.0);
     if (Math.random() < weaponProb) {
         let weapon = generateRandomWeapon(robot.element); // Arma del mismo elemento
         robot.equipWeapon(weapon);
@@ -306,20 +465,89 @@ function generateWildRobot(floor, isElite = false) {
     return robot;
 }
 
-function generateBoss() {
+function generateBoss(equipWeapon = false) {
     let boss = new Robot({
         name: 'TITAN-X (Jefe)',
         element: ELEMENTS.NEUTRO,
         emoji: '👹',
         level: 10,
+        baseStatsOverride: {
+            maxHp: 260,
+            atk: 20,
+            spd: 10,
+            dodge: 10,
+            acc: 100,
+            critChance: 10
+        },
+        turnPattern: ['Golpe Titánico', 'Pulso PEM Titánico', 'Protocolo Exterminio'],
         skills: [
-            { name: 'Golpe Titánico', cd: 0, currentCd: 0, desc: 'Ataque demoledor', type: 'DAMAGE', power: 1.5 },
-            { name: 'Protocolo Exterminio', cd: 4, currentCd: 0, desc: 'Ataque masivo', type: 'DAMAGE', power: 3.0 }
+            { 
+                name: 'Golpe Titánico', 
+                cd: 0, 
+                currentCd: 0, 
+                desc: 'Ataque demoledor neutro (1.4x de daño).', 
+                type: 'DAMAGE', 
+                power: 1.4 
+            },
+            { 
+                name: 'Pulso PEM Titánico', 
+                cd: 3, 
+                currentCd: 1, 
+                desc: 'Pulso electromagnético masivo que daña a todo el escuadrón (0.8x) y desactiva todas las Barreras y Escudos aliados.', 
+                type: 'DAMAGE_AOE_STATUS', 
+                target: 'ALL_ENEMIES', 
+                power: 0.8, 
+                purgeShields: true 
+            },
+            { 
+                name: 'Protocolo Exterminio', 
+                cd: 4, 
+                currentCd: 2, 
+                desc: 'Ataque masivo devastador concentrado en un objetivo (2.2x de daño).', 
+                type: 'DAMAGE', 
+                power: 2.2 
+            }
         ]
     });
-    // Boss always has a random powerful weapon
-    boss.equipWeapon(generateRandomWeapon());
+    // Por defecto no lleva arma para balance controlado y limpio, pero admite equiparla
+    if (equipWeapon) {
+        boss.equipWeapon(generateRandomWeapon());
+    }
     return boss;
+}
+
+function generateEncounter(floor, nodeType) {
+    if (nodeType === NODE_TYPES.BOSS || floor === 10) {
+        return [generateBoss()];
+    }
+    
+    const isElite = (nodeType === NODE_TYPES.ELITE);
+    
+    // Pisos 1-5: 1 enemigo
+    // Pisos 6-9: Probabilidad escalable de generar 2 enemigos (Piso 6: 40%, Piso 7: 50%, Piso 8: 60%, Piso 9: 70%)
+    let enemyCount = 1;
+    if (floor >= 6 && floor <= 9) {
+        let multiChance = 0.40 + (floor - 6) * 0.10; // 0.40, 0.50, 0.60, 0.70
+        if (Math.random() < multiChance) {
+            enemyCount = 2;
+        }
+    }
+    
+    let enemies = [];
+    if (isElite) {
+        // En Élite: 1 Élite principal + secuaces normales si hay múltiples
+        enemies.push(generateWildRobot(floor, true));
+        for (let i = 1; i < enemyCount; i++) {
+            enemies.push(generateWildRobot(floor, false));
+        }
+    } else {
+        // Combate normal: 1 a N enemigos salvajes
+        for (let i = 0; i < enemyCount; i++) {
+            enemies.push(generateWildRobot(floor, false));
+        }
+    }
+    
+    return enemies;
 }
 
 function generateRandomItem() {

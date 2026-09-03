@@ -26,8 +26,14 @@ class Robot {
         this.isElite = !!template.isElite;
         this.isBoss = !!template.isBoss;
         
-        // Habilidades
+        // Habilidades y Rotación de Turnos
         this.skills = template.skills ? JSON.parse(JSON.stringify(template.skills)) : [];
+        this.turnPattern = template.turnPattern ? [...template.turnPattern] : null;
+        this.patternIndex = 0;
+        
+        // Pasiva especial y overrides de estadísticas
+        this.passive = template.passive || null;
+        this.baseStatsOverride = template.baseStatsOverride ? JSON.parse(JSON.stringify(template.baseStatsOverride)) : null;
         
         // Mutador de Élite
         this.mutator = template.mutator || null;
@@ -39,6 +45,15 @@ class Robot {
                 type: `MUTACION_${this.mutator.type}`,
                 name: `Mutación: ${this.mutator.name}`,
                 desc: this.mutator.desc,
+                isPermanent: true,
+                duration: Infinity
+            });
+        }
+        if (this.passive === 'FURIA_SOBRECALENTADA') {
+            this.statuses.push({
+                type: 'PASIVA_FURIA',
+                name: 'Furia Sobrecalentada',
+                desc: 'Aumenta su daño y probabilidad de crítico según la vida que haya perdido.',
                 isPermanent: true,
                 duration: Infinity
             });
@@ -83,17 +98,35 @@ class Robot {
         const oldMaxHp = this.maxHp || 0;
         
         // Obtener stats base por elemento
-        const elStats = ELEMENT_BASE_STATS[this.element];
+        const elStats = ELEMENT_BASE_STATS[this.element] || { maxHp: 100, atk: 20, spd: 10, dodge: 5, acc: 95, critChance: 5 };
+        
+        let baseHp = (this.baseStatsOverride && this.baseStatsOverride.maxHp !== undefined) ? this.baseStatsOverride.maxHp : elStats.maxHp;
+        let baseAtkVal = (this.baseStatsOverride && this.baseStatsOverride.atk !== undefined) ? this.baseStatsOverride.atk : elStats.atk;
+        let hpMultiplier = 1.0;
+        let atkMultiplier = 1.0;
+        let baseSpd = elStats.spd;
+        let baseDodge = elStats.dodge;
+        let baseAcc = elStats.acc;
+        let baseCritChance = elStats.critChance || 5;
+
+        if (this.baseStatsOverride) {
+            if (this.baseStatsOverride.hpMultiplier) hpMultiplier *= this.baseStatsOverride.hpMultiplier;
+            if (this.baseStatsOverride.atkMultiplier) atkMultiplier *= this.baseStatsOverride.atkMultiplier;
+            if (this.baseStatsOverride.spd !== undefined) baseSpd = this.baseStatsOverride.spd;
+            if (this.baseStatsOverride.dodge !== undefined) baseDodge = this.baseStatsOverride.dodge;
+            if (this.baseStatsOverride.acc !== undefined) baseAcc = this.baseStatsOverride.acc;
+            if (this.baseStatsOverride.critChance !== undefined) baseCritChance = this.baseStatsOverride.critChance;
+        }
         
         // Escalar por nivel (solo HP y ATK)
-        this.baseMaxHp = Math.floor(elStats.maxHp * (1 + (this.level - 1) * 0.05));
-        this.baseAtk = Math.floor(elStats.atk * (1 + (this.level - 1) * 0.05));
+        this.baseMaxHp = Math.floor(baseHp * hpMultiplier * (1 + (this.level - 1) * 0.05));
+        this.baseAtk = Math.floor(baseAtkVal * atkMultiplier * (1 + (this.level - 1) * 0.05));
         
-        // Los otros stats no escalan con el nivel, son fijos por elemento
-        this.spd = elStats.spd;
-        this.dodge = elStats.dodge;
-        this.acc = elStats.acc;
-        this.critChance = elStats.critChance || 5;
+        // Los otros stats
+        this.spd = baseSpd;
+        this.dodge = baseDodge;
+        this.acc = baseAcc;
+        this.critChance = baseCritChance;
         
         // Restaurar a base
         this.maxHp = this.baseMaxHp;
@@ -239,6 +272,11 @@ class Robot {
             status.duration = (status.duration || 2) + extraDuration;
         }
 
+        // Si es una marca elemental, solo puede haber una única marca activa a la vez
+        if (status.type && status.type.startsWith('MARCA_')) {
+            this.statuses = this.statuses.filter(s => !s.type.startsWith('MARCA_'));
+        }
+
         this.statuses.push(status);
     }
 
@@ -249,6 +287,15 @@ class Robot {
                 type: `MUTACION_${this.mutator.type}`,
                 name: `Mutación: ${this.mutator.name}`,
                 desc: this.mutator.desc,
+                isPermanent: true,
+                duration: Infinity
+            });
+        }
+        if (this.passive === 'FURIA_SOBRECALENTADA') {
+            this.statuses.push({
+                type: 'PASIVA_FURIA',
+                name: 'Furia Sobrecalentada',
+                desc: 'Aumenta su daño y probabilidad de crítico según la vida que haya perdido.',
                 isPermanent: true,
                 duration: Infinity
             });
@@ -277,15 +324,46 @@ class Robot {
 
     removeBuffs() {
         const isDebuff = (s) => ['BURN', 'STUN', 'SLOW', 'FROST', 'BLIND', 'ARMOR_BREAK'].includes(s.type) || s.type.startsWith('MARCA_');
-        this.statuses = this.statuses.filter(s => isDebuff(s) || s.isPermanent || (s.type && s.type.startsWith('MUTACION_')));
+        this.statuses = this.statuses.filter(s => isDebuff(s) || s.isPermanent || (s.type && (s.type.startsWith('MUTACION_') || s.type === 'PASIVA_FURIA')));
     }
 
     getEffectiveSpeed() {
+        if (this.hasStatus('SLOW_EXTREME')) {
+            return 1;
+        }
         let speed = this.spd;
         if (this.hasStatus('SLOW')) {
             speed = Math.max(1, Math.floor(speed * 0.5));
         }
         return speed;
+    }
+
+    getEffectiveDodge() {
+        if (this.hasStatus('DESFASE_100')) {
+            return 100;
+        }
+        return this.dodge || 0;
+    }
+
+    getBerserkBonus() {
+        if (this.passive === 'FURIA_SOBRECALENTADA' && this.maxHp > 0) {
+            const lostRatio = Math.max(0, 1 - (this.hp / this.maxHp));
+            return {
+                dmgMult: 1 + (lostRatio * 1.25),
+                critBonus: Math.round(lostRatio * 60)
+            };
+        }
+        return { dmgMult: 1, critBonus: 0 };
+    }
+
+    getBerserkGlowClass() {
+        if (this.passive === 'FURIA_SOBRECALENTADA' && !this.isOffline && this.hp > 0 && this.maxHp > 0) {
+            const lostRatio = 1 - (this.hp / this.maxHp);
+            if (lostRatio >= 0.70) return 'berserk-glow-3';
+            if (lostRatio >= 0.40) return 'berserk-glow-2';
+            if (lostRatio >= 0.15) return 'berserk-glow-1';
+        }
+        return '';
     }
 
     getEffectiveAcc() {
@@ -308,8 +386,8 @@ class Robot {
         for (let i = this.statuses.length - 1; i >= 0; i--) {
             let status = this.statuses[i];
             
-            // DEFENDIENDO, CORAZA_ESPINAS, BARRIER y Mutaciones permanentes no expiran en fin de ronda global
-            if (status.type === 'DEFENDIENDO' || status.type === 'CORAZA_ESPINAS' || status.type === 'BARRIER' || status.isPermanent || status.duration === Infinity || (status.type && status.type.startsWith('MUTACION_'))) {
+            // DEFENDIENDO, CORAZA_ESPINAS, BARRIER, DESFASE_100, STUN, REGENERACION y Mutaciones permanentes no expiran en fin de ronda global
+            if (status.type === 'DEFENDIENDO' || status.type === 'CORAZA_ESPINAS' || status.type === 'BARRIER' || status.type === 'DESFASE_100' || status.type === 'STUN' || status.type === 'REGENERACION' || status.isPermanent || status.duration === Infinity || (status.type && status.type.startsWith('MUTACION_'))) {
                 continue;
             }
 
