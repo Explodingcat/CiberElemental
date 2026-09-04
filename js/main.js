@@ -176,10 +176,22 @@ function initGame() {
                         <span class="skill-cd">⏱️ CD: ${specialSkill.cd} turnos</span>
                     </div>
                     <div class="skill-body">
-                        <strong>${specialSkill.name}:</strong> ${specialSkill.desc}
+                        <strong class="skill-title">${specialSkill.name}:</strong>
+                        <span class="skill-desc-text">${specialSkill.desc}</span>
                     </div>
                 </div>
             `;
+        }
+
+        let roleSubtitle = '';
+        if (template.element === ELEMENTS.FUEGO) {
+            roleSubtitle = '⚔️ Guerrero Ofensivo • Daño Térmico Directo';
+        } else if (template.element === ELEMENTS.AGUA) {
+            roleSubtitle = '💧 Soporte Táctico • Médico y Regeneración';
+        } else if (template.element === ELEMENTS.TIERRA) {
+            roleSubtitle = '🛡️ Coloso Defensivo • Tanque y Provocación';
+        } else if (template.element === ELEMENTS.AIRE) {
+            roleSubtitle = '⚡ Pícaro Cibernético • Alta Velocidad y Evasión';
         }
 
         robotPreview.innerHTML = `
@@ -193,6 +205,7 @@ function initGame() {
                         ${ELEMENT_EMOJIS[template.element]} ${template.element}
                     </span>
                 </div>
+                <div class="hero-role-badge">${roleSubtitle}</div>
             </div>
             
             <div class="stats-grid">
@@ -207,6 +220,7 @@ function initGame() {
             ${specialSkillHtml}
         `;
         renderWeapon(); // Sincronizar elemento y sinergia del arma
+        renderSynergyBanner();
     }
     
     function renderWeapon() {
@@ -221,42 +235,90 @@ function initGame() {
         
         let desc = '';
         let wName = '';
-        if (wKey === 'DAGA') { wName = 'Daga'; desc = '25% prob. de doble ataque consecutivo (40% con +1).'; }
-        if (wKey === 'HACHA') { wName = 'Hacha'; desc = 'Perfora el 50% de las defensas y barreras enemigas (75% con +1).'; }
-        if (wKey === 'BACULO') { wName = 'Báculo'; desc = 'Regenera un 5% del HP máximo al finalizar cada turno (7% con +1).'; }
-        if (wKey === 'ESPADA') { wName = 'Espada'; desc = '+15% de daño base pasivo + 10% Crítico en Básicos (+30% daño y +20% Crítico con +1).'; }
-        
+        let weaponRoleSubtitle = '';
+        if (wKey === 'DAGA') { 
+            wName = 'Daga'; 
+            desc = '<strong>25% prob. de doble ataque</strong> consecutivo (40% con +1). Cada golpe puede aplicar marca elemental al rival.';
+            weaponRoleSubtitle = '🗡️ Filo Rápido • Ataque Doble Consecutivo';
+        }
+        if (wKey === 'HACHA') { 
+            wName = 'Hacha'; 
+            desc = '<strong>Perfora el 50% de barreras/defensa</strong> (75% con +1). Otorga <strong>+35% de Daño masivo</strong> a rivales con ≤40% HP (Verdugo).';
+            weaponRoleSubtitle = '🪓 Arma Pesada • Perforación y Verdugo';
+        }
+        if (wKey === 'BACULO') { 
+            wName = 'Báculo'; 
+            desc = '<strong>Regenera un 5% del HP máximo</strong> al finalizar cada ronda (7% con +1). Potenciado por Afinidad de Agua (+25% cura).';
+            weaponRoleSubtitle = '🪄 Canalizador • Sustento y Curación';
+        }
+        if (wKey === 'ESPADA') { 
+            wName = 'Espada'; 
+            desc = '<strong>+15% Daño base</strong> y <strong>+10% Crítico</strong> (+30%/+20% con +1). Críticos activan <strong>Racha</strong> (+10% ATQ temporal).';
+            weaponRoleSubtitle = '⚔️ Hoja Balanceada • Crítico y Racha';
+        }
+
         weaponPreview.innerHTML = `
             <div class="preview-hero">
                 <div class="holo-platform platform-${template.element}">
                     <div class="avatar-emoji elem-${template.element}">${WEAPON_EMOJIS[wType]}</div>
                 </div>
                 <div class="hero-name-row">
-                    <h2 class="hero-name">${wName}</h2>
+                    <h2 class="hero-name">${wName} de ${template.element}</h2>
                     <span class="element-badge elem-badge-${template.element}">
                         ${ELEMENT_EMOJIS[template.element]} ${template.element}
                     </span>
                 </div>
+                <div class="hero-role-badge">${weaponRoleSubtitle}</div>
             </div>
             
             <div class="weapon-passive-card">
                 <div class="passive-header">
-                    <span class="passive-tag">🛡️ EFECTO PASIVO</span>
+                    <span class="passive-tag">🛡️ EFECTO PASIVO PRINCIPAL</span>
                     <span class="passive-type">PERMANENTE</span>
                 </div>
                 <div class="passive-body">
-                    <strong>${wName}:</strong> ${desc}
+                    ${desc}
                 </div>
             </div>
 
-            <div class="synergy-box">
-                <div class="synergy-header">
+            <div class="weapon-basic-row">
+                <span class="weapon-basic-badge">⚔️ ATAQUE BÁSICO</span>
+                <span class="weapon-basic-desc">1.0x Potencia • 20% prob. de aplicar <strong>Marca de ${template.element}</strong> (3 turnos)</span>
+            </div>
+        `;
+        renderSynergyBanner();
+    }
+
+    function renderSynergyBanner() {
+        const banner = document.getElementById('elemental-synergy-banner');
+        if (!banner) return;
+
+        let template = ROBOT_TEMPLATES[robotKeys[currentRobotIndex]];
+        let element = template.element;
+
+        let synergyDesc = '';
+        if (element === ELEMENTS.FUEGO) {
+            synergyDesc = 'Afinidad compartida: <strong>+15% ATQ</strong> y <strong>+15% Daño adicional</strong> contra rivales con Marca o Quemadura activa.';
+        } else if (element === ELEMENTS.AGUA) {
+            synergyDesc = 'Afinidad compartida: <strong>+15% HP Máximo</strong> y <strong>+25% Potencia de Curación</strong> a todas las fuentes de regeneración.';
+        } else if (element === ELEMENTS.TIERRA) {
+            synergyDesc = 'Afinidad compartida: <strong>+25% HP Máximo</strong> y <strong>-10% Daño recibido permanente</strong> (Mitigación pasiva de blindaje).';
+        } else if (element === ELEMENTS.AIRE) {
+            synergyDesc = 'Afinidad compartida: <strong>+15% ATQ</strong>, <strong>+2 Velocidad base</strong> y <strong>+10% Probabilidad de Esquiva</strong>.';
+        }
+
+        banner.className = `synergy-banner synergy-theme-${element}`;
+        banner.innerHTML = `
+            <div class="synergy-header-row">
+                <div class="synergy-title-group">
                     <span class="synergy-icon">✨</span>
-                    <span class="synergy-title">SINERGIA DE AFINIDAD</span>
+                    <span class="synergy-label">ENLACE ELEMENTAL ACTIVO</span>
+                    <span class="element-badge elem-badge-${element}">${ELEMENT_EMOJIS[element]} ${element}</span>
                 </div>
-                <div class="synergy-body">
-                    Armamento sintonizado con <strong>${template.element}</strong>: <strong>+20% HP Máx</strong> y <strong>+20% ATQ</strong>.
-                </div>
+                <span class="synergy-status-pill">SINERGIA COMBINADA 100%</span>
+            </div>
+            <div class="synergy-body-text">
+                ${synergyDesc}
             </div>
         `;
     }
@@ -313,10 +375,10 @@ function initGame() {
         let weapon = generateRandomWeapon(playerRobot.element);
         weapon.type = WEAPON_TYPES[selectedWeaponType];
         weapon.name = `${selectedWeaponType.charAt(0) + selectedWeaponType.slice(1).toLowerCase()} de ${playerRobot.element}`;
-        if (weapon.type === WEAPON_TYPES.DAGA) weapon.desc = '25% prob. doble ataque (40% con +1)';
-        if (weapon.type === WEAPON_TYPES.HACHA) weapon.desc = 'Perfora 50% de barreras y defensas (75% con +1)';
-        if (weapon.type === WEAPON_TYPES.BACULO) weapon.desc = 'Cura 5% HP al final del turno (7% con +1)';
-        if (weapon.type === WEAPON_TYPES.ESPADA) weapon.desc = '+15% Daño + 10% Crítico en Básicos (+30% Daño y +20% Crítico con +1)';
+        if (weapon.type === WEAPON_TYPES.DAGA) weapon.desc = '25% prob. doble ataque (40% con +1). Cada golpe puede aplicar marca.';
+        if (weapon.type === WEAPON_TYPES.HACHA) weapon.desc = 'Perfora 50% barreras/defensa (75% con +1). +35% Daño a enemigos con ≤40% HP (Verdugo).';
+        if (weapon.type === WEAPON_TYPES.BACULO) weapon.desc = 'Regenera 5% HP por ronda (7% con +1). Potenciado por afinidad de Agua.';
+        if (weapon.type === WEAPON_TYPES.ESPADA) weapon.desc = '+15% Daño base y +10% Crítico (+30%/+20% con +1). Críticos otorgan +10% ATQ temporal.';
         
         playerRobot.equipWeapon(weapon);
         
@@ -342,4 +404,7 @@ function initGame() {
 // Iniciar
 window.onload = () => {
     initGame();
+    if (window.location.hash === '#start') {
+        showScreen('screen-start');
+    }
 };

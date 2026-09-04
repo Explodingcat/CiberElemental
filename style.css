@@ -1,3 +1,7 @@
+*, *::before, *::after {
+    box-sizing: border-box;
+}
+
 :root {
     --bg-color: #0b0c10;
     --container-bg: #15181e;
@@ -237,65 +241,73 @@ button:disabled {
 .start-instruction {
     font-size: 14px;
     color: #8395a7;
-    margin: 2px 0 0 0;
+    margin: 2px auto 0 auto;
     letter-spacing: 0.5px;
+    max-width: 90%;
+    line-height: 1.35;
 }
 
 /* Selector Cards Container */
 .selector-container {
     display: flex;
     justify-content: center;
-    gap: 25px;
+    gap: 20px;
     width: 100%;
-    max-width: 960px;
-    margin: 8px 0;
+    max-width: 980px;
+    margin: 8px 0 4px 0;
+    box-sizing: border-box;
 }
 
 .selector-box {
     flex: 1;
-    max-width: 440px;
-    background: rgba(13, 17, 23, 0.75);
-    backdrop-filter: blur(12px);
-    border: 1px solid rgba(102, 252, 241, 0.2);
+    max-width: 480px;
+    width: 100%;
+    box-sizing: border-box;
+    background: rgba(13, 17, 23, 0.82);
+    backdrop-filter: blur(14px);
+    border: 1px solid rgba(102, 252, 241, 0.25);
     border-radius: 14px;
-    padding: 14px 18px;
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.6), inset 0 0 15px rgba(102, 252, 241, 0.03);
+    padding: 16px 18px;
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.65), inset 0 0 20px rgba(102, 252, 241, 0.04);
     display: flex;
     flex-direction: column;
     position: relative;
-    transition: border-color 0.3s, box-shadow 0.3s;
+    transition: all 0.3s ease;
 }
 
 .selector-box:hover {
-    border-color: rgba(102, 252, 241, 0.45);
-    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.7), 0 0 20px rgba(102, 252, 241, 0.15);
+    border-color: rgba(102, 252, 241, 0.5);
+    box-shadow: 0 14px 35px rgba(0, 0, 0, 0.75), 0 0 25px rgba(102, 252, 241, 0.2);
 }
 
 .box-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
     padding-bottom: 8px;
     margin-bottom: 10px;
+    width: 100%;
+    box-sizing: border-box;
 }
 
 .box-title {
-    font-size: 14px;
-    font-weight: 700;
-    letter-spacing: 2px;
+    font-size: 13.5px;
+    font-weight: 800;
+    letter-spacing: 1.5px;
     color: var(--accent-color);
     text-transform: uppercase;
 }
 
 .page-pill {
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 700;
-    padding: 2px 8px;
-    background: rgba(255, 255, 255, 0.06);
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    border-radius: 10px;
-    color: #c5c6c7;
+    padding: 2px 10px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 12px;
+    color: #e2e8f0;
+    white-space: nowrap;
 }
 
 /* Carousel Layout */
@@ -304,40 +316,50 @@ button:disabled {
     align-items: center;
     justify-content: space-between;
     gap: 8px;
+    width: 100%;
+    box-sizing: border-box;
     flex: 1;
 }
 
 .carousel-nav-btn {
-    background: rgba(102, 252, 241, 0.06);
-    border: 1px solid rgba(102, 252, 241, 0.3);
+    background: rgba(102, 252, 241, 0.08);
+    border: 1px solid rgba(102, 252, 241, 0.35);
     color: var(--accent-color);
-    width: 34px;
-    height: 34px;
+    width: 36px;
+    height: 36px;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    font-size: 13px;
+    font-size: 14px;
     padding: 0;
     margin: 0;
     transition: all 0.2s ease;
     flex-shrink: 0;
+    touch-action: manipulation;
 }
 
 .carousel-nav-btn:hover {
     background: var(--accent-color);
     color: #0b0c10;
     transform: scale(1.15);
-    box-shadow: 0 0 15px var(--accent-color);
+    box-shadow: 0 0 18px var(--accent-color);
+}
+
+.carousel-nav-btn:active {
+    transform: scale(0.95);
 }
 
 .preview-area {
-    flex-grow: 1;
+    flex: 1;
+    min-width: 0;
     display: flex;
     flex-direction: column;
     align-items: center;
     text-align: center;
+    width: 100%;
+    box-sizing: border-box;
     min-height: 250px;
 }
 
@@ -347,33 +369,34 @@ button:disabled {
     flex-direction: column;
     align-items: center;
     margin-bottom: 8px;
+    width: 100%;
 }
 
 .holo-platform {
-    width: 76px;
-    height: 76px;
+    width: 72px;
+    height: 72px;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
     position: relative;
     margin-bottom: 6px;
-    background: radial-gradient(circle, rgba(255,255,255,0.06) 0%, transparent 70%);
-    box-shadow: 0 6px 16px rgba(0,0,0,0.5);
-    border: 1px dashed rgba(255, 255, 255, 0.15);
+    background: radial-gradient(circle, rgba(255,255,255,0.08) 0%, transparent 70%);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.5);
+    border: 1px dashed rgba(255, 255, 255, 0.2);
     transition: all 0.3s ease;
 }
 
-.platform-FUEGO { border-color: rgba(255, 107, 107, 0.5); box-shadow: 0 0 18px rgba(255, 107, 107, 0.25); }
-.platform-AGUA { border-color: rgba(72, 219, 251, 0.5); box-shadow: 0 0 18px rgba(72, 219, 251, 0.25); }
-.platform-TIERRA { border-color: rgba(254, 202, 87, 0.5); box-shadow: 0 0 18px rgba(254, 202, 87, 0.25); }
-.platform-AIRE { border-color: rgba(200, 214, 229, 0.5); box-shadow: 0 0 18px rgba(200, 214, 229, 0.25); }
+.platform-FUEGO { border-color: rgba(255, 107, 107, 0.6); box-shadow: 0 0 20px rgba(255, 107, 107, 0.3); }
+.platform-AGUA { border-color: rgba(72, 219, 251, 0.6); box-shadow: 0 0 20px rgba(72, 219, 251, 0.3); }
+.platform-TIERRA { border-color: rgba(254, 202, 87, 0.6); box-shadow: 0 0 20px rgba(254, 202, 87, 0.3); }
+.platform-AIRE { border-color: rgba(200, 214, 229, 0.6); box-shadow: 0 0 20px rgba(200, 214, 229, 0.3); }
 
 .avatar-emoji {
-    font-size: 48px;
+    font-size: 46px;
     margin: 0;
     line-height: 1;
-    filter: drop-shadow(0 0 10px rgba(255,255,255,0.3));
+    filter: drop-shadow(0 0 12px rgba(255,255,255,0.35));
     animation: heroFloat 3s ease-in-out infinite;
 }
 
@@ -386,132 +409,272 @@ button:disabled {
     display: flex;
     align-items: center;
     gap: 8px;
+    flex-wrap: wrap;
+    justify-content: center;
 }
 
 .hero-name {
     font-size: 22px;
-    font-weight: 700;
+    font-weight: 800;
     margin: 0;
     letter-spacing: 1px;
-    color: #fff;
+    color: #ffffff;
 }
 
 .element-badge {
-    font-size: 11px;
+    font-size: 11.5px;
     font-weight: 700;
-    padding: 2px 8px;
-    border-radius: 5px;
+    padding: 3px 9px;
+    border-radius: 6px;
     text-transform: uppercase;
     letter-spacing: 1px;
 }
 
-.elem-badge-FUEGO { background: rgba(255, 107, 107, 0.15); color: var(--fire); border: 1px solid var(--fire); }
-.elem-badge-AGUA { background: rgba(72, 219, 251, 0.15); color: var(--water); border: 1px solid var(--water); }
-.elem-badge-TIERRA { background: rgba(254, 202, 87, 0.15); color: var(--earth); border: 1px solid var(--earth); }
-.elem-badge-AIRE { background: rgba(200, 214, 229, 0.15); color: var(--air); border: 1px solid var(--air); }
+.elem-badge-FUEGO { background: rgba(255, 107, 107, 0.18); color: var(--fire); border: 1px solid var(--fire); }
+.elem-badge-AGUA { background: rgba(72, 219, 251, 0.18); color: var(--water); border: 1px solid var(--water); }
+.elem-badge-TIERRA { background: rgba(254, 202, 87, 0.18); color: var(--earth); border: 1px solid var(--earth); }
+.elem-badge-AIRE { background: rgba(200, 214, 229, 0.18); color: var(--air); border: 1px solid var(--air); }
+
+.hero-role-badge {
+    font-size: 12.5px;
+    font-weight: 600;
+    color: #94a3b8;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    padding: 3px 12px;
+    border-radius: 20px;
+    margin-top: 5px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    max-width: 100%;
+    text-align: center;
+    line-height: 1.3;
+}
 
 /* Stats Grid */
 .stats-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 5px;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
     width: 100%;
-    margin-bottom: 6px;
+    margin: 8px 0;
+    box-sizing: border-box;
 }
 
 .stat-pill {
-    background: rgba(0, 0, 0, 0.4);
-    border: 1px solid rgba(255, 255, 255, 0.07);
-    border-radius: 6px;
-    padding: 4px 8px;
+    background: rgba(0, 0, 0, 0.45);
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    border-radius: 8px;
+    padding: 5px 4px;
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    font-size: 12px;
+    justify-content: center;
+    gap: 4px;
+    font-size: 13px;
+    min-width: 0;
+    box-sizing: border-box;
+    transition: border-color 0.2s;
+    white-space: nowrap;
 }
 
-.stat-pill.full-width {
-    grid-column: span 2;
+.stat-pill:hover {
+    border-color: rgba(102, 252, 241, 0.3);
 }
 
 .stat-icon {
-    font-size: 12px;
-    margin-right: 4px;
+    font-size: 12.5px;
+    flex-shrink: 0;
 }
 
 .stat-label {
-    color: #8395a7;
-    font-weight: 600;
+    color: #94a3b8;
+    font-weight: 700;
+    font-size: 11.5px;
+    letter-spacing: 0.5px;
 }
 
 .stat-val {
-    color: #fff;
-    font-weight: 700;
+    color: #ffffff;
+    font-weight: 800;
+    font-size: 13.5px;
 }
 
 /* Special Skill & Passive Cards */
 .special-skill-box, .weapon-passive-card {
-    background: rgba(0, 0, 0, 0.45);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 8px;
-    padding: 6px 10px;
+    background: rgba(0, 0, 0, 0.55);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 10px;
+    padding: 10px 14px;
     width: 100%;
     box-sizing: border-box;
     text-align: left;
-    margin-top: 3px;
+    margin-top: 8px;
+    transition: all 0.2s ease;
+}
+
+.special-skill-box:hover, .weapon-passive-card:hover {
+    border-color: rgba(102, 252, 241, 0.35);
 }
 
 .skill-header, .passive-header {
     display: flex;
     justify-content: space-between;
-    font-size: 10px;
-    font-weight: 700;
-    margin-bottom: 3px;
+    align-items: center;
+    font-size: 12px;
+    font-weight: 800;
+    margin-bottom: 6px;
     color: var(--secondary-accent);
 }
 
 .skill-tag, .passive-tag {
-    letter-spacing: 1px;
+    letter-spacing: 1.2px;
     text-transform: uppercase;
 }
 
 .skill-cd, .passive-type {
     color: #feca57;
+    font-size: 12px;
+    font-weight: 700;
+    background: rgba(254, 202, 87, 0.12);
+    border: 1px solid rgba(254, 202, 87, 0.3);
+    padding: 2px 8px;
+    border-radius: 6px;
 }
 
 .skill-body, .passive-body {
-    font-size: 12px;
-    line-height: 1.25;
-    color: #c5c6c7;
+    font-size: 14px;
+    line-height: 1.45;
+    color: #e2e8f0;
 }
 
-/* Synergy Box */
-.synergy-box {
-    background: rgba(102, 252, 241, 0.08);
-    border: 1px solid rgba(102, 252, 241, 0.3);
+.skill-title {
+    color: #66fcf1;
+    font-weight: 700;
+    margin-right: 4px;
+}
+
+.skill-desc-text {
+    color: #e2e8f0;
+}
+
+/* Weapon Basic Attack Row */
+.weapon-basic-row {
+    background: rgba(255, 211, 42, 0.07);
+    border: 1px solid rgba(255, 211, 42, 0.25);
     border-radius: 8px;
-    padding: 6px 10px;
+    padding: 7px 12px;
+    margin-top: 8px;
     width: 100%;
     box-sizing: border-box;
-    text-align: left;
-    margin-top: 6px;
-}
-
-.synergy-header {
-    font-size: 10px;
-    font-weight: 700;
-    letter-spacing: 1px;
-    color: var(--accent-color);
-    margin-bottom: 2px;
     display: flex;
     align-items: center;
-    gap: 4px;
+    gap: 8px;
+    text-align: left;
 }
 
-.synergy-body {
+.weapon-basic-badge {
     font-size: 11px;
-    color: #e0fbf9;
-    line-height: 1.25;
+    font-weight: 800;
+    color: #ffd32a;
+    background: rgba(255, 211, 42, 0.18);
+    border: 1px solid rgba(255, 211, 42, 0.3);
+    padding: 2px 7px;
+    border-radius: 4px;
+    white-space: nowrap;
+    letter-spacing: 0.5px;
+}
+
+.weapon-basic-desc {
+    font-size: 13.5px;
+    color: #f1f2f6;
+    line-height: 1.35;
+}
+
+/* Unified Elemental Synergy Banner */
+.synergy-banner {
+    width: 100%;
+    max-width: 980px;
+    margin: 8px auto 4px auto;
+    padding: 10px 16px;
+    border-radius: 12px;
+    text-align: left;
+    box-sizing: border-box;
+    backdrop-filter: blur(12px);
+    transition: all 0.3s ease;
+}
+
+.synergy-theme-FUEGO {
+    background: linear-gradient(90deg, rgba(255, 107, 107, 0.16) 0%, rgba(13, 17, 23, 0.85) 100%);
+    border: 1px solid rgba(255, 107, 107, 0.45);
+    box-shadow: 0 4px 20px rgba(255, 107, 107, 0.15);
+}
+
+.synergy-theme-AGUA {
+    background: linear-gradient(90deg, rgba(72, 219, 251, 0.16) 0%, rgba(13, 17, 23, 0.85) 100%);
+    border: 1px solid rgba(72, 219, 251, 0.45);
+    box-shadow: 0 4px 20px rgba(72, 219, 251, 0.15);
+}
+
+.synergy-theme-TIERRA {
+    background: linear-gradient(90deg, rgba(254, 202, 87, 0.16) 0%, rgba(13, 17, 23, 0.85) 100%);
+    border: 1px solid rgba(254, 202, 87, 0.45);
+    box-shadow: 0 4px 20px rgba(254, 202, 87, 0.15);
+}
+
+.synergy-theme-AIRE {
+    background: linear-gradient(90deg, rgba(200, 214, 229, 0.16) 0%, rgba(13, 17, 23, 0.85) 100%);
+    border: 1px solid rgba(200, 214, 229, 0.45);
+    box-shadow: 0 4px 20px rgba(200, 214, 229, 0.15);
+}
+
+.synergy-header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 4px;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.synergy-title-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.synergy-icon {
+    font-size: 16px;
+}
+
+.synergy-label {
+    font-size: 13px;
+    font-weight: 800;
+    letter-spacing: 1.5px;
+    color: #ffffff;
+    text-transform: uppercase;
+}
+
+.synergy-status-pill {
+    font-size: 11px;
+    font-weight: 700;
+    color: #2ed573;
+    background: rgba(46, 213, 115, 0.14);
+    border: 1px solid rgba(46, 213, 115, 0.35);
+    padding: 2px 8px;
+    border-radius: 12px;
+    letter-spacing: 0.5px;
+}
+
+.synergy-body-text {
+    font-size: 14px;
+    color: #f1f2f6;
+    line-height: 1.45;
+}
+
+.synergy-body-text strong {
+    color: #ffffff;
 }
 
 .start-footer {
@@ -5113,7 +5276,8 @@ progress::-webkit-progress-value {
     }
 
     #game-container {
-        width: 100vw;
+        width: 100%;
+        max-width: 100%;
         height: 100vh;
         height: 100dvh;
         max-height: 100dvh;
@@ -5148,11 +5312,11 @@ progress::-webkit-progress-value {
         padding: 14px 10px;
         justify-content: flex-start;
         overflow-y: auto;
-        gap: 8px;
+        gap: 10px;
     }
 
     .start-header {
-        margin-bottom: 2px;
+        margin-bottom: 4px;
     }
 
     .game-title {
@@ -5161,38 +5325,55 @@ progress::-webkit-progress-value {
     }
 
     .sub-header-badge {
-        font-size: 9px;
+        font-size: 10px;
         letter-spacing: 1.5px;
         padding: 2px 10px;
     }
 
     .start-instruction {
-        font-size: 12px;
-        margin-top: 1px;
+        font-size: 13px;
+        margin-top: 2px;
     }
 
     .selector-container {
         flex-direction: column;
         align-items: center;
-        gap: 10px;
-        margin: 4px 0;
+        gap: 14px;
+        margin: 6px 0;
         width: 100%;
     }
 
     .selector-box {
         max-width: 100%;
         width: 100%;
-        padding: 10px 12px;
+        padding: 12px 10px;
+        box-sizing: border-box;
+        overflow: hidden;
+    }
+
+    .carousel {
+        gap: 6px;
+        width: 100%;
         box-sizing: border-box;
     }
 
+    .carousel-nav-btn {
+        width: 30px;
+        height: 30px;
+        font-size: 11px;
+        flex-shrink: 0;
+    }
+
     .preview-area {
+        min-width: 0;
+        width: 100%;
+        box-sizing: border-box;
         min-height: auto;
     }
 
     .holo-platform {
-        width: 58px;
-        height: 58px;
+        width: 60px;
+        height: 60px;
         margin-bottom: 4px;
     }
 
@@ -5201,38 +5382,94 @@ progress::-webkit-progress-value {
     }
 
     .hero-name {
-        font-size: 18px;
+        font-size: 19px;
+    }
+
+    .hero-role-badge {
+        font-size: 12px;
+        padding: 2px 10px;
+        max-width: 100%;
+        text-align: center;
     }
 
     .stats-grid {
-        gap: 4px;
-        margin-bottom: 4px;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 5px;
+        margin: 6px 0;
+        width: 100%;
+        box-sizing: border-box;
     }
 
     .stat-pill {
-        padding: 3px 6px;
-        font-size: 11px;
+        padding: 4px 3px;
+        font-size: 12px;
+        min-width: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 3px;
+        box-sizing: border-box;
+        white-space: nowrap;
     }
 
-    .special-skill-box, .weapon-passive-card, .synergy-box {
-        padding: 5px 8px;
-        margin-top: 4px;
+    .stat-icon {
+        font-size: 11.5px;
+        flex-shrink: 0;
     }
 
-    .skill-header, .passive-header, .synergy-header {
-        font-size: 9.5px;
-        margin-bottom: 2px;
+    .stat-label {
+        font-size: 10.5px;
     }
 
-    .skill-body, .passive-body, .synergy-body {
-        font-size: 11px;
-        line-height: 1.2;
+    .stat-val {
+        font-size: 13px;
+    }
+
+    .special-skill-box, .weapon-passive-card {
+        padding: 8px 12px;
+        margin-top: 6px;
+    }
+
+    .skill-header, .passive-header {
+        font-size: 11.5px;
+        margin-bottom: 4px;
+    }
+
+    .skill-body, .passive-body {
+        font-size: 13.5px;
+        line-height: 1.4;
+    }
+
+    .weapon-basic-row {
+        padding: 6px 10px;
+        margin-top: 6px;
+    }
+
+    .weapon-basic-desc {
+        font-size: 13px;
+    }
+
+    .synergy-banner {
+        margin: 6px auto;
+        padding: 8px 12px;
+        border-radius: 10px;
+    }
+
+    .synergy-label {
+        font-size: 12px;
+    }
+
+    .synergy-body-text {
+        font-size: 13px;
+        line-height: 1.4;
     }
 
     .start-footer {
         max-width: 100%;
-        margin-top: 4px;
-        margin-bottom: 6px;
+        margin-top: 6px;
+        margin-bottom: 8px;
+        flex-direction: column-reverse;
+        gap: 8px;
     }
 
     .btn-start-game {
@@ -5984,53 +6221,118 @@ progress::-webkit-progress-value {
     }
 
     #screen-start {
-        padding: 6px 10px;
-        gap: 4px;
+        padding: 8px 10px;
+        gap: 6px;
+        overflow-y: auto;
+        justify-content: flex-start;
     }
 
     .game-title {
-        font-size: 20px;
+        font-size: clamp(18px, 4vw, 24px);
         letter-spacing: 1px;
     }
 
     .start-instruction {
-        display: none;
+        font-size: 12px;
+        margin-top: 1px;
     }
 
     .selector-container {
         flex-direction: row;
-        gap: 8px;
-        margin: 2px 0;
+        gap: 10px;
+        margin: 4px 0;
+        width: 100%;
     }
 
     .selector-box {
-        padding: 6px 10px;
+        padding: 8px 10px;
+        flex: 1;
     }
 
     .preview-area {
-        min-height: 110px;
+        min-height: auto;
     }
 
     .holo-platform {
-        width: 40px;
-        height: 40px;
-        margin-bottom: 2px;
+        width: 48px;
+        height: 48px;
+        margin-bottom: 3px;
     }
 
     .avatar-emoji {
-        font-size: 26px;
+        font-size: 30px;
     }
 
     .hero-name {
-        font-size: 14px;
+        font-size: 16px;
     }
 
-    .special-skill-box, .weapon-passive-card, .synergy-box {
-        display: none;
+    .hero-role-badge {
+        font-size: 11px;
+        padding: 2px 8px;
+        margin-top: 2px;
+    }
+
+    .stats-grid {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 4px;
+        margin: 4px 0;
+    }
+
+    .stat-pill {
+        padding: 3px 6px;
+        font-size: 12px;
+    }
+
+    .stat-label {
+        font-size: 10px;
+    }
+
+    .stat-val {
+        font-size: 12.5px;
+    }
+
+    .special-skill-box, .weapon-passive-card {
+        display: block;
+        padding: 6px 8px;
+        margin-top: 4px;
+    }
+
+    .skill-header, .passive-header {
+        font-size: 10.5px;
+        margin-bottom: 2px;
+    }
+
+    .skill-body, .passive-body {
+        font-size: 12px;
+        line-height: 1.35;
+    }
+
+    .weapon-basic-row {
+        padding: 4px 8px;
+        margin-top: 4px;
+    }
+
+    .weapon-basic-desc {
+        font-size: 11.5px;
+    }
+
+    .synergy-banner {
+        padding: 6px 10px;
+        margin: 4px auto;
+    }
+
+    .synergy-label {
+        font-size: 11.5px;
+    }
+
+    .synergy-body-text {
+        font-size: 12px;
+        line-height: 1.35;
     }
 
     .btn-start-game {
-        padding: 6px 14px;
+        padding: 8px 16px;
         font-size: 14px;
     }
 

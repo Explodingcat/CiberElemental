@@ -50,10 +50,10 @@ function initChestEvent() {
         const weapon = generateRandomWeapon();
         weapon.isUpgraded = true;
         weapon.name += " +1";
-        if (weapon.type === WEAPON_TYPES.DAGA) weapon.desc = '40% prob. doble ataque';
-        if (weapon.type === WEAPON_TYPES.HACHA) weapon.desc = 'Perfora 75% de barreras y defensas';
-        if (weapon.type === WEAPON_TYPES.BACULO) weapon.desc = 'Cura 7% HP al final del turno';
-        if (weapon.type === WEAPON_TYPES.ESPADA) weapon.desc = '+30% Daño + 20% Crítico en Básicos';
+        if (weapon.type === WEAPON_TYPES.DAGA) weapon.desc = '40% prob. doble ataque (con +1). Cada golpe puede aplicar marca.';
+        if (weapon.type === WEAPON_TYPES.HACHA) weapon.desc = 'Perfora 75% barreras/defensa (con +1). +35% Daño a ≤40% HP (Verdugo).';
+        if (weapon.type === WEAPON_TYPES.BACULO) weapon.desc = 'Regenera 7% HP por ronda (con +1). Potenciado por afinidad de Agua.';
+        if (weapon.type === WEAPON_TYPES.ESPADA) weapon.desc = '+30% Daño base y +20% Crítico (con +1). Críticos activan Racha (+10% ATQ).';
         
         rewardObj = weapon;
         rewardName = weapon.name;
@@ -369,10 +369,10 @@ function executeCampForge(robotId) {
     const w = robot.equippedWeapon;
     w.isUpgraded = true;
     w.name += ' +1';
-    if (w.type === WEAPON_TYPES.DAGA) w.desc = '40% prob. doble ataque';
-    if (w.type === WEAPON_TYPES.HACHA) w.desc = 'Perfora 75% de barreras y defensas';
-    if (w.type === WEAPON_TYPES.BACULO) w.desc = 'Cura 7% HP al final del turno';
-    if (w.type === WEAPON_TYPES.ESPADA) w.desc = '+30% Daño + 20% Crítico en Básicos';
+    if (w.type === WEAPON_TYPES.DAGA) w.desc = '40% prob. doble ataque (con +1). Cada golpe puede aplicar marca.';
+    if (w.type === WEAPON_TYPES.HACHA) w.desc = 'Perfora 75% barreras/defensa (con +1). +35% Daño a ≤40% HP (Verdugo).';
+    if (w.type === WEAPON_TYPES.BACULO) w.desc = 'Regenera 7% HP por ronda (con +1). Potenciado por afinidad de Agua.';
+    if (w.type === WEAPON_TYPES.ESPADA) w.desc = '+30% Daño base y +20% Crítico (con +1). Críticos activan Racha (+10% ATQ).';
     robot.recalculateStats();
     
     let msg = `⚒️ ¡El arma <strong>${w.name}</strong> de <strong>${robot.name}</strong> ha sido forjada con éxito al grado +1!`;

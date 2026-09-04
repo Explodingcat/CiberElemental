@@ -94,6 +94,26 @@ class Robot {
         this.recalculateStats();
     }
 
+    hasAffinity() {
+        return !!(this.equippedWeapon && this.equippedWeapon.element === this.element);
+    }
+
+    getAffinityDescription() {
+        if (!this.hasAffinity()) return null;
+        switch(this.element) {
+            case ELEMENTS.FUEGO:
+                return 'Afinidad Fuego: +15% ATQ y +15% daño adicional a enemigos con Marca o Quemadura.';
+            case ELEMENTS.AGUA:
+                return 'Afinidad Agua: +15% HP y +25% potencia a todas las curaciones emitidas.';
+            case ELEMENTS.TIERRA:
+                return 'Afinidad Tierra: +25% HP y -10% de daño recibido permanente.';
+            case ELEMENTS.AIRE:
+                return 'Afinidad Aire: +15% ATQ, +2 VEL fija y +10% de Esquiva.';
+            default:
+                return 'Afinidad Elemental activa.';
+        }
+    }
+
     recalculateStats() {
         const oldMaxHp = this.maxHp || 0;
         
@@ -146,14 +166,34 @@ class Robot {
         }
 
         if (this.equippedWeapon) {
-            // Bono de afinidad (+20% base, aumentado con pasivas de Sintonía de Chasis)
-            if (this.equippedWeapon.element === this.element) {
-                let affinityMult = 1.20;
+            // Bono de afinidad temática especializada (coincidencia Robot + Arma del mismo elemento)
+            if (this.hasAffinity()) {
+                let extraAffinity = 0;
                 if (this.isAlly && typeof SkillsManager !== 'undefined') {
-                    affinityMult += SkillsManager.getAffinityMultiplierBonus();
+                    extraAffinity = typeof SkillsManager.getAffinityMultiplierBonus === 'function' 
+                        ? SkillsManager.getAffinityMultiplierBonus() 
+                        : SkillsManager.getModifier('affinity_bonus_extra', 0);
                 }
-                this.maxHp = Math.floor(this.maxHp * affinityMult);
-                this.atk = Math.floor(this.atk * affinityMult);
+                
+                if (this.element === ELEMENTS.FUEGO) {
+                    // FUEGO: +15% ATQ base (+15% daño adicional a marcados/quemados en combate)
+                    let fireAtkMult = 1.15 + extraAffinity;
+                    this.atk = Math.floor(this.atk * fireAtkMult);
+                } else if (this.element === ELEMENTS.AGUA) {
+                    // AGUA: +15% HP máximo (+25% potencia a todas las curaciones en combate)
+                    let waterHpMult = 1.15 + extraAffinity;
+                    this.maxHp = Math.floor(this.maxHp * waterHpMult);
+                } else if (this.element === ELEMENTS.TIERRA) {
+                    // TIERRA: +25% HP máximo (-10% daño recibido permanente en takeDamage)
+                    let earthHpMult = 1.25 + extraAffinity;
+                    this.maxHp = Math.floor(this.maxHp * earthHpMult);
+                } else if (this.element === ELEMENTS.AIRE) {
+                    // AIRE: +15% ATQ base, +2 VEL fija y +10% de Esquiva
+                    let airAtkMult = 1.15 + extraAffinity;
+                    this.atk = Math.floor(this.atk * airAtkMult);
+                    this.spd += 2;
+                    this.dodge = (this.dodge || 0) + 10;
+                }
             }
             // Espada +15% de daño base pasivo (+30% si está mejorada) y +10% de Crítico en básicos (+20% con +1)
             if (this.equippedWeapon.type === WEAPON_TYPES.ESPADA) {
@@ -233,6 +273,11 @@ class Robot {
             } else {
                 finalDamage = Math.floor(finalDamage * (1 - baseReduction));
             }
+        }
+        
+        // Afinidad de Tierra: mitigación pasiva permanente del 10% del daño recibido
+        if (this.hasAffinity() && this.element === ELEMENTS.TIERRA && finalDamage > 0) {
+            finalDamage = Math.max(1, Math.floor(finalDamage * 0.90));
         }
         
         this.hp -= finalDamage;
@@ -417,6 +462,9 @@ class Robot {
                 ? SkillsManager.getModifier('staff_extra_heal', 0) 
                 : 0;
             let healRate = (this.equippedWeapon.isUpgraded ? 0.07 : 0.05) + staffExtra;
+            if (this.hasAffinity() && this.element === ELEMENTS.AGUA) {
+                healRate *= 1.25; // +25% de potencia de curación por Afinidad de Agua
+            }
             let healAmount = Math.max(1, Math.floor(this.maxHp * healRate));
             let actualHeal = this.heal(healAmount);
             if (actualHeal > 0) {

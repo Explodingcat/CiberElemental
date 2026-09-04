@@ -57,10 +57,10 @@ function initPostBattle(enemies) {
                 let wp = generateRandomWeapon(enemy.element);
                 wp.isUpgraded = true;
                 wp.name += " +1";
-                if (wp.type === WEAPON_TYPES.DAGA) wp.desc = '40% prob. doble ataque';
-                if (wp.type === WEAPON_TYPES.HACHA) wp.desc = 'Perfora 75% de barreras y defensas';
-                if (wp.type === WEAPON_TYPES.BACULO) wp.desc = 'Cura 7% HP al final del turno';
-                if (wp.type === WEAPON_TYPES.ESPADA) wp.desc = '+30% Daño + 20% Crítico en Básicos';
+                if (wp.type === WEAPON_TYPES.DAGA) wp.desc = '40% prob. doble ataque (con +1). Cada golpe puede aplicar marca.';
+                if (wp.type === WEAPON_TYPES.HACHA) wp.desc = 'Perfora 75% barreras/defensa (con +1). +35% Daño a ≤40% HP (Verdugo).';
+                if (wp.type === WEAPON_TYPES.BACULO) wp.desc = 'Regenera 7% HP por ronda (con +1). Potenciado por afinidad de Agua.';
+                if (wp.type === WEAPON_TYPES.ESPADA) wp.desc = '+30% Daño base y +20% Crítico (con +1). Críticos activan Racha (+10% ATQ).';
                 allDroppedWeapons.push(wp);
             } else {
                 let chipKeys = Object.keys(ITEM_TYPES).filter(k => k.includes('CHIP'));
@@ -80,10 +80,10 @@ function initPostBattle(enemies) {
                 let wp = generateRandomWeapon(enemy.element);
                 wp.isUpgraded = true;
                 wp.name += " +1";
-                if (wp.type === WEAPON_TYPES.DAGA) wp.desc = '40% prob. doble ataque';
-                if (wp.type === WEAPON_TYPES.HACHA) wp.desc = 'Perfora 75% de barreras y defensas';
-                if (wp.type === WEAPON_TYPES.BACULO) wp.desc = 'Cura 7% HP al final del turno';
-                if (wp.type === WEAPON_TYPES.ESPADA) wp.desc = '+30% Daño + 20% Crítico en Básicos';
+                if (wp.type === WEAPON_TYPES.DAGA) wp.desc = '40% prob. doble ataque (con +1). Cada golpe puede aplicar marca.';
+                if (wp.type === WEAPON_TYPES.HACHA) wp.desc = 'Perfora 75% barreras/defensa (con +1). +35% Daño a ≤40% HP (Verdugo).';
+                if (wp.type === WEAPON_TYPES.BACULO) wp.desc = 'Regenera 7% HP por ronda (con +1). Potenciado por afinidad de Agua.';
+                if (wp.type === WEAPON_TYPES.ESPADA) wp.desc = '+30% Daño base y +20% Crítico (con +1). Críticos activan Racha (+10% ATQ).';
                 allDroppedWeapons.push(wp);
             } else if (eliteRoll < 0.66) {
                 let chipKeys = Object.keys(ITEM_TYPES).filter(k => k.includes('CHIP'));

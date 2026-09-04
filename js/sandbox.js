@@ -180,10 +180,10 @@ function createRobotFromConfig(config, isAlly) {
         if (isPlusOne) wName += ' +1';
         
         let desc = '';
-        if (wType === WEAPON_TYPES.DAGA) desc = isPlusOne ? '40% prob. doble ataque' : '25% prob. doble ataque';
-        if (wType === WEAPON_TYPES.HACHA) desc = isPlusOne ? 'Perfora 75% de barreras' : 'Perfora 50% de barreras';
-        if (wType === WEAPON_TYPES.BACULO) desc = isPlusOne ? 'Cura 7% HP al final de turno' : 'Cura 5% HP al final de turno';
-        if (wType === WEAPON_TYPES.ESPADA) desc = isPlusOne ? '+30% Daño + 20% Crítico' : '+15% Daño + 10% Crítico';
+        if (wType === WEAPON_TYPES.DAGA) desc = isPlusOne ? '40% prob. doble ataque (con +1). Cada golpe aplica marca.' : '25% prob. doble ataque. Cada golpe aplica marca.';
+        if (wType === WEAPON_TYPES.HACHA) desc = isPlusOne ? 'Perfora 75% barreras. +35% Daño a ≤40% HP (Verdugo).' : 'Perfora 50% barreras. +35% Daño a ≤40% HP (Verdugo).';
+        if (wType === WEAPON_TYPES.BACULO) desc = isPlusOne ? 'Regenera 7% HP por ronda. Potenciado por afinidad Agua.' : 'Regenera 5% HP por ronda. Potenciado por afinidad Agua.';
+        if (wType === WEAPON_TYPES.ESPADA) desc = isPlusOne ? '+30% Daño base y +20% Crítico. Críticos activan Racha (+10% ATQ).' : '+15% Daño base y +10% Crítico. Críticos activan Racha (+10% ATQ).';
         
         robot.equipWeapon({
             id: Math.random().toString(36).substr(2, 9),
@@ -281,7 +281,7 @@ function renderTeamBuilder(teamType) {
 
         let statsHtml = '<span style="color:#8395a7; font-size:0.85rem;">Slot desactivado</span>';
         if (previewRobot) {
-            const affinity = previewRobot.equippedWeapon && (previewRobot.equippedWeapon.element === previewRobot.element);
+            const affDesc = (previewRobot.hasAffinity && previewRobot.hasAffinity()) ? previewRobot.getAffinityDescription() : '';
             statsHtml = `
                 <span class="stat-chip">❤️ HP: <strong>${previewRobot.maxHp}</strong></span>
                 <span class="stat-chip">⚔️ ATQ: <strong>${previewRobot.atk}</strong></span>
@@ -289,7 +289,7 @@ function renderTeamBuilder(teamType) {
                 <span class="stat-chip">💨 ESQ: <strong>${previewRobot.dodge}%</strong></span>
                 <span class="stat-chip">🎯 PREC: <strong>${previewRobot.acc}%</strong></span>
                 <span class="stat-chip">💥 CRÍT: <strong>${previewRobot.critChance}%</strong></span>
-                ${affinity ? '<span class="stat-chip stat-affinity">🌟 Sinergia (+20%)</span>' : ''}
+                ${affDesc ? `<span class="stat-chip stat-affinity" title="${affDesc}">🌟 Afinidad Activa</span>` : ''}
             `;
         }
 

@@ -50,11 +50,12 @@ function updateTeamUI() {
     const teamHTML = GAME_STATE.team.map(r => {
         let weaponHtml = '';
         if (r.equippedWeapon) {
-            let afinidad = (r.element === r.equippedWeapon.element) ? '🌟 AFINIDAD' : '';
+            let afinidadDesc = r.getAffinityDescription ? r.getAffinityDescription() : 'Afinidad Elemental activa.';
+            let afinidad = (r.hasAffinity && r.hasAffinity()) ? '🌟 AFINIDAD' : '';
             weaponHtml = `
             <div class="team-weapon-pill elem-${r.equippedWeapon.element}">
                 <span>${WEAPON_EMOJIS[r.equippedWeapon.type]} ${r.equippedWeapon.name}</span>
-                ${afinidad ? `<span class="affinity-star">${afinidad}</span>` : ''}
+                ${afinidad ? `<span class="affinity-star" title="${afinidadDesc}">${afinidad}</span>` : ''}
             </div>`;
         }
         

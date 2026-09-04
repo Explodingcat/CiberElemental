@@ -5,12 +5,13 @@ const ROBOT_TEMPLATES = {
         name: 'Ignis',
         element: ELEMENTS.FUEGO,
         emoji: '🤖', // Robot icon tinted by css filter
+        desc: 'Guerrero ofensivo de fuego. Especialista en daño térmico sostenido y quemaduras continuas.',
         skills: [
             {
                 name: 'Ataque Básico',
                 cd: 0,
                 currentCd: 0,
-                desc: 'Ataque estándar de fuego.',
+                desc: 'Ataque físico estándar. Si porta un arma, adquiere su elemento y un 20% de prob. de aplicar Marca Elemental (3 turnos).',
                 type: 'DAMAGE',
                 power: 1.0
             },
@@ -29,12 +30,13 @@ const ROBOT_TEMPLATES = {
         name: 'Aqua',
         element: ELEMENTS.AGUA,
         emoji: '🤖',
+        desc: 'Soporte táctico y curandero de agua. Cura aliados, regenera blindaje y salpica con Marca de Agua.',
         skills: [
             {
                 name: 'Ataque Básico',
                 cd: 0,
                 currentCd: 0,
-                desc: 'Ataque estándar de agua.',
+                desc: 'Ataque físico estándar. Si porta un arma, adquiere su elemento y un 20% de prob. de aplicar Marca Elemental (3 turnos).',
                 type: 'DAMAGE',
                 power: 1.0
             },
@@ -54,12 +56,13 @@ const ROBOT_TEMPLATES = {
         name: 'Terra',
         element: ELEMENTS.TIERRA,
         emoji: '🤖',
+        desc: 'Coloso defensivo de tierra. Provoca a los enemigos, mitiga daño masivo y refleja Marca de Tierra.',
         skills: [
             {
                 name: 'Ataque Básico',
                 cd: 0,
                 currentCd: 0,
-                desc: 'Ataque estándar de tierra.',
+                desc: 'Ataque físico estándar. Si porta un arma, adquiere su elemento y un 20% de prob. de aplicar Marca Elemental (3 turnos).',
                 type: 'DAMAGE',
                 power: 1.0
             },
@@ -78,12 +81,13 @@ const ROBOT_TEMPLATES = {
         name: 'Zephyr',
         element: ELEMENTS.AIRE,
         emoji: '🤖',
+        desc: 'Pícaro veloz de aire. Alta iniciativa, elevada esquiva y ataques cortantes con prioridad.',
         skills: [
             {
                 name: 'Ataque Básico',
                 cd: 0,
                 currentCd: 0,
-                desc: 'Ataque estándar de aire.',
+                desc: 'Ataque físico estándar. Si porta un arma, adquiere su elemento y un 20% de prob. de aplicar Marca Elemental (3 turnos).',
                 type: 'DAMAGE',
                 power: 1.0
             },
@@ -255,19 +259,19 @@ function generateRandomWeapon(forcedElement = null) {
     switch(type) {
         case WEAPON_TYPES.DAGA:
             name = 'Daga';
-            abilityDesc = '25% prob. doble ataque (40% con +1)';
+            abilityDesc = '25% prob. doble ataque (40% con +1). Cada golpe puede aplicar marca.';
             break;
         case WEAPON_TYPES.HACHA:
             name = 'Hacha';
-            abilityDesc = 'Perfora 50% de barreras y defensas (75% con +1)';
+            abilityDesc = 'Perfora 50% barreras/defensa (75% con +1). +35% Daño a enemigos con <40% HP (Verdugo).';
             break;
         case WEAPON_TYPES.BACULO:
             name = 'Báculo';
-            abilityDesc = 'Cura 5% HP al final del turno (7% con +1)';
+            abilityDesc = 'Regenera 5% HP por ronda (7% con +1). Potenciado por afinidad de Agua.';
             break;
         case WEAPON_TYPES.ESPADA:
             name = 'Espada';
-            abilityDesc = '+15% Daño + 10% Crítico en Básicos (+30% Daño y +20% Crítico con +1)';
+            abilityDesc = '+15% Daño base y +10% Crítico (+30%/+20% con +1). Críticos otorgan +10% ATQ temporal.';
             break;
     }
     

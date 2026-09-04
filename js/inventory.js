@@ -25,6 +25,8 @@ function renderInventory() {
             let weaponSlotHtml = '';
             if (robot.equippedWeapon) {
                 const w = robot.equippedWeapon;
+                const hasAff = (robot.hasAffinity && robot.hasAffinity());
+                const affDesc = hasAff ? `<div class="inv-slot-affinity" style="margin-top: 6px; font-size: 0.78rem; color: #ffd32a; font-weight: bold;">🌟 ${robot.getAffinityDescription()}</div>` : '';
                 weaponSlotHtml = `
                     <div class="inv-slot-box inv-slot-equipped elem-${w.element}">
                         <div class="inv-slot-header">
@@ -32,6 +34,7 @@ function renderInventory() {
                             <button class="btn-inv-unequip" onclick="unequipWeaponFrom(${idx})" title="Desequipar y guardar en mochila">Desequipar</button>
                         </div>
                         <div class="inv-slot-desc">${w.desc}</div>
+                        ${affDesc}
                     </div>
                 `;
             } else {

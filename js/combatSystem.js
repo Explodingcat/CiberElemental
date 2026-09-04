@@ -320,6 +320,7 @@ function formatStatusLabel(type) {
         case 'BURN': return 'Quemadura';
         case 'STUN': return 'Aturdimiento';
         case 'PASIVA_FURIA': return 'Furia Sobrecalentada';
+        case 'BUFF_ESPADA_RACHA': return 'Racha de Espada (+10% ATQ)';
         case 'REGENERACION': return 'Rocío Reparador (+10% HP)';
         case 'BARRIER': return 'Barrera Plasma';
         case 'SHIELD': return 'Escudo';
@@ -358,6 +359,7 @@ function renderStatusesSplitted(buffId, debuffId, statuses, owner = null) {
     
     const getIcon = (type) => {
         if (type === 'PASIVA_FURIA') return '🔥';
+        if (type === 'BUFF_ESPADA_RACHA') return '⚔️';
         if (type === 'REGENERACION') return '💧';
         if (type === 'SHIELD' || type === 'BARRIER') return '🛡️';
         if (type === 'EVADE') return '💨';
@@ -619,6 +621,9 @@ async function advanceTurnQueue() {
                 let s = robot.statuses[i];
                 if (s.type === 'REGENERACION' && (s.casterId === currentActor.robot.id || (!s.casterId && robot === currentActor.robot))) {
                     let healRate = (s && s.healPct) ? s.healPct : 0.10;
+                    if (currentActor.robot.hasAffinity && currentActor.robot.hasAffinity() && currentActor.robot.element === ELEMENTS.AGUA) {
+                        healRate *= 1.25; // +25% potencia de curación por Afinidad de Agua
+                    }
                     let healAmt = Math.max(1, Math.floor(robot.maxHp * healRate));
                     let actualHealed = robot.heal(healAmt);
                     robot.statuses.splice(i, 1);
@@ -732,6 +737,63 @@ function showWaitingCombatActions(msg = 'TURNO ENEMIGO EN PROCESO // CALCULANDO 
     `;
 }
 
+function getBasicAttackInfo(robot) {
+    if (!robot) {
+        return {
+            name: 'Golpe Metálico',
+            element: ELEMENTS.NEUTRO,
+            desc: 'Ataque físico directo (1.0x). 20% prob. de aplicar Marca de su elemento (3T).'
+        };
+    }
+    if (!robot.equippedWeapon) {
+        const elem = robot.element || ELEMENTS.NEUTRO;
+        const elemEmoji = ELEMENT_EMOJIS[elem] || '';
+        return {
+            name: `Golpe Metálico ${elemEmoji}`,
+            element: elem,
+            desc: `Ataque sin armas (1.0x). 20% prob. de aplicar Marca de ${elem} (3T).`
+        };
+    }
+    
+    const w = robot.equippedWeapon;
+    const elem = w.element;
+    const elemEmoji = ELEMENT_EMOJIS[elem] || '';
+    const weaponEmoji = WEAPON_EMOJIS[w.type] || '';
+    let actionName = 'Ataque';
+    
+    if (w.type === WEAPON_TYPES.ESPADA) {
+        if (elem === ELEMENTS.FUEGO) actionName = 'Tajo Ígneo';
+        else if (elem === ELEMENTS.AGUA) actionName = 'Tajo Torrencial';
+        else if (elem === ELEMENTS.TIERRA) actionName = 'Tajo Sísmico';
+        else if (elem === ELEMENTS.AIRE) actionName = 'Tajo Huracán';
+        else actionName = 'Tajo de Espada';
+    } else if (w.type === WEAPON_TYPES.DAGA) {
+        if (elem === ELEMENTS.FUEGO) actionName = 'Estocada Ardiente';
+        else if (elem === ELEMENTS.AGUA) actionName = 'Estocada Marina';
+        else if (elem === ELEMENTS.TIERRA) actionName = 'Estocada Pétrea';
+        else if (elem === ELEMENTS.AIRE) actionName = 'Estocada Huracán';
+        else actionName = 'Estocada Veloz';
+    } else if (w.type === WEAPON_TYPES.HACHA) {
+        if (elem === ELEMENTS.FUEGO) actionName = 'Hendidura de Magma';
+        else if (elem === ELEMENTS.AGUA) actionName = 'Hendidura Glacial';
+        else if (elem === ELEMENTS.TIERRA) actionName = 'Hendidura Telúrica';
+        else if (elem === ELEMENTS.AIRE) actionName = 'Hendidura Ciclónica';
+        else actionName = 'Hendidura Pesada';
+    } else if (w.type === WEAPON_TYPES.BACULO) {
+        if (elem === ELEMENTS.FUEGO) actionName = 'Descarga Ígnea';
+        else if (elem === ELEMENTS.AGUA) actionName = 'Descarga Marina';
+        else if (elem === ELEMENTS.TIERRA) actionName = 'Descarga Telúrica';
+        else if (elem === ELEMENTS.AIRE) actionName = 'Descarga Aérea';
+        else actionName = 'Descarga Mística';
+    }
+    
+    return {
+        name: `${actionName} ${weaponEmoji}${elemEmoji}`,
+        element: elem,
+        desc: `Ataque con ${w.name} (1.0x). 20% prob. de aplicar Marca de ${elem} (3T).`
+    };
+}
+
 function renderCombatActions(playerRobot, allyIndex, view = 'MAIN', activeSkillIdx = null) {
     const actionsContainer = document.getElementById('combat-actions');
     if (!actionsContainer) return;
@@ -813,8 +875,15 @@ function renderCombatActions(playerRobot, allyIndex, view = 'MAIN', activeSkillI
             let typeTag = 'BÁSICO';
             let cardClass = 'skill-card-basic';
             let elemTag = playerRobot.element;
-            
-            if (isSpecial) {
+            let displayName = skill.name;
+            let displayDesc = skill.desc || 'Ataque ofensivo.';
+
+            if (isBasic) {
+                const basicInfo = getBasicAttackInfo(playerRobot);
+                displayName = basicInfo.name;
+                elemTag = basicInfo.element;
+                displayDesc = basicInfo.desc;
+            } else if (isSpecial) {
                 typeTag = 'ESPECIAL';
                 cardClass = 'skill-card-special';
                 elemTag = skill.elementOverride || playerRobot.element;
@@ -832,10 +901,10 @@ function renderCombatActions(playerRobot, allyIndex, view = 'MAIN', activeSkillI
                         ${cdBadge}
                     </div>
                     <div class="skill-card-name-row">
-                        <span class="skill-name-text">${skill.name}</span>
+                        <span class="skill-name-text">${displayName}</span>
                         <span class="member-elem-badge elem-${elemTag}">(${elemTag})</span>
                     </div>
-                    <div class="skill-card-desc">${skill.desc || 'Ataque ofensivo.'}</div>
+                    <div class="skill-card-desc">${displayDesc}</div>
                 </div>
             `;
         }).join('');
@@ -857,6 +926,10 @@ function renderCombatActions(playerRobot, allyIndex, view = 'MAIN', activeSkillI
     }
     else if (view === 'SELECT_ENEMY_TARGET') {
         const skill = (playerRobot && playerRobot.skills && activeSkillIdx !== null && activeSkillIdx !== undefined) ? playerRobot.skills[activeSkillIdx] : null;
+        let skillTitle = skill ? skill.name : 'ATAQUE';
+        if (skill && activeSkillIdx === 0) {
+            skillTitle = getBasicAttackInfo(playerRobot).name;
+        }
         const validEnemies = (combatState.enemies || [])
             .map((e, idx) => ({ robot: e, idx }))
             .filter(item => !item.robot.isOffline && item.robot.hp > 0);
@@ -881,7 +954,7 @@ function renderCombatActions(playerRobot, allyIndex, view = 'MAIN', activeSkillI
                         <progress value="${hpPercent}" max="100"></progress>
                     </div>
                     <button class="btn-target-enemy-cta" onclick="executePlayerTurn(${activeSkillIdx}, ${allyIndex}, null, ${eIdx})">
-                        <span>⚔️ Atacar a ${enemy.name}</span>
+                        <span>⚔️ ${skillTitle} contra ${enemy.name}</span>
                     </button>
                 </div>
             `;
@@ -894,7 +967,7 @@ function renderCombatActions(playerRobot, allyIndex, view = 'MAIN', activeSkillI
                     <button class="btn-tactical-back" onclick="cancelEnemyTargetSelection(${allyIndex})">
                         <span>◀ VOLVER A HABILIDADES</span>
                     </button>
-                    <span class="tactical-sub-title">SELECCIONAR ENEMIGO OBJETIVO PARA ${skill ? skill.name.toUpperCase() : 'ATAQUE'} (O CLIC EN LA ARENA)</span>
+                    <span class="tactical-sub-title">SELECCIONAR OBJETIVO PARA ${skillTitle.toUpperCase()}</span>
                 </div>
                 <div class="tactical-allies-target-grid">
                     ${enemiesHtml}
@@ -1605,7 +1678,12 @@ function executeTurnAoE(attacker, skill, isAttackerAlly, actorIndex = 0) {
 }
 
 function executeTurn(attacker, skill, defender, isAttackerAlly, allyIndex = 0, targetAllyIndex = null, targetEnemyIndex = 0) {
-    logCombat(`[${attacker.name}] usa ${skill.name}`);
+    const isBasicAttack = (skill.cd === 0);
+    let effectiveSkillName = skill.name;
+    if (isBasicAttack) {
+        effectiveSkillName = getBasicAttackInfo(attacker).name;
+    }
+    logCombat(`[${attacker.name}] usa ${effectiveSkillName}`);
     skill.currentCd = skill.cd;
     
     // Animar al atacante saltando hacia adelante
@@ -1613,7 +1691,8 @@ function executeTurn(attacker, skill, defender, isAttackerAlly, allyIndex = 0, t
         triggerCombatAnim(isAttackerAlly, 'ATTACK', isAttackerAlly ? allyIndex : targetEnemyIndex);
     }
     
-    let attackElement = skill.elementOverride || attacker.element;
+    // Si es ataque básico y tiene arma equipada, el básico adopta el elemento del arma
+    let attackElement = skill.elementOverride || (isBasicAttack && attacker.equippedWeapon ? attacker.equippedWeapon.element : attacker.element);
 
     // 1. Daño
     if (skill.type.includes('DAMAGE')) {
@@ -1640,6 +1719,11 @@ function executeTurn(attacker, skill, defender, isAttackerAlly, allyIndex = 0, t
             let mult = getMultiplier(attackElement, defender.element);
             let baseDmg = Math.floor(attacker.atk * skill.power * mult);
 
+            // Buff de Racha de Espada (+10% ATQ si asestó crítico en ronda previa)
+            if (attacker.hasStatus && attacker.hasStatus('BUFF_ESPADA_RACHA')) {
+                baseDmg = Math.floor(baseDmg * 1.10);
+            }
+
             // Pasiva Berserker: Furia Sobrecalentada
             let berserkBonus = attacker.getBerserkBonus ? attacker.getBerserkBonus() : { dmgMult: 1, critBonus: 0 };
             if (berserkBonus.dmgMult > 1) {
@@ -1665,7 +1749,23 @@ function executeTurn(attacker, skill, defender, isAttackerAlly, allyIndex = 0, t
                 }
             }
 
-            const isBasicAttack = (skill.cd === 0);
+            // Afinidad de Fuego: +15% de daño adicional contra objetivos con Marca o Quemadura
+            if (attacker.hasAffinity && attacker.hasAffinity() && attacker.element === ELEMENTS.FUEGO) {
+                const hasMarkOrBurn = defender.statuses.some(s => s.type.startsWith('MARCA_') || s.type === 'BURN');
+                if (hasMarkOrBurn) {
+                    baseDmg = Math.floor(baseDmg * 1.15);
+                    logCombat(`🔥 [Afinidad Fuego] ¡Ignición táctica! +15% daño a objetivo marcado/quemado.`);
+                }
+            }
+
+            // Hacha (Efecto Verdugo): +35% de daño masivo contra objetivos con menos del 40% de vida
+            if (attacker.equippedWeapon && attacker.equippedWeapon.type === WEAPON_TYPES.HACHA) {
+                if (defender.maxHp > 0 && (defender.hp / defender.maxHp) <= 0.40) {
+                    baseDmg = Math.floor(baseDmg * 1.35);
+                    logCombat(`🪓 [Hacha del Verdugo] ¡Golpe de gracia! +35% daño a rival herido (<40% HP).`);
+                }
+            }
+
             let isCrit = false;
             
             // Daño Crítico Global: Exclusivo de ataques básicos (skill.cd === 0)
@@ -1679,6 +1779,13 @@ function executeTurn(attacker, skill, defender, isAttackerAlly, allyIndex = 0, t
                     isCrit = true;
                     let critPctStr = Math.round((critMult - 1) * 100);
                     logCombat(`⚡💥 ¡Impacto Crítico de [${attacker.name}] (+${critPctStr}% Daño)!`);
+
+                    // Racha de Espada: crítico activa +10% ATQ temporal
+                    if (attacker.equippedWeapon && attacker.equippedWeapon.type === WEAPON_TYPES.ESPADA) {
+                        attacker.statuses = attacker.statuses.filter(s => s.type !== 'BUFF_ESPADA_RACHA');
+                        attacker.addStatus({ type: 'BUFF_ESPADA_RACHA', duration: 2, isBuff: true });
+                        logCombat(`⚔️ [Racha de Espada] ¡El impacto crítico activa +10% ATQ para [${attacker.name}]!`);
+                    }
                 }
             }
             
@@ -1857,12 +1964,20 @@ function executeTurn(attacker, skill, defender, isAttackerAlly, allyIndex = 0, t
                 logCombat(`- 💧 ¡El Rocío Reparador sobre [${defender.name}] salpica a [${attacker.name}] y le adhiere ${formatStatusLabel('MARCA_AGUA')} (3 turnos)!`);
             }
             
-            // Aplicar marca elemental si es habilidad especial
+            // Aplicar marca elemental si es habilidad especial o probabilidad del 20% en ataques básicos
             if (skill.cd > 0 && attackElement !== ELEMENTS.NEUTRO) {
                 let markType = `MARCA_${attackElement}`;
                 defender.statuses = defender.statuses.filter(s => !s.type.startsWith('MARCA_'));
                 defender.addStatus({ type: markType, duration: 3 });
                 logCombat(`- Aplica ${formatStatusLabel(markType)} a ${defender.name} (3 turnos).`);
+            } else if (isBasicAttack && attackElement !== ELEMENTS.NEUTRO && defender.hp > 0) {
+                // 20% de probabilidad de aplicar Marca Elemental en Ataque Básico
+                if (Math.random() < 0.20) {
+                    let markType = `MARCA_${attackElement}`;
+                    defender.statuses = defender.statuses.filter(s => !s.type.startsWith('MARCA_'));
+                    defender.addStatus({ type: markType, duration: 3 });
+                    logCombat(`✨ ¡[${attacker.name}] imbuye su golpe y adhiere ${formatStatusLabel(markType)} a [${defender.name}] (3 turnos)!`);
+                }
             }
             
             showHitAnimation(attackElement, isAttackerAlly, isAttackerAlly ? targetEnemyIndex : (targetAllyIndex !== null ? targetAllyIndex : allyIndex));
@@ -1902,6 +2017,15 @@ function executeTurn(attacker, skill, defender, isAttackerAlly, allyIndex = 0, t
                             logCombat(`🌵 ¡[${defender.name}] refleja ${actualDaggerReflect} de daño extra a [${attacker.name}] con Coraza de Espinas!`);
                             setTimeout(() => showDamagePopup(actualDaggerReflect, !isAttackerAlly, isAttackerAlly ? allyIndex : targetEnemyIndex, false), 350);
                         }
+
+                        // 20% probabilidad de aplicar Marca en el segundo golpe de Daga si es básico
+                        if (isBasicAttack && attackElement !== ELEMENTS.NEUTRO && defender.hp > 0 && Math.random() < 0.20) {
+                            let markType = `MARCA_${attackElement}`;
+                            defender.statuses = defender.statuses.filter(s => !s.type.startsWith('MARCA_'));
+                            defender.addStatus({ type: markType, duration: 3 });
+                            logCombat(`✨ ¡Segundo golpe de Daga adhiere ${formatStatusLabel(markType)} a [${defender.name}] (3 turnos)!`);
+                        }
+
                         setTimeout(() => {
                             showHitAnimation(attackElement, isAttackerAlly, isAttackerAlly ? targetEnemyIndex : (targetAllyIndex !== null ? targetAllyIndex : allyIndex));
                             showDamagePopup(dmgDealt2, isAttackerAlly, isAttackerAlly ? targetEnemyIndex : (targetAllyIndex !== null ? targetAllyIndex : allyIndex), isDaggerCrit, isDaggerCrit);
@@ -1991,8 +2115,12 @@ function executeTurn(attacker, skill, defender, isAttackerAlly, allyIndex = 0, t
                 logCombat(`- [${attacker.name}] activa Coraza de Espinas (reduce 50% daño recibido y refleja 50% al atacante hasta su próximo turno).`);
                 showHitAnimation('SHIELD', recipientIsEnemy, recipientAllyIdx);
             } else if (skill.status.type === 'BARRIER') {
-                // Curar 5% de la vida máxima del que recibe la barrera
-                let healAmt = Math.max(1, Math.floor(recipient.maxHp * 0.05));
+                // Curar 5% de la vida máxima del que recibe la barrera (+25% si tiene Afinidad de Agua)
+                let barrierHealRate = 0.05;
+                if (attacker.hasAffinity && attacker.hasAffinity() && attacker.element === ELEMENTS.AGUA) {
+                    barrierHealRate *= 1.25;
+                }
+                let healAmt = Math.max(1, Math.floor(recipient.maxHp * barrierHealRate));
                 let actualHealed = recipient.heal(healAmt);
                 if (actualHealed > 0) {
                     showHealPopup(actualHealed, recipientIsEnemy, recipientAllyIdx);
@@ -2041,6 +2169,12 @@ function executeTurn(attacker, skill, defender, isAttackerAlly, allyIndex = 0, t
         } else {
             healAmount = Math.floor(healRecipient.maxHp * 0.3);
         }
+
+        // Afinidad de Agua: +25% de potencia a todas las curaciones emitidas
+        if (attacker.hasAffinity && attacker.hasAffinity() && attacker.element === ELEMENTS.AGUA) {
+            healAmount = Math.floor(healAmount * 1.25);
+        }
+
         let actualHealed = healRecipient.heal(healAmount);
         if (actualHealed > 0) {
             showHealPopup(actualHealed, healRecipientIsEnemy, healRecipientIdx);
