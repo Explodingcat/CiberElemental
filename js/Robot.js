@@ -5,7 +5,17 @@ class Robot {
         this.id = template.id || Math.random().toString(36).substr(2, 9);
         this.name = template.name;
         this.element = template.element;
-        this.emoji = template.emoji || '🤖';
+        this.skin = template.skin || 'DEFAULT';
+        this.aura = template.aura || 'NONE';
+        this.particles = template.particles || 'NONE';
+        
+        // Sincronizar emoji: respetar estrictamente el emoji del template original (👾 salvajes, 🦍 élites, 👹 jefes, 🤖 aliados)
+        // Solo sobreescribir si se especificó una skin cosmética personalizada diferente a DEFAULT que posea su propio emoji
+        if (this.skin && this.skin !== 'DEFAULT' && typeof SKINS_DATABASE !== 'undefined' && SKINS_DATABASE[this.skin] && SKINS_DATABASE[this.skin].emoji) {
+            this.emoji = SKINS_DATABASE[this.skin].emoji;
+        } else {
+            this.emoji = template.emoji || '🤖';
+        }
         
         // Niveles y XP
         this.level = template.level || 1;
@@ -95,11 +105,17 @@ class Robot {
     }
 
     hasAffinity() {
+        if (this.equippedWeapon && (this.equippedWeapon.element === ELEMENTS.LEGENDARIO || this.equippedWeapon.isLegendary)) {
+            return true;
+        }
         return !!(this.equippedWeapon && this.equippedWeapon.element === this.element);
     }
 
     getAffinityDescription() {
         if (!this.hasAffinity()) return null;
+        if (this.equippedWeapon && (this.equippedWeapon.element === ELEMENTS.LEGENDARIO || this.equippedWeapon.isLegendary)) {
+            return '🌟 Afinidad Legendaria Universal: Armonía dorada con todos los elementos (+25% ATQ y +15% HP).';
+        }
         switch(this.element) {
             case ELEMENTS.FUEGO:
                 return 'Afinidad Fuego: +15% ATQ y +15% daño adicional a enemigos con Marca o Quemadura.';
@@ -175,7 +191,12 @@ class Robot {
                         : SkillsManager.getModifier('affinity_bonus_extra', 0);
                 }
                 
-                if (this.element === ELEMENTS.FUEGO) {
+                if (this.equippedWeapon && (this.equippedWeapon.element === ELEMENTS.LEGENDARIO || this.equippedWeapon.isLegendary)) {
+                    // AFINIDAD LEGENDARIA UNIVERSAL: +25% ATQ y +15% HP a cualquier robot
+                    let legAtkMult = 1.25 + extraAffinity;
+                    this.atk = Math.floor(this.atk * legAtkMult);
+                    this.maxHp = Math.floor(this.maxHp * 1.15);
+                } else if (this.element === ELEMENTS.FUEGO) {
                     // FUEGO: +15% ATQ base (+15% daño adicional a marcados/quemados en combate)
                     let fireAtkMult = 1.15 + extraAffinity;
                     this.atk = Math.floor(this.atk * fireAtkMult);
@@ -205,6 +226,11 @@ class Robot {
                 }
                 this.atk = Math.floor(this.atk * swordDmgMult);
                 this.critChance += swordCrit;
+            }
+
+            // Hacha: +10% de daño base pasivo
+            if (this.equippedWeapon.type === WEAPON_TYPES.HACHA) {
+                this.atk = Math.floor(this.atk * 1.10);
             }
         }
         
@@ -456,8 +482,8 @@ class Robot {
             }
         }
         
-        // Efecto Báculo: cura 5% max hp (7% si mejorado) + pasiva Báculos de Regeneración
-        if (this.equippedWeapon && this.equippedWeapon.type === WEAPON_TYPES.BACULO && this.hp > 0 && this.hp < this.maxHp) {
+        // Efecto Báculo: regeneración al portador y soporte táctico en +1
+        if (this.equippedWeapon && this.equippedWeapon.type === WEAPON_TYPES.BACULO && this.hp > 0) {
             let staffExtra = (this.isAlly && typeof SkillsManager !== 'undefined') 
                 ? SkillsManager.getModifier('staff_extra_heal', 0) 
                 : 0;
@@ -465,11 +491,61 @@ class Robot {
             if (this.hasAffinity() && this.element === ELEMENTS.AGUA) {
                 healRate *= 1.25; // +25% de potencia de curación por Afinidad de Agua
             }
-            let healAmount = Math.max(1, Math.floor(this.maxHp * healRate));
-            let actualHeal = this.heal(healAmount);
-            if (actualHeal > 0) {
-                totalHeal += actualHeal;
-                messages.push(`${this.name} se cura ${actualHeal} gracias a su Báculo.`);
+            if (this.hp < this.maxHp) {
+                let healAmount = Math.max(1, Math.floor(this.maxHp * healRate));
+                let actualHeal = this.heal(healAmount);
+                if (actualHeal > 0) {
+                    totalHeal += actualHeal;
+                    messages.push(`${this.name} se cura ${actualHeal} gracias a su Báculo.`);
+                }
+            }
+
+            // Báculo +1: Curación de soporte al aliado más herido (5% HP Máx)
+            if (this.equippedWeapon.isUpgraded) {
+                let allyGroup = this.isAlly 
+                    ? ((typeof GAME_STATE !== 'undefined' && GAME_STATE.team) ? GAME_STATE.team : [])
+                    : ((typeof combatState !== 'undefined' && combatState.enemies) ? combatState.enemies : []);
+                let woundedAllies = allyGroup.filter(a => !a.isOffline && a.hp > 0 && a.hp < a.maxHp && a !== this);
+                if (woundedAllies.length > 0) {
+                    woundedAllies.sort((a, b) => (a.hp / a.maxHp) - (b.hp / b.maxHp));
+                    let targetAlly = woundedAllies[0];
+                    let allyHealRate = 0.05;
+                    if (this.hasAffinity() && this.element === ELEMENTS.AGUA) {
+                        allyHealRate *= 1.25;
+                    }
+                    let allyHealAmt = Math.max(1, Math.floor(targetAlly.maxHp * allyHealRate));
+                    let actualAllyHeal = targetAlly.heal(allyHealAmt);
+                    if (actualAllyHeal > 0) {
+                        messages.push(`🪄 ${this.name} transfiere energía con su Báculo +1 y cura ${actualAllyHeal} HP a ${targetAlly.name}.`);
+                        messages.allyHeal = {
+                            targetRobot: targetAlly,
+                            amount: actualAllyHeal,
+                            isEnemy: !this.isAlly
+                        };
+                    }
+                }
+
+                // Báculo +1: 20% probabilidad de reducir 1 Cooldown a una habilidad de un aliado o propia
+                if (Math.random() < 0.20) {
+                    let teamForCd = this.isAlly 
+                        ? ((typeof GAME_STATE !== 'undefined' && GAME_STATE.team) ? GAME_STATE.team : [])
+                        : ((typeof combatState !== 'undefined' && combatState.enemies) ? combatState.enemies : []);
+                    let eligibleMembers = teamForCd.filter(a => !a.isOffline && a.hp > 0 && a.skills && a.skills.some(s => s.currentCd > 0));
+                    if (eligibleMembers.length > 0) {
+                        let chosenMember = eligibleMembers[Math.floor(Math.random() * eligibleMembers.length)];
+                        let onCdSkills = chosenMember.skills.filter(s => s.currentCd > 0);
+                        if (onCdSkills.length > 0) {
+                            let chosenSkill = onCdSkills[Math.floor(Math.random() * onCdSkills.length)];
+                            chosenSkill.currentCd = Math.max(0, chosenSkill.currentCd - 1);
+                            messages.push(`⚡🔋 ¡Sobrecarga mística del Báculo +1! Se reduce 1 turno de Cooldown a [${chosenSkill.name}] de ${chosenMember.name}.`);
+                            messages.cooldownReduced = {
+                                targetRobot: chosenMember,
+                                skillName: chosenSkill.name,
+                                isEnemy: !this.isAlly
+                            };
+                        }
+                    }
+                }
             }
         }
         
@@ -483,7 +559,145 @@ class Robot {
     }
 
     getEmojiGraphic() {
-        // Devuelve el emoji base, modificado por el elemento
-        return `<span class="elem-${this.element}">${this.emoji}</span>`;
+        const skinDef = this.getSkinDef();
+        const effectiveEmoji = (this.skin && this.skin !== 'DEFAULT' && skinDef.emoji)
+            ? skinDef.emoji
+            : (this.emoji || '🤖');
+        return `<span class="elem-${this.element}">${effectiveEmoji}</span>`;
+    }
+
+    getSkinDef() {
+        if (this.skin && this.skin !== 'DEFAULT' && typeof SKINS_DATABASE !== 'undefined' && SKINS_DATABASE[this.skin]) {
+            return SKINS_DATABASE[this.skin];
+        }
+        return {
+            id: 'DEFAULT',
+            name: 'Chasis Estándar',
+            emoji: this.emoji || '🤖',
+            accessory: null
+        };
+    }
+
+    getAuraDef() {
+        let auraKey = this.aura || 'NONE';
+        if (auraKey === 'AUTO') {
+            auraKey = this.element;
+        }
+        if (typeof AURAS_DATABASE !== 'undefined' && AURAS_DATABASE[auraKey]) {
+            return AURAS_DATABASE[auraKey];
+        }
+        return { className: 'aura-none', type: 'none' };
+    }
+
+    getParticlesDef() {
+        let pKey = this.particles || 'NONE';
+        if (pKey === 'AUTO') {
+            pKey = this.element;
+        }
+        if (typeof PARTICLES_DATABASE !== 'undefined' && PARTICLES_DATABASE[pKey]) {
+            return PARTICLES_DATABASE[pKey];
+        }
+        return { className: 'particles-none', type: 'none' };
+    }
+
+    getAvatarGraphicHtml(containerId = '') {
+        const skinDef = this.getSkinDef();
+        const auraDef = this.getAuraDef();
+        const particlesDef = this.getParticlesDef();
+        const effectiveEmoji = (this.skin && this.skin !== 'DEFAULT' && skinDef.emoji)
+            ? skinDef.emoji
+            : (this.emoji || '🤖');
+        
+        let accessoryHtml = '';
+        if (skinDef.accessory && typeof ACCESSORIES_DATABASE !== 'undefined' && ACCESSORIES_DATABASE[skinDef.accessory]) {
+            const acc = ACCESSORIES_DATABASE[skinDef.accessory];
+            accessoryHtml = `<span class="avatar-accessory ${acc.className}">${acc.emoji}</span>`;
+        }
+        
+        let auraHtml = '';
+        if (auraDef && auraDef.className && auraDef.className !== 'aura-none') {
+            auraHtml = `<div class="avatar-aura-effect ${auraDef.className}"></div>`;
+        }
+
+        let particlesHtml = '';
+        if (particlesDef && particlesDef.type && particlesDef.type !== 'none') {
+            particlesHtml = `
+                <div class="aura-particles-layer particles-${particlesDef.type}">
+                    <span class="aura-particle p-1"></span>
+                    <span class="aura-particle p-2"></span>
+                    <span class="aura-particle p-3"></span>
+                    <span class="aura-particle p-4"></span>
+                    <span class="aura-particle p-5"></span>
+                    <span class="aura-particle p-6"></span>
+                </div>
+            `;
+        }
+        
+        const chasisClass = `chasis-${effectiveEmoji}`;
+        
+        return `
+            <div class="avatar-skin-wrapper ${chasisClass}">
+                ${auraHtml}
+                ${particlesHtml}
+                <span class="avatar-base-emoji elem-${this.element}">${effectiveEmoji}</span>
+                ${accessoryHtml}
+            </div>
+        `;
+    }
+
+    serialize() {
+        return {
+            id: this.id,
+            name: this.name,
+            element: this.element,
+            emoji: this.emoji,
+            skin: this.skin,
+            aura: this.aura,
+            particles: this.particles,
+            level: this.level,
+            xp: this.xp,
+            hp: this.hp,
+            isOffline: !!this.isOffline,
+            isAlly: this.isAlly,
+            isElite: !!this.isElite,
+            isBoss: !!this.isBoss,
+            skills: this.skills,
+            turnPattern: this.turnPattern,
+            passive: this.passive,
+            baseStatsOverride: this.baseStatsOverride,
+            mutator: this.mutator,
+            equippedWeapon: this.equippedWeapon
+        };
+    }
+
+    static deserialize(data) {
+        const robot = new Robot({
+            id: data.id,
+            name: data.name,
+            element: data.element,
+            emoji: data.emoji,
+            skin: data.skin,
+            aura: data.aura,
+            particles: data.particles,
+            level: data.level,
+            xp: data.xp,
+            hp: data.hp,
+            isAlly: data.isAlly,
+            isElite: data.isElite,
+            isBoss: data.isBoss,
+            skills: data.skills,
+            turnPattern: data.turnPattern,
+            passive: data.passive,
+            baseStatsOverride: data.baseStatsOverride,
+            mutator: data.mutator
+        });
+        if (data.equippedWeapon) {
+            robot.equipWeapon(data.equippedWeapon);
+        }
+        if (data.hp !== undefined) {
+            robot.hp = data.hp;
+        }
+        robot.isOffline = !!data.isOffline;
+        return robot;
     }
 }

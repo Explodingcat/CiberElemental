@@ -76,18 +76,21 @@ Los robots Élite tienen **+2 niveles**, **+30% de HP Máximo** y un **Mutador C
 
 ### 🛡️ Probabilidad de Enemigos con Armas Equipadas en Combate
 
-Los robots enemigos salvajes pueden spawnear con armas ya equipadas desde el inicio de la batalla:
+Los robots enemigos salvajes pueden spawnear con armas ya equipadas desde el inicio de la batalla de acuerdo con la torre en la que se encuentre el jugador:
 
-| Piso de la Torre | Probabilidad en Enemigo Normal | Probabilidad en Enemigo Élite | Probabilidad en Jefe TITAN-X |
-| :---: | :---: | :---: | :---: |
-| **Piso 1** | **30.00%** | **100.00%** | — |
-| **Piso 2** | **40.00%** | **100.00%** | — |
-| **Piso 3** | **50.00%** | **100.00%** | — |
-| **Piso 4** | **60.00%** | **100.00%** | — |
-| **Piso 5** | *(Puro Tesoro)* | *(Puro Tesoro)* | — |
-| **Piso 6** | **80.00%** | **100.00%** | — |
-| **Piso 7** | **90.00%** | **100.00%** | — |
-| **Pisos 8 - 10** | **100.00%** | **100.00%** | **100.00%** |
+| Sector / Torre | Rango de Pisos | Probabilidad en Enemigo Normal | Notas Tácticas |
+| :---: | :---: | :---: | :--- |
+| **🗼 Torre 1: Torre Cibernética** | **Pisos 1 al 10** | **0.00% (Sin armas)** | Los enemigos regulares luchan a mano limpia con sus estadísticas y habilidades elementales base. |
+| **⚛️ Torre 2: Torre Cuántica** | **Piso 11** | **30.00%** | Comienzan a equipar armas elementales (Espadas, Dagas, Hachas, Báculos). |
+| **⚛️ Torre 2: Torre Cuántica** | **Piso 12** | **40.00%** | +10% de probabilidad acumulada por piso. |
+| **⚛️ Torre 2: Torre Cuántica** | **Piso 13** | **50.00%** | La mitad de los enemigos estándar portan armas. |
+| **⚛️ Torre 2: Torre Cuántica** | **Piso 14** | **60.00%** | Incremento de letalidad y posibles pasivas de armas enemigas. |
+| **⚛️ Torre 2: Torre Cuántica** | **Piso 15** | *(Puro Tesoro)* | Sector de abastecimiento sin combates. |
+| **⚛️ Torre 2: Torre Cuántica** | **Pisos 16 - 17** | **80.00% - 90.00%** | Casi la totalidad de los autómatas están armados. |
+| **⚛️ Torre 2: Torre Cuántica** | **Pisos 18 - 20** | **100.00%** | 100% de armas equipadas en enemigos regulares. |
+| **🌌 Torre 3: Torre de Singularidad** | **Pisos 21 al 30** | **100.00%** | Máxima hostilidad: todo enemigo regular porta armamento elemental de alto nivel. |
+
+> **Nota sobre Élites y Jefes:** Los robots Élite dependen primordialmente de sus mutadores cibernéticos y stats aumentados, mientras que los Jefes de torre sueltan armas doradas legendarias garantizadas tras su neutralización.
 
 ---
 
@@ -121,8 +124,8 @@ Todas las armas obtenidas en cofres vienen **garantizadas con mejora +1** (valor
 
 #### 1. Tipo de Arma (Equiprobable 25%):
 * 🗡️ **Daga (+1):** **25%** *(12.50% global)* ➔ *40% prob. de doble ataque consecutivo.*
-* 🪓 **Hacha (+1):** **25%** *(12.50% global)* ➔ *Perfora 75% de barreras y defensas.*
-* 🪄 **Báculo (+1):** **25%** *(12.50% global)* ➔ *Repara 7% HP Máx al final de cada turno.*
+* 🪓 **Hacha (+1):** **25%** *(12.50% global)* ➔ *+10% ATQ, perfora 75% defensas, 20% Rompearmaduras, +45% Daño a ≤40% HP.*
+* 🪄 **Báculo (+1):** **25%** *(12.50% global)* ➔ *Repara 7% HP Máx portador + 5% a aliado. 20% prob. de -1 Cooldown.*
 * ⚔️ **Espada (+1):** **25%** *(12.50% global)* ➔ *+30% Daño base pasivo y +20% Crítico en Básicos.*
 
 #### 2. Elemento del Arma (Equiprobable 25%):
@@ -141,14 +144,14 @@ $$\text{Probabilidad Exacta} = 50\% \times 25\% \times 25\% = \mathbf{3.125\%} \
 | **Daga de Agua +1** | 🗡️ 💧 | +1 | **3.125%** | 40% doble ataque |
 | **Daga de Tierra +1** | 🗡️ 🪨 | +1 | **3.125%** | 40% doble ataque |
 | **Daga de Aire +1** | 🗡️ 💨 | +1 | **3.125%** | 40% doble ataque |
-| **Hacha de Fuego +1** | 🪓 🔥 | +1 | **3.125%** | Perfora 75% defensas/barreras |
-| **Hacha de Agua +1** | 🪓 💧 | +1 | **3.125%** | Perfora 75% defensas/barreras |
-| **Hacha de Tierra +1** | 🪓 🪨 | +1 | **3.125%** | Perfora 75% defensas/barreras |
-| **Hacha de Aire +1** | 🪓 💨 | +1 | **3.125%** | Perfora 75% defensas/barreras |
-| **Báculo de Fuego +1** | 🪄 🔥 | +1 | **3.125%** | Cura 7% HP Máx/turno |
-| **Báculo de Agua +1** | 🪄 💧 | +1 | **3.125%** | Cura 7% HP Máx/turno |
-| **Báculo de Tierra +1** | 🪄 🪨 | +1 | **3.125%** | Cura 7% HP Máx/turno |
-| **Báculo de Aire +1** | 🪄 💨 | +1 | **3.125%** | Cura 7% HP Máx/turno |
+| **Hacha de Fuego +1** | 🪓 🔥 | +1 | **3.125%** | +10% ATQ, 75% Pen, 20% Rompearmaduras, +45% Verdugo |
+| **Hacha de Agua +1** | 🪓 💧 | +1 | **3.125%** | +10% ATQ, 75% Pen, 20% Rompearmaduras, +45% Verdugo |
+| **Hacha de Tierra +1** | 🪓 🪨 | +1 | **3.125%** | +10% ATQ, 75% Pen, 20% Rompearmaduras, +45% Verdugo |
+| **Hacha de Aire +1** | 🪓 💨 | +1 | **3.125%** | +10% ATQ, 75% Pen, 20% Rompearmaduras, +45% Verdugo |
+| **Báculo de Fuego +1** | 🪄 🔥 | +1 | **3.125%** | Cura 7% portador + 5% aliado / 20% -1 CD |
+| **Báculo de Agua +1** | 🪄 💧 | +1 | **3.125%** | Cura 7% portador + 5% aliado / 20% -1 CD |
+| **Báculo de Tierra +1** | 🪄 🪨 | +1 | **3.125%** | Cura 7% portador + 5% aliado / 20% -1 CD |
+| **Báculo de Aire +1** | 🪄 💨 | +1 | **3.125%** | Cura 7% portador + 5% aliado / 20% -1 CD |
 | **Espada de Fuego +1** | ⚔️ 🔥 | +1 | **3.125%** | +30% Daño + 20% Crítico |
 | **Espada de Agua +1** | ⚔️ 💧 | +1 | **3.125%** | +30% Daño + 20% Crítico |
 | **Espada de Tierra +1** | ⚔️ 🪨 | +1 | **3.125%** | +30% Daño + 20% Crítico |

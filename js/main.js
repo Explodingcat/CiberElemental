@@ -75,6 +75,10 @@ function showScreen(screenId) {
         }
     }
 
+    if (screenId === 'screen-main-menu') {
+        checkSavedCheckpoint();
+    }
+
     // Actualizar datos de Game Over y guardar run
     if (screenId === 'screen-game-over' && typeof GAME_STATE !== 'undefined') {
         const floorEl = document.getElementById('gameover-floor');
@@ -99,6 +103,11 @@ function showScreen(screenId) {
             if (typeof SkillsManager !== 'undefined') SkillsManager.updateAllScrapDisplays();
         }
 
+        // Si el escuadrón cae derrotado, se borra el checkpoint de la base de datos
+        if (typeof AuthManager !== 'undefined' && typeof AuthManager.clearTowerCheckpoint === 'function') {
+            AuthManager.clearTowerCheckpoint();
+        }
+
         // Renderizar banner / formulario de registro si el usuario es anónimo
         if (typeof AuthManager !== 'undefined') {
             AuthManager.renderPostGameAuthBanner('screen-game-over');
@@ -117,6 +126,13 @@ function showScreen(screenId) {
         if (teamEl) teamEl.innerText = `${aliveRobots.length} 🤖`;
         if (globalScrapAddedEl) globalScrapAddedEl.innerText = `+${GAME_STATE.scrap} ⚙️ transferidos al Pozo Global de tu Cuenta`;
 
+        const sectorEl = document.getElementById('victory-sector-conquered');
+        if (sectorEl) {
+            const currentTowerId = (GAME_STATE && GAME_STATE.currentTower) ? GAME_STATE.currentTower : 1;
+            const towerCfg = (typeof TOWERS_CONFIG !== 'undefined' && TOWERS_CONFIG[currentTowerId]) ? TOWERS_CONFIG[currentTowerId] : null;
+            sectorEl.innerText = towerCfg ? `${towerCfg.name.toUpperCase()} (PISO ${GAME_STATE.floor || 10}) ✔` : `PISO ${GAME_STATE.floor || 10} ✔`;
+        }
+
         if (rosterEl && GAME_STATE.team) {
             rosterEl.innerHTML = GAME_STATE.team.map(r => `
                 <div class="victory-hero-pill elem-${r.element}">
@@ -131,12 +147,17 @@ function showScreen(screenId) {
             const duration = GAME_STATE.startTime ? Math.max(1, Math.round((Date.now() - GAME_STATE.startTime) / 1000)) : 0;
             AuthManager.saveMatchRun({
                 won: true,
-                floor_reached: 10,
+                floor_reached: GAME_STATE.floor || 10,
                 duration_seconds: duration,
                 scrap_collected: GAME_STATE.scrap || 0,
                 squad: extractSquadData()
             });
             if (typeof SkillsManager !== 'undefined') SkillsManager.updateAllScrapDisplays();
+        }
+
+        // Si se consolida la victoria, se borra el checkpoint de la base de datos
+        if (typeof AuthManager !== 'undefined' && typeof AuthManager.clearTowerCheckpoint === 'function') {
+            AuthManager.clearTowerCheckpoint();
         }
 
         // Renderizar banner / formulario de registro si el usuario es anónimo
@@ -194,10 +215,18 @@ function initGame() {
             roleSubtitle = '⚡ Pícaro Cibernético • Alta Velocidad y Evasión';
         }
 
+        const previewAura = (typeof CosmeticsManager !== 'undefined') ? CosmeticsManager.getEquippedAura() : 'NONE';
+        const previewParticles = (typeof CosmeticsManager !== 'undefined') ? CosmeticsManager.getEquippedParticles() : 'NONE';
+        const previewRobot = new Robot(Object.assign({}, template, {
+            aura: previewAura,
+            particles: previewParticles
+        }));
+        const avatarGraphicHtml = previewRobot.getAvatarGraphicHtml();
+
         robotPreview.innerHTML = `
             <div class="preview-hero">
                 <div class="holo-platform platform-${template.element}">
-                    <div class="avatar-emoji elem-${template.element}">${template.emoji}</div>
+                    ${avatarGraphicHtml}
                 </div>
                 <div class="hero-name-row">
                     <h2 class="hero-name">${template.name}</h2>
@@ -243,13 +272,13 @@ function initGame() {
         }
         if (wKey === 'HACHA') { 
             wName = 'Hacha'; 
-            desc = '<strong>Perfora el 50% de barreras/defensa</strong> (75% con +1). Otorga <strong>+35% de Daño masivo</strong> a rivales con ≤40% HP (Verdugo).';
-            weaponRoleSubtitle = '🪓 Arma Pesada • Perforación y Verdugo';
+            desc = '<strong>+10% ATQ base</strong>. <strong>20% prob. de Rompearmaduras</strong> (-25% DEF). Perfora 50% barreras/defensa (75% con +1). <strong>+35% Daño a ≤40% HP (+45% con +1)</strong>.';
+            weaponRoleSubtitle = '🪓 Arma Pesada • Quiebre de Armadura y Verdugo';
         }
         if (wKey === 'BACULO') { 
             wName = 'Báculo'; 
-            desc = '<strong>Regenera un 5% del HP máximo</strong> al finalizar cada ronda (7% con +1). Potenciado por Afinidad de Agua (+25% cura).';
-            weaponRoleSubtitle = '🪄 Canalizador • Sustento y Curación';
+            desc = '<strong>Regenera 5% HP del portador</strong> por ronda (7% con +1). En +1 <strong>cura 5% a un aliado</strong> y <strong>20% prob. de reducir 1 CD</strong>.';
+            weaponRoleSubtitle = '🪄 Canalizador • Sustento y Soporte Grupal';
         }
         if (wKey === 'ESPADA') { 
             wName = 'Espada'; 
@@ -368,6 +397,10 @@ function initGame() {
         let selectedTemplate = robotKeys[currentRobotIndex];
         let selectedWeaponType = weaponKeys[currentWeaponIndex];
         
+        // Reiniciar equipo e inventario para nueva expedición
+        GAME_STATE.team = [];
+        GAME_STATE.inventory = { items: [], weapons: [] };
+        
         addStarterRobot(selectedTemplate);
         
         // Equipar el arma seleccionada
@@ -376,13 +409,15 @@ function initGame() {
         weapon.type = WEAPON_TYPES[selectedWeaponType];
         weapon.name = `${selectedWeaponType.charAt(0) + selectedWeaponType.slice(1).toLowerCase()} de ${playerRobot.element}`;
         if (weapon.type === WEAPON_TYPES.DAGA) weapon.desc = '25% prob. doble ataque (40% con +1). Cada golpe puede aplicar marca.';
-        if (weapon.type === WEAPON_TYPES.HACHA) weapon.desc = 'Perfora 50% barreras/defensa (75% con +1). +35% Daño a enemigos con ≤40% HP (Verdugo).';
-        if (weapon.type === WEAPON_TYPES.BACULO) weapon.desc = 'Regenera 5% HP por ronda (7% con +1). Potenciado por afinidad de Agua.';
+        if (weapon.type === WEAPON_TYPES.HACHA) weapon.desc = '+10% ATQ base. 20% prob. Rompearmaduras (-25% DEF). Perfora 50% defensas (75% con +1). +35% Daño a ≤40% HP (+45% con +1).';
+        if (weapon.type === WEAPON_TYPES.BACULO) weapon.desc = 'Regenera 5% HP al portador por ronda (7% con +1). En +1 cura 5% a un aliado y 20% prob. de -1 CD.';
         if (weapon.type === WEAPON_TYPES.ESPADA) weapon.desc = '+15% Daño base y +10% Crítico (+30%/+20% con +1). Críticos otorgan +10% ATQ temporal.';
         
         playerRobot.equipWeapon(weapon);
         
+        GAME_STATE.currentTower = 1;
         GAME_STATE.floor = 1;
+        GAME_STATE.currentNodeId = null;
         GAME_STATE.startTime = Date.now();
         GAME_STATE.runSaved = false;
         startRunTimer();
@@ -392,7 +427,7 @@ function initGame() {
         const disp = document.getElementById('scrap-display');
         if (disp) disp.innerText = `Chatarra: ${GAME_STATE.scrap} ⚙️`;
 
-        generateFullMap();
+        generateFullMap(1);
         renderMap();
         showScreen('screen-map');
     };
@@ -401,9 +436,84 @@ function initGame() {
     renderRobot();
 }
 
+async function checkSavedCheckpoint() {
+    const resumeBtn = document.getElementById('btn-resume-run');
+    if (!resumeBtn) return;
+    
+    if (typeof AuthManager === 'undefined' || typeof AuthManager.getSavedTowerCheckpoint !== 'function') {
+        resumeBtn.style.display = 'none';
+        return;
+    }
+    
+    try {
+        const checkpoint = await AuthManager.getSavedTowerCheckpoint();
+        if (checkpoint && checkpoint.squad && checkpoint.squad.length > 0) {
+            const towerId = checkpoint.current_tower || 2;
+            const towerCfg = (typeof TOWERS_CONFIG !== 'undefined' && TOWERS_CONFIG[towerId]) 
+                ? TOWERS_CONFIG[towerId] 
+                : { name: `Torre ${towerId}` };
+            
+            const badgeEl = document.getElementById('resume-tower-badge');
+            if (badgeEl) badgeEl.innerText = `${towerCfg.name.toUpperCase()} (PISO ${checkpoint.floor || 11})`;
+            
+            resumeBtn.style.display = 'flex';
+            resumeBtn.onclick = () => resumeSavedRun(checkpoint);
+        } else {
+            resumeBtn.style.display = 'none';
+        }
+    } catch (e) {
+        console.error('Error al comprobar checkpoint guardado de torre:', e);
+        resumeBtn.style.display = 'none';
+    }
+}
+
+async function resumeSavedRun(checkpoint) {
+    if (!checkpoint) {
+        checkpoint = await AuthManager.getSavedTowerCheckpoint();
+    }
+    if (!checkpoint) return;
+
+    // Restaurar escuadrón completo
+    GAME_STATE.team = [];
+    if (Array.isArray(checkpoint.squad)) {
+        checkpoint.squad.forEach(robotData => {
+            const robot = (typeof Robot.deserialize === 'function') 
+                ? Robot.deserialize(robotData) 
+                : new Robot(robotData);
+            GAME_STATE.team.push(robot);
+        });
+    }
+
+    // Restaurar inventario
+    GAME_STATE.inventory = {
+        items: (checkpoint.inventory && checkpoint.inventory.items) ? checkpoint.inventory.items : [],
+        weapons: (checkpoint.inventory && checkpoint.inventory.weapons) ? checkpoint.inventory.weapons : []
+    };
+
+    // Restaurar chatarra recolectada en la run
+    GAME_STATE.scrap = checkpoint.scrap || 0;
+    const disp = document.getElementById('scrap-display');
+    if (disp) disp.innerText = `Chatarra: ${GAME_STATE.scrap} ⚙️`;
+
+    // Restaurar torre y piso
+    GAME_STATE.currentTower = checkpoint.current_tower || 2;
+    GAME_STATE.floor = checkpoint.floor || 11;
+    GAME_STATE.currentNodeId = null;
+    GAME_STATE.startTime = Date.now();
+    GAME_STATE.runSaved = false;
+    startRunTimer();
+
+    // Generar mapa de la torre correspondiente
+    generateFullMap(GAME_STATE.currentTower);
+    renderMap();
+    updateTeamUI();
+    showScreen('screen-map');
+}
+
 // Iniciar
 window.onload = () => {
     initGame();
+    checkSavedCheckpoint();
     if (window.location.hash === '#start') {
         showScreen('screen-start');
     }

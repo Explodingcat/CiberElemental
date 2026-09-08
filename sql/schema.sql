@@ -85,3 +85,72 @@ CREATE POLICY "Users can update their own profile"
     ON public.player_profiles FOR UPDATE
     USING (auth.uid() = user_id)
     WITH CHECK (auth.uid() = user_id);
+
+-- 6. Tabla de Cosméticos (Auras y Partículas) Adquiridos y Equipados
+CREATE TABLE IF NOT EXISTS public.player_cosmetics (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    user_id UUID REFERENCES auth.users ON DELETE CASCADE NOT NULL DEFAULT auth.uid(),
+    cosmetic_type TEXT NOT NULL CHECK (cosmetic_type IN ('AURA', 'PARTICLES')),
+    cosmetic_id TEXT NOT NULL,
+    is_equipped BOOLEAN NOT NULL DEFAULT FALSE,
+    purchased_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    CONSTRAINT unique_user_cosmetic UNIQUE (user_id, cosmetic_type, cosmetic_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_player_cosmetics_user 
+    ON public.player_cosmetics (user_id, cosmetic_type);
+
+ALTER TABLE public.player_cosmetics ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Users can read their own cosmetics" ON public.player_cosmetics;
+CREATE POLICY "Users can read their own cosmetics"
+    ON public.player_cosmetics FOR SELECT
+    USING (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "Users can insert their own cosmetics" ON public.player_cosmetics;
+CREATE POLICY "Users can insert their own cosmetics"
+    ON public.player_cosmetics FOR INSERT
+    WITH CHECK (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "Users can update their own cosmetics" ON public.player_cosmetics;
+CREATE POLICY "Users can update their own cosmetics"
+    ON public.player_cosmetics FOR UPDATE
+    USING (auth.uid() = user_id)
+    WITH CHECK (auth.uid() = user_id);
+
+-- 7. Tabla de Puntos de Control de Incursión por Torre (saved_tower_runs)
+CREATE TABLE IF NOT EXISTS public.saved_tower_runs (
+    user_id UUID PRIMARY KEY REFERENCES auth.users ON DELETE CASCADE,
+    tower_completed INT NOT NULL, -- 1 o 2
+    current_tower INT NOT NULL,   -- 2 o 3
+    floor INT NOT NULL,           -- 11 o 21
+    scrap INT NOT NULL DEFAULT 0,
+    squad JSONB NOT NULL,         -- Robots con HP, maxHp, nivel, XP, skills (chips), arma
+    inventory JSONB NOT NULL,     -- Weapons e items recolectados
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+ALTER TABLE public.saved_tower_runs ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Users can read their own saved run" ON public.saved_tower_runs;
+CREATE POLICY "Users can read their own saved run"
+    ON public.saved_tower_runs FOR SELECT
+    USING (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "Users can insert their own saved run" ON public.saved_tower_runs;
+CREATE POLICY "Users can insert their own saved run"
+    ON public.saved_tower_runs FOR INSERT
+    WITH CHECK (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "Users can update their own saved run" ON public.saved_tower_runs;
+CREATE POLICY "Users can update their own saved run"
+    ON public.saved_tower_runs FOR UPDATE
+    USING (auth.uid() = user_id)
+    WITH CHECK (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "Users can delete their own saved run" ON public.saved_tower_runs;
+CREATE POLICY "Users can delete their own saved run"
+    ON public.saved_tower_runs FOR DELETE
+    USING (auth.uid() = user_id);
+
+

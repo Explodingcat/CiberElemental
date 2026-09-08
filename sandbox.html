@@ -20,7 +20,7 @@
             </div>
         </div>
 
-        <!-- 3 Botones / Modos Principales -->
+        <!-- 4 Botones / Modos Principales -->
         <div class="sandbox-nav-modes">
             <button id="tab-btn-combat" class="sandbox-tab-btn active" onclick="switchSandboxTab('combat')">
                 <span>⚔️</span> SIMULADOR DE COMBATE
@@ -30,6 +30,9 @@
             </button>
             <button id="tab-btn-balance" class="sandbox-tab-btn" onclick="switchSandboxTab('balance')">
                 <span>⚖️</span> BALANCEADOR DE STATS
+            </button>
+            <button id="tab-btn-towers" class="sandbox-tab-btn" onclick="switchSandboxTab('towers')">
+                <span>🗼</span> PASO ENTRE TORRES
             </button>
         </div>
 
@@ -56,10 +59,14 @@
                     <span class="presets-label">⚡ PRESETS RÁPIDOS:</span>
                     <button class="btn-preset" onclick="applyCombatPreset('1V1')">1v1 Básico</button>
                     <button class="btn-preset" onclick="applyCombatPreset('3V3_STARTERS')">3v3 Clásico (Starters vs Salvajes)</button>
-                    <button class="btn-preset" onclick="applyCombatPreset('VS_BOSS')">3 Starters vs TITAN-X (Jefe)</button>
+                    <button class="btn-preset" onclick="applyCombatPreset('VS_BOSS')">3 Starters vs TITAN-X (Jefe 1)</button>
+                    <button class="btn-preset" onclick="applyCombatPreset('VS_TITAN_OMEGA')">3 Starters vs TITAN-OMEGA (Jefe 2)</button>
+                    <button class="btn-preset" onclick="applyCombatPreset('VS_SINGULARIDAD')">3 Starters vs SINGULARIDAD (Jefe 3)</button>
+                    <button class="btn-preset btn-preset-legendary" onclick="applyCombatPreset('LEGENDARY_SQUAD')">👑 Armas Legendarias</button>
                     <button class="btn-preset" onclick="applyCombatPreset('VS_3_ELITES')">3 Starters vs 3 Élites</button>
                     <button class="btn-preset" onclick="applyCombatPreset('BOSS_DUEL')">Duelo de Jefes (TITAN vs TITAN)</button>
-                    <button class="btn-preset" onclick="applyCombatPreset('MIRROR')">🔁 Espejo (Copiar Aliados)</button>
+                    <button class="btn-preset" onclick="applyCombatPreset('MIRROR')">🔁 Espejo</button>
+                    <button class="btn-preset btn-preset-skins" onclick="applyCombatPreset('SKINS_SHOWCASE')">✨ Skins y Auras</button>
                 </div>
 
                 <!-- Grid Dual: Aliados vs Enemigos -->
@@ -288,6 +295,94 @@
             </div>
         </section>
 
+        <!-- ====================================================================
+             4. MODO PASO ENTRE TORRES & ARMAS LEGENDARIAS
+             ==================================================================== -->
+        <section id="view-towers" class="sandbox-view">
+            <!-- Barra Superior: Selector de Torres y Estado Global -->
+            <div class="towers-dashboard-header">
+                <div class="towers-header-info">
+                    <div class="sub-header-badge">SIMULADOR DE ASCENSO // ARQUITECTURA MULTITORRE</div>
+                    <h2 class="towers-main-title">PASO ENTRE TORRES Y ARMAS LEGENDARIAS</h2>
+                    <p class="towers-desc">Prueba y visualiza la transición entre sectores, la entrega de llaves cuánticas, los drops de armas doradas y el guardado de checkpoints en base de datos.</p>
+                </div>
+                
+                <!-- Selector de Acción Rápida de Transición -->
+                <div class="tower-quick-controls">
+                    <span class="control-label">⚡ SIMULAR TRANSICIÓN:</span>
+                    <button class="btn-tower-action btn-trans-1-2" onclick="simulateTowerTransition(1)">
+                        <span>🔑</span> Torre 1 ➔ Torre 2 (TITAN-X)
+                    </button>
+                    <button class="btn-tower-action btn-trans-2-3" onclick="simulateTowerTransition(2)">
+                        <span>🗝️</span> Torre 2 ➔ Torre 3 (TITAN-OMEGA)
+                    </button>
+                    <button class="btn-tower-action btn-trans-3-win" onclick="simulateTowerTransition(3)">
+                        <span>👑</span> Torre 3 ➔ Victoria (SINGULARIDAD)
+                    </button>
+                </div>
+            </div>
+
+            <!-- Grid de las 3 Torres -->
+            <div id="towers-cards-grid" class="towers-cards-grid">
+                <!-- Generado por renderTowersOverview() -->
+            </div>
+
+            <!-- Panel Dual: Escenario de Transición en Vivo vs Visor de Mapa -->
+            <div class="towers-split-layout">
+                
+                <!-- Columna Izquierda: Escenario de Transición y Post-Batalla -->
+                <div class="tower-panel-box transition-stage-panel">
+                    <div class="panel-header-badge">
+                        <span>🎬 ESCENARIO DE TRANSICIÓN POST-BATALLA</span>
+                        <span id="trans-current-step-badge" class="badge-status-step">LISTO</span>
+                    </div>
+                    
+                    <div id="tower-transition-stage" class="transition-stage-content">
+                        <!-- Renderizado dinámico de la post-batalla de jefe: Llave, Arma Dorada, Acciones y JSON de BD -->
+                    </div>
+                </div>
+
+                <!-- Columna Derecha: Visor Interactivo de Mapa Sectorial -->
+                <div class="tower-panel-box map-viewer-panel">
+                    <div class="panel-header-badge">
+                        <span>🗺️ MAPA SECTORIAL // <span id="map-preview-tower-name">TORRE CIBERNÉTICA</span></span>
+                        <div class="map-controls-bar">
+                            <span class="pill-label">PISO SIMULADO:</span>
+                            <select id="map-preview-floor-select" class="sandbox-select-inline" onchange="onTowerFloorSelectChange(this.value)">
+                                <!-- Opciones 1..10, 11..20, etc. -->
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div id="sandbox-map-preview-container" class="sandbox-map-container">
+                        <!-- Mapa generado con nodos y líneas SVG -->
+                    </div>
+
+                    <!-- Panel de Información de Nodo Seleccionado -->
+                    <div id="sandbox-node-details" class="sandbox-node-details" style="display: none;">
+                        <span id="node-detail-badge" class="node-detail-badge">👾 NODO COMBATE</span>
+                        <span id="node-detail-info" class="node-detail-info">Piso 4 // Ruta Principal</span>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Sección Inferior: Laboratorio de Armas Legendarias Doradas -->
+            <div class="legendary-lab-section">
+                <div class="legendary-lab-header">
+                    <div class="sub-header-badge" style="color: #ffd700; border-color: rgba(255, 215, 0, 0.4);">
+                        👑 ARSENAL LEGENDARIO // AFINIDAD UNIVERSAL (+25% ATQ / +15% HP)
+                    </div>
+                    <h3 class="lab-title">PROBADOR DE ARMAS DORADAS</h3>
+                    <p class="lab-desc">Prueba cómo las armas doradas legendarias otorgan bonificaciones de estadísticas universales a cualquier robot e infligen 1.15x de daño contra cualquier elemento.</p>
+                </div>
+
+                <div id="legendary-lab-content" class="legendary-lab-grid">
+                    <!-- Generado por renderLegendaryWeaponsLab() -->
+                </div>
+            </div>
+        </section>
+
     </main>
 
     <!-- Modal de Resultado de Combate Sandbox -->
@@ -360,6 +455,7 @@
     <script src="js/constants.js"></script>
     <script src="js/balanceManager.js"></script>
     <script src="js/database.js"></script>
+    <script src="js/skinsData.js"></script>
     <script src="js/eventsDatabase.js"></script>
     <script src="js/Robot.js"></script>
     <script src="js/teamManager.js"></script>
@@ -369,6 +465,7 @@
     <script src="js/combatSystem.js"></script>
     <script src="js/eventHandler.js"></script>
     <script src="js/postBattle.js"></script>
+    <script src="js/mapGenerator.js"></script>
 
     <!-- Script del Sandbox -->
     <script src="js/sandbox.js"></script>

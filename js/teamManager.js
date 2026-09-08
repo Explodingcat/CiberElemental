@@ -12,13 +12,26 @@ const GAME_STATE = {
 };
 
 function addStarterRobot(templateKey) {
-    GAME_STATE.team = [new Robot(ROBOT_TEMPLATES[templateKey])];
+    const baseTemplate = ROBOT_TEMPLATES[templateKey];
+    const equippedAura = (typeof CosmeticsManager !== 'undefined') ? CosmeticsManager.getEquippedAura() : 'NONE';
+    const equippedParticles = (typeof CosmeticsManager !== 'undefined') ? CosmeticsManager.getEquippedParticles() : 'NONE';
+
+    const starterConfig = Object.assign({}, baseTemplate, {
+        aura: equippedAura,
+        particles: equippedParticles
+    });
+
+    GAME_STATE.team = [new Robot(starterConfig)];
     updateTeamUI();
 }
 
 function recruitRobot(robot) {
     if (GAME_STATE.team.length < 3) {
         robot.isAlly = true;
+        if (typeof CosmeticsManager !== 'undefined') {
+            robot.aura = CosmeticsManager.getEquippedAura();
+            robot.particles = CosmeticsManager.getEquippedParticles();
+        }
         robot.recalculateStats();
         robot.hp = Math.floor(robot.maxHp * 0.5); // Reclutado al 50% HP
         robot.isOffline = false;

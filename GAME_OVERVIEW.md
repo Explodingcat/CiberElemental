@@ -79,7 +79,7 @@ El avance por la torre consta de 10 pisos con diferentes nodos interactivos:
 
 ### 👑 Condición de Victoria (Completar la Incursión)
 1. **Llegar al Piso 10 (Cámara del Núcleo):** Superar los 9 pisos previos administrando recursos, vida del escuadrón y sinergias.
-2. **Derrotar a TITAN-X (Jefe Supremo):** Un coloso neutral de alto poder (**200 HP / 30 ATQ**) que cuenta con *Golpe Titánico* (1.5x) y el devastador *Protocolo Exterminio* (3.0x de daño masivo).
+2. **Derrotar a TITAN-X (Jefe Supremo Colosal):** Un coloso neutral de tamaño doble y alto poder (**350 HP base / ~507 HP en Nivel 10**) equipado con *Golpe Titánico* (1.4x), *Pulso PEM Titánico* (0.8x daño en área y purga total de escudos) y el temido *Protocolo Exterminio* (2.2x daño masivo infalible que no puede fallar ni ser esquivado por Evasión o Desfase Cuántico).
 3. **Pantalla de Victoria:** Al neutralizar a TITAN-X, se despliega la pantalla de **Victoria Táctica Cyberpunk**, certificando el éxito de la misión y liberando el sector.
 
 ---

@@ -27,7 +27,10 @@ El juego opera bajo una rueda de afinidades elemental táctica:
 | 💦 **AGUA** | **Aqua** | 130 | 14 | 9 | 5% | 95% | 5% | **Ataque Básico:** 1.0x Daño.<br>**Barrera Plasma (CD 3):** Otorga barrera a cualquier aliado: bloquea el 100% de daño recibido hasta el próximo turno del invocador, restaura 5% de HP Máx y adhiere Marca de Agua (3T) al enemigo cuando éste ataca al protegido. |
 | 🪨 **TIERRA** | **Terra** | 175 | 12 | 4 | 0% | 85% | 5% | **Ataque Básico:** 1.0x Daño.<br>**Coraza de Espinas (CD 2):** Provocación: obliga a los enemigos a atacarle (al de menor HP si hay varios), reduce 50% el daño recibido, refleja 50% y adhiere 3 Marcas de Tierra al atacante hasta su próximo turno. |
 | 💨 **AIRE** | **Zephyr** | 80 | 22 | 16 | 25% | 95% | 15% | **Ataque Básico:** 1.0x Daño.<br>**Ráfaga Cortante (CD 2):** Inflige 1.4x daño (garantiza actuar primero en el turno de uso). |
-| ⚙️ **NEUTRO** | **TITAN-X** *(Jefe)* | 200 | 30 | 12 | 10% | 100% | 10% | **Golpe Titánico:** 1.5x Daño.<br>**Protocolo Exterminio (CD 4):** 3.0x Daño masivo. |
+| ⚙️ **NEUTRO** | **TITAN-X** *(Jefe Torre 1)* | 350 *(~507 Nv10)* | 26 *(~37 Nv10)* | 11 | 10% | 100% | 12% | **Golpe Titánico:** 1.4x Daño sísmico.<br>**Pulso PEM Titánico (CD 3):** 0.8x Daño en área a todo el escuadrón y destruye todas las barreras y escudos.<br>**Protocolo Exterminio (CD 4):** 2.2x Daño masivo infalible (fijación balística absoluta: no puede fallar ni ser esquivado). |
+| ⚛️ **NEUTRO** | **TITAN-OMEGA** *(Jefe Torre 2)* | 420 *(~819 Nv20)* | 28 *(~54 Nv20)* | 12 | 12% | 100% | 15% | **Golpe Cuántico:** 1.5x Daño electromagnético.<br>**Sobrecarga Cuántica (CD 3):** 1.0x Daño en área que destruye escudos y aplica rompearmaduras.<br>**Protocolo Aniquilación (CD 4):** 2.5x Daño infalible devastador con sacudida sísmica. |
+| 🌌 **NEUTRO** | **SINGULARIDAD-ZERO** *(Jefe Torre 3)* | 500 *(~1225 Nv30)* | 32 *(~78 Nv30)* | 14 | 15% | 100% | 20% | **Colapso Gravitatorio:** 1.6x Daño por aplastamiento espacial.<br>**Tormenta del Vacío (CD 3):** 1.2x Daño en área total, purga barreras y deja conmoción.<br>**Protocolo Singularidad (CD 4):** 3.0x Daño cataclísmico garantizado (no puede fallar). |
+| 👑 **LEGENDARIO** | **Armas Doradas** | — | +25% Afinidad | — | — | — | +20% Crít (+1) | **Afinidad Universal:** Otorga **+25% ATQ y +15% HP Máximo** a cualquier robot independientemente de su elemento.<br>**1.15x Daño Universal:** Sin desventaja contra ningún elemento. Al desmantelarse otorga +100 Chatarra. |
 
 > [!NOTE]
 > **Sistema de Daño Crítico (1.5x / +50% Daño):** Ocurre de forma global exclusivamente en **Ataques Básicos** (las habilidades con Cooldown no pueden asestar golpes críticos).
@@ -121,9 +124,9 @@ En los **Campamentos / Talleres (⛺)** puedes **Forjar** para subir un arma a *
 | Arma | Icono | Efecto Pasivo Base | Efecto Pasivo Mejorado (+1) |
 | :--- | :---: | :--- | :--- |
 | **Daga** | 🗡️ | **25% de probabilidad** de asestar un segundo golpe consecutivo. | **40% de probabilidad** de doble ataque consecutivo. |
-| **Hacha** | 🪓 | **Perfora el 50%** de la reducción de daño por defensa y barreras. | **Perfora el 75%** de la reducción de daño por defensa y barreras. |
-| **Báculo** | 🪄 | Repara automáticamente un **5% del HP Máximo** al final de cada turno. | Repara un **7% del HP Máximo** al final de cada turno. |
-| **Espada** | ⚔️ | **+15% Daño base pasivo** + **10% de Golpe Crítico en Básicos**. | **+30% Daño base pasivo** + **20% de Golpe Crítico en Básicos**. |
+| **Hacha** | 🪓 | **+10% ATQ base pasivo**, **20% prob. de Rompearmaduras** (-25% DEF, 2T) y **perfora 50%** de barreras/defensas.<br>**Verdugo:** +35% Daño a enemigos con $\le 40\%$ HP. | **Perfora 75%** de defensas.<br>**Verdugo Potenciado:** **+45% Daño** a enemigos con $\le 40\%$ HP.<br>Conserva el +10% ATQ y 20% Rompearmaduras. |
+| **Báculo** | 🪄 | Repara automáticamente un **5% del HP Máximo** del portador al final de cada turno (potenciado por Afinidad de Agua). | Repara un **7% del HP Máximo** del portador + **cura 5% HP al aliado más herido**.<br>**20% prob. de reducir 1 turno de Cooldown** a una habilidad aliada o propia. |
+| **Espada** | ⚔️ | **+15% Daño base pasivo** + **10% de Golpe Crítico en Básicos**. Críticos activan Racha (+10% ATQ). | **+30% Daño base pasivo** + **20% de Golpe Crítico en Básicos**. Críticos activan Racha (+10% ATQ). |
 
 > [!NOTE]
 > Cualquier arma no deseada en el inventario puede ser **Desmantelada** por **+20 Chatarra (⚙️)**.
@@ -159,12 +162,27 @@ La ventana modal de **Mochila y Escuadrón (`🎒`)** ofrece control total sobre
 
 ---
 
-## 7. Navegación de la Torre y Nodos Sectoriales
+## 7. Navegación Multitorre y Nodos Sectoriales
 
-El mapa de cada sector consta de 10 pisos de bifurcaciones tácticas con una estructura equilibrada:
-* **🛒 Mercados Garantizados (2 por incursión):** Aparece exactamente 1 Mercado entre los **Pisos 2 a 4**, y un 2º Mercado entre los **Pisos 6 a 9**.
-* **🎁 Cámara de Tesoros (Piso 5):** El piso 5 está compuesto **exclusivamente por cofres de tesoro** en todas sus rutas, permitiendo tomar exactamente 1 tesoro garantizado a mitad de torre.
-* **👑 Núcleo de la Torre (Piso 10):** Enfrentamiento final contra el jefe supremo **TITAN-X**.
+La incursión opera bajo un sistema de progresión roguelike estricto. **Toda expedición comienza obligatoriamente en el Piso 1 de la Torre 1**. Cada sector consta de 10 pisos con bifurcaciones tácticas:
+
+* **🗼 Torre 1: Torre Cibernética (Pisos 1 - 10):**
+  * Sector inicial. Enemigos de Nv1 a Nv10.
+  * **Curva Limpia de Inicio:** Los enemigos regulares no portan armas (luchan a mano limpia con sus estadísticas y habilidades elementales base).
+  * **Piso 10:** Jefe **TITAN-X**. Al derrotarlo, otorga la **Llave Cuántica** 🔑 (acceso a Torre 2) y un **Arma Legendaria Dorada** garantizada 👑.
+* **⚛️ Torre 2: Torre Cuántica (Pisos 11 - 20):**
+  * Desbloqueada tras derrotar a TITAN-X. Enemigos avanzados de Nv11 a Nv20.
+  * **Enemigos Armados:** A partir de esta torre, los enemigos regulares pueden portar armas elementales (30% en Piso 11, +10% por piso).
+  * **Piso 20:** Jefe **TITAN-OMEGA**. Al derrotarlo, otorga la **Llave de Singularidad** 🗝️ (acceso a Torre 3) y un **Arma Legendaria Dorada** 👑.
+* **🌌 Torre 3: Torre de Singularidad (Pisos 21 - 30):**
+  * El desafío supremo. Enemigos hiper-letales de Nv21 a Nv30.
+  * **Máxima Hostilidad:** El 100% de los enemigos regulares van pertrechados con armamento de combate avanzado.
+  * **Piso 30:** Jefe final **SINGULARIDAD-ZERO**. Al derrotarlo, se sella la victoria total de la expedición.
+
+### Estructura Equilibrada por Torre
+* **🛒 Mercados Garantizados (2 por torre):** Aparece exactamente 1 Mercado en los primeros pisos (pisos 2-4 / 12-14 / 22-24) y un 2º Mercado en los pisos superiores (pisos 6-9 / 16-19 / 26-29).
+* **🎁 Cámara de Tesoros (Piso 5 / 15 / 25):** Compuesto **exclusivamente por cofres de tesoro** en todas sus rutas, garantizando una recompensa estratégica a mitad de cada torre.
+* **👑 Núcleo de la Torre (Piso 10 / 20 / 30):** Enfrentamiento contra el jefe de la torre.
 
 ### Leyenda de Nodos
 * 👾 **Combate Normal:** Enfrentamiento contra robot salvaje del nivel del piso actual.
@@ -173,24 +191,24 @@ El mapa de cada sector consta de 10 pisos de bifurcaciones tácticas con una est
 * 🛒 **Mercado Negro:** Tienda para adquirir armas, suministros y dar de baja robots por 30 ⚙️.
 * ⛺ **Taller de Reparación:** Permite elegir entre **Reparar Escuadrón** (cura 30%), **Entrenar Robot** (+300 XP) o **Forjar Arma** (mejora a +1).
 * ❓ **Evento Misterioso:** Terminales narrativas con decisiones de riesgo y recompensa.
-* 👑 **Jefe de Sector (Piso 10):** Enfrentamiento supremo contra **TITAN-X** en el núcleo de la torre.
+* 👑 **Jefe de Sector:** Enfrentamiento contra el jefe supremo en el núcleo de la torre.
 
-> [!TIP]
-> **📊 Tabla de Probabilidades y Tasas de Aparición:** Puedes consultar el desglose matemático detallado de botines de cofres, tiradas de armas (+1), chips y precios del mercado negro en [PROBABILIDADES_RECOMPENSAS.md](file:///c:/Git/CiberElemental/PROBABILIDADES_RECOMPENSAS.md).
-
-### Estados Visuales del Mapa
-* **👑 Piso 10 (Cámara del Jefe):** Advertencia e iluminación en rojo carmesí (`#ff4757`).
-* **▶ Piso Actual:** Resplandor cian neón (`#66fcf1`) con etiqueta activa.
-* **✔ Pisos Superados:** Atenuados con marca de sector completado.
-* **Nodos Seleccionables:** Destacados con un anillo pulsante cian (`.node-pulse-ring`) y animación interactiva.
-* **Circuitos de Datos:** Las rutas disponibles hacia el siguiente piso muestran un flujo de datos animado (`.map-line-active`).
+### Guardado Seguro en Base de Datos (Cero LocalStorage)
+Para garantizar la integridad competitiva y evitar manipulaciones en el cliente:
+* **Persistencia en Supabase:** Al derrotar al jefe de una torre, el estado completo de la run (escuadrón, niveles, armas, chips, inventario y chatarra recolectada) se almacena en la tabla `saved_tower_runs`.
+* **Reanudar Incursión:** En el Menú Principal aparece el botón interactivo **⚡ REANUDAR INCURSIÓN** indicando la torre y piso guardado.
+* **Muerte Permanente:** Si el escuadrón es derrotado en combate (Game Over), el checkpoint se purga automáticamente de la base de datos.
+* **Llaves como Acceso Táctico:** Las llaves son un evento y recompensa psicológica que desbloquean el ascenso inmediato, no objetos de inventario permanente.
 
 ---
 
 ## 8. Decisiones Post-Combate
 
-Al neutralizar a un robot rival, el escuadrón debe elegir:
-* **🤖 Reclutar (Normal):** Si el enemigo es estándar, se une garantizado al equipo al 50% de HP (hasta un máximo de 3 miembros).
-* **⚠️ Reclutar Élite (Alto Riesgo):** Intentar reprogramar a un robot Élite tiene **50% de probabilidad de éxito**. Si falla (50%), su núcleo sufre una **autodestrucción violenta** que inflige **10% de daño de HP a todo tu escuadrón** (con riesgo de causar Game Over si la salud de las unidades es insuficiente).
-* **⚙️ Desmantelar:** Destruye el chasis enemigo a cambio de **+30 Chatarra** y una **reparación del 10% de HP** para todo el escuadrón.
-* **➔ Avanzar Incursión:** Continúa directamente hacia el siguiente sector sin interactuar con los restos.
+Al neutralizar a un escuadrón rival:
+* **🤖 Reclutar (Normal):** Si el enemigo es estándar, se une garantizado al equipo al 50% de HP (máximo 3 miembros).
+* **⚠️ Reclutar Élite (Alto Riesgo):** Reprogramar a un Élite tiene **50% de probabilidad de éxito**. Si falla, el núcleo **explota** infligiendo **10% de daño de HP a todo el escuadrón**.
+* **⚙️ Desmantelar:** Destruye el chasis enemigo a cambio de **+30 Chatarra** y **+10% de reparación**. Tras un jefe, desmantelar cura al equipo sin forzar el avance, permitiendo decidir el siguiente paso.
+* **🚀 Ascender a la Siguiente Torre:** Disponible tras vencer al jefe de la Torre 1 o 2. Despliega al equipo en el primer piso del nuevo sector.
+* **🏆 Retirarse con Victoria:** Permite consolidar la chatarra acumulada en el pozo global de la cuenta y finalizar la expedición con éxito sin arriesgar el progreso.
+* **➔ Avanzar Incursión:** Continúa al siguiente piso en nodos estándar.
+

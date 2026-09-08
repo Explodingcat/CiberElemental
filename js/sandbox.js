@@ -17,14 +17,14 @@ const Sandbox = {
     
     combatConfig: {
         allies: [
-            { enabled: true, templateKey: 'IGNIS', level: 3, weaponType: 'ESPADA', weaponElement: 'FUEGO', isUpgraded: true, chipType: 'NONE', mutatorType: 'NONE' },
-            { enabled: true, templateKey: 'AQUA', level: 3, weaponType: 'BACULO', weaponElement: 'AGUA', isUpgraded: false, chipType: 'NONE', mutatorType: 'NONE' },
-            { enabled: true, templateKey: 'TERRA', level: 3, weaponType: 'HACHA', weaponElement: 'TIERRA', isUpgraded: false, chipType: 'NONE', mutatorType: 'NONE' }
+            { enabled: true, templateKey: 'IGNIS', level: 3, weaponType: 'ESPADA', weaponElement: 'FUEGO', isUpgraded: true, chipType: 'NONE', mutatorType: 'NONE', skin: 'ROBOT_SHADES', aura: 'AUTO', particles: 'AUTO' },
+            { enabled: true, templateKey: 'AQUA', level: 3, weaponType: 'BACULO', weaponElement: 'AGUA', isUpgraded: false, chipType: 'NONE', mutatorType: 'NONE', skin: 'DEFAULT', aura: 'AUTO', particles: 'AUTO' },
+            { enabled: true, templateKey: 'TERRA', level: 3, weaponType: 'HACHA', weaponElement: 'TIERRA', isUpgraded: false, chipType: 'NONE', mutatorType: 'NONE', skin: 'DEFAULT', aura: 'AUTO', particles: 'AUTO' }
         ],
         enemies: [
-            { enabled: true, templateKey: 'WILD_FUEGO', level: 3, weaponType: 'DAGA', weaponElement: 'FUEGO', isUpgraded: false, chipType: 'NONE', mutatorType: 'NONE' },
-            { enabled: true, templateKey: 'WILD_AGUA', level: 3, weaponType: 'BACULO', weaponElement: 'AGUA', isUpgraded: false, chipType: 'NONE', mutatorType: 'NONE' },
-            { enabled: false, templateKey: 'WILD_TIERRA', level: 3, weaponType: 'HACHA', weaponElement: 'TIERRA', isUpgraded: false, chipType: 'NONE', mutatorType: 'NONE' }
+            { enabled: true, templateKey: 'WILD_FUEGO', level: 3, weaponType: 'DAGA', weaponElement: 'FUEGO', isUpgraded: false, chipType: 'NONE', mutatorType: 'NONE', skin: 'DEFAULT', aura: 'AUTO', particles: 'AUTO' },
+            { enabled: true, templateKey: 'WILD_AGUA', level: 3, weaponType: 'BACULO', weaponElement: 'AGUA', isUpgraded: false, chipType: 'NONE', mutatorType: 'NONE', skin: 'DEFAULT', aura: 'AUTO', particles: 'AUTO' },
+            { enabled: false, templateKey: 'WILD_TIERRA', level: 3, weaponType: 'HACHA', weaponElement: 'TIERRA', isUpgraded: false, chipType: 'NONE', mutatorType: 'NONE', skin: 'DEFAULT', aura: 'AUTO', particles: 'AUTO' }
         ],
         options: {
             arenaBg: 'bg-normal',
@@ -87,6 +87,8 @@ function switchSandboxTab(tabName) {
     } else if (tabName === 'combat') {
         renderTeamBuilder('allies');
         renderTeamBuilder('enemies');
+    } else if (tabName === 'towers') {
+        initTowersSandbox();
     }
 }
 
@@ -131,7 +133,7 @@ const CHARACTER_TEMPLATES = {
     
     // Jefes
     'TITAN_X': {
-        name: 'TITAN-X (Jefe)',
+        name: 'TITAN-X (Jefe Torre 1)',
         group: '👑 Jefes',
         isBoss: true,
         template: {
@@ -139,11 +141,72 @@ const CHARACTER_TEMPLATES = {
             element: ELEMENTS.NEUTRO,
             emoji: '👹',
             level: 10,
+            isBoss: true,
+            baseStatsOverride: {
+                maxHp: 350,
+                atk: 26,
+                spd: 11,
+                dodge: 10,
+                acc: 100,
+                critChance: 12
+            },
             turnPattern: ['Golpe Titánico', 'Pulso PEM Titánico', 'Protocolo Exterminio'],
             skills: [
-                { name: 'Golpe Titánico', cd: 0, currentCd: 0, desc: 'Ataque demoledor neutro (1.4x de daño).', type: 'DAMAGE', power: 1.4 },
-                { name: 'Pulso PEM Titánico', cd: 3, currentCd: 1, desc: 'Pulso electromagnético masivo que daña a todo el escuadrón (0.8x) y desactiva todas las Barreras y Escudos aliados.', type: 'DAMAGE_AOE_STATUS', target: 'ALL_ENEMIES', power: 0.8, purgeShields: true },
-                { name: 'Protocolo Exterminio', cd: 4, currentCd: 2, desc: 'Ataque masivo devastador concentrado en un objetivo (2.2x de daño).', type: 'DAMAGE', power: 2.2 }
+                { name: 'Golpe Titánico', cd: 0, currentCd: 0, desc: 'Ataque demoledor neutro (1.4x de daño) que sacude la arena.', type: 'DAMAGE', power: 1.4 },
+                { name: 'Pulso PEM Titánico', cd: 3, currentCd: 1, desc: 'Tormenta electromagnética masiva que descarga rayos sobre todo el escuadrón (0.8x) y desactiva todas las Barreras y Escudos aliados.', type: 'DAMAGE_AOE_STATUS', target: 'ALL_ENEMIES', power: 0.8, purgeShields: true },
+                { name: 'Protocolo Exterminio', cd: 4, currentCd: 2, desc: 'Haz orbital aniquilador concentrado (2.2x de daño masivo). Infalible: Fijación balística absoluta, no puede fallar ni ser esquivado.', type: 'DAMAGE', power: 2.2, cannotMiss: true }
+            ]
+        }
+    },
+    'TITAN_OMEGA': {
+        name: 'TITAN-OMEGA (Jefe Torre 2)',
+        group: '👑 Jefes',
+        isBoss: true,
+        template: {
+            name: 'TITAN-OMEGA (Jefe)',
+            element: ELEMENTS.NEUTRO,
+            emoji: '👹',
+            level: 20,
+            isBoss: true,
+            baseStatsOverride: {
+                maxHp: 420,
+                atk: 28,
+                spd: 12,
+                dodge: 12,
+                acc: 100,
+                critChance: 15
+            },
+            turnPattern: ['Golpe Cuántico', 'Sobrecarga Cuántica', 'Protocolo Aniquilación'],
+            skills: [
+                { name: 'Golpe Cuántico', cd: 0, currentCd: 0, desc: 'Impacto cuántico neutro (1.5x de daño) que desestabiliza las frecuencias del blanco.', type: 'DAMAGE', power: 1.5 },
+                { name: 'Sobrecarga Cuántica', cd: 3, currentCd: 1, desc: 'Descarga cuántica masiva sobre todo el escuadrón (1.0x). Destruye escudos y aplica rompearmaduras.', type: 'DAMAGE_AOE_STATUS', target: 'ALL_ENEMIES', power: 1.0, purgeShields: true },
+                { name: 'Protocolo Aniquilación', cd: 4, currentCd: 2, desc: 'Rayo orbital concentrado (2.5x de daño masivo). Infalible: No puede fallar ni ser esquivado.', type: 'DAMAGE', power: 2.5, cannotMiss: true }
+            ]
+        }
+    },
+    'SINGULARIDAD_ZERO': {
+        name: 'SINGULARIDAD-ZERO (Jefe Torre 3)',
+        group: '👑 Jefes',
+        isBoss: true,
+        template: {
+            name: 'SINGULARIDAD-ZERO (Jefe Final)',
+            element: ELEMENTS.NEUTRO,
+            emoji: '👹',
+            level: 30,
+            isBoss: true,
+            baseStatsOverride: {
+                maxHp: 500,
+                atk: 32,
+                spd: 14,
+                dodge: 15,
+                acc: 100,
+                critChance: 20
+            },
+            turnPattern: ['Colapso Gravitatorio', 'Tormenta del Vacío', 'Protocolo Singularidad'],
+            skills: [
+                { name: 'Colapso Gravitatorio', cd: 0, currentCd: 0, desc: 'Aplastamiento de gravedad cero (1.6x de daño neutro).', type: 'DAMAGE', power: 1.6 },
+                { name: 'Tormenta del Vacío', cd: 3, currentCd: 1, desc: 'Colapso dimensional en área (1.2x daño a todo el escuadrón). Purga barreras y deja conmoción.', type: 'DAMAGE_AOE_STATUS', target: 'ALL_ENEMIES', power: 1.2, purgeShields: true },
+                { name: 'Protocolo Singularidad', cd: 4, currentCd: 2, desc: 'Aniquilación total por horizonte de sucesos (3.0x daño devastador). Infalible.', type: 'DAMAGE', power: 3.0, cannotMiss: true }
             ]
         }
     },
@@ -167,23 +230,36 @@ function createRobotFromConfig(config, isAlly) {
         level: parseInt(config.level) || 1,
         isAlly: isAlly,
         isElite: !!charDef.isElite,
-        isBoss: !!charDef.isBoss
+        isBoss: !!charDef.isBoss,
+        skin: config.skin || 'DEFAULT',
+        aura: config.aura !== undefined ? config.aura : 'AUTO',
+        particles: config.particles !== undefined ? config.particles : 'AUTO'
     });
     
     // Equipar Arma
     if (config.weaponType && config.weaponType !== 'NONE') {
         let wType = WEAPON_TYPES[config.weaponType];
-        let wElem = ELEMENTS[config.weaponElement] || robot.element;
-        let isPlusOne = !!config.isUpgraded;
+        let isLegendary = (config.weaponElement === 'LEGENDARIO' || config.weaponElement === (typeof ELEMENTS !== 'undefined' ? ELEMENTS.LEGENDARIO : 'LEGENDARIO') || !!config.isLegendary);
+        let wElem = isLegendary ? (typeof ELEMENTS !== 'undefined' ? ELEMENTS.LEGENDARIO : 'LEGENDARIO') : (ELEMENTS[config.weaponElement] || robot.element);
+        let isPlusOne = !!config.isUpgraded || isLegendary;
         
-        let wName = `${config.weaponType.charAt(0) + config.weaponType.slice(1).toLowerCase()} de ${wElem}`;
-        if (isPlusOne) wName += ' +1';
+        let wName = isLegendary
+            ? `${config.weaponType.charAt(0) + config.weaponType.slice(1).toLowerCase()} Legendaria`
+            : `${config.weaponType.charAt(0) + config.weaponType.slice(1).toLowerCase()} de ${wElem}`;
+        if (isPlusOne && !isLegendary) wName += ' +1';
         
         let desc = '';
-        if (wType === WEAPON_TYPES.DAGA) desc = isPlusOne ? '40% prob. doble ataque (con +1). Cada golpe aplica marca.' : '25% prob. doble ataque. Cada golpe aplica marca.';
-        if (wType === WEAPON_TYPES.HACHA) desc = isPlusOne ? 'Perfora 75% barreras. +35% Daño a ≤40% HP (Verdugo).' : 'Perfora 50% barreras. +35% Daño a ≤40% HP (Verdugo).';
-        if (wType === WEAPON_TYPES.BACULO) desc = isPlusOne ? 'Regenera 7% HP por ronda. Potenciado por afinidad Agua.' : 'Regenera 5% HP por ronda. Potenciado por afinidad Agua.';
-        if (wType === WEAPON_TYPES.ESPADA) desc = isPlusOne ? '+30% Daño base y +20% Crítico. Críticos activan Racha (+10% ATQ).' : '+15% Daño base y +10% Crítico. Críticos activan Racha (+10% ATQ).';
+        if (isLegendary) {
+            if (wType === WEAPON_TYPES.DAGA) desc = '40% prob. doble ataque (con +1). Afinidad Universal (+25% ATQ / +15% HP). 1.15x Daño universal.';
+            if (wType === WEAPON_TYPES.HACHA) desc = '+10% ATQ base. Perfora 75% defensas (+1). 20% prob. Rompearmaduras. +45% Daño a ≤40% HP (Verdugo +1). Afinidad Universal.';
+            if (wType === WEAPON_TYPES.BACULO) desc = 'Regenera 7% HP portador (+1) + 5% a un aliado. 20% prob. de -1 CD. Afinidad Universal.';
+            if (wType === WEAPON_TYPES.ESPADA) desc = '+30% Daño base y +20% Crítico (+1). Críticos activan Racha (+10% ATQ). Afinidad Universal.';
+        } else {
+            if (wType === WEAPON_TYPES.DAGA) desc = isPlusOne ? '40% prob. doble ataque (con +1). Cada golpe aplica marca.' : '25% prob. doble ataque. Cada golpe aplica marca.';
+            if (wType === WEAPON_TYPES.HACHA) desc = isPlusOne ? '+10% ATQ. Perfora 75% barreras. 20% Rompearmaduras. +45% Daño a ≤40% HP.' : '+10% ATQ. Perfora 50% barreras. 20% Rompearmaduras. +35% Daño a ≤40% HP.';
+            if (wType === WEAPON_TYPES.BACULO) desc = isPlusOne ? 'Regenera 7% HP portador + 5% a aliado. 20% prob. -1 CD. Potenciado por Agua.' : 'Regenera 5% HP por ronda. Potenciado por afinidad Agua.';
+            if (wType === WEAPON_TYPES.ESPADA) desc = isPlusOne ? '+30% Daño base y +20% Crítico. Críticos activan Racha (+10% ATQ).' : '+15% Daño base y +10% Crítico. Críticos activan Racha (+10% ATQ).';
+        }
         
         robot.equipWeapon({
             id: Math.random().toString(36).substr(2, 9),
@@ -191,7 +267,8 @@ function createRobotFromConfig(config, isAlly) {
             element: wElem,
             name: wName,
             desc: desc,
-            isUpgraded: isPlusOne
+            isUpgraded: isPlusOne,
+            isLegendary: isLegendary
         });
     }
     
@@ -247,6 +324,40 @@ function renderTeamBuilder(teamType) {
                 ${groups[grp].map(opt => `<option value="${opt.key}" ${slot.templateKey === opt.key ? 'selected' : ''}>${opt.name}</option>`).join('')}
             </optgroup>
         `).join('');
+
+        // Opciones de Skins / Chasis
+        let skinGroups = {};
+        if (typeof SKINS_DATABASE !== 'undefined') {
+            Object.keys(SKINS_DATABASE).forEach(sKey => {
+                const sDef = SKINS_DATABASE[sKey];
+                const grp = sDef.group || 'Otras';
+                if (!skinGroups[grp]) skinGroups[grp] = [];
+                skinGroups[grp].push(sDef);
+            });
+        }
+        const skinOptionsHtml = Object.keys(skinGroups).map(grp => `
+            <optgroup label="${grp}">
+                ${skinGroups[grp].map(sDef => `<option value="${sDef.id}" ${(slot.skin || 'DEFAULT') === sDef.id ? 'selected' : ''}>${sDef.name}</option>`).join('')}
+            </optgroup>
+        `).join('');
+
+        // Opciones de Auras
+        let auraOptionsHtml = '';
+        if (typeof AURAS_DATABASE !== 'undefined') {
+            auraOptionsHtml = Object.keys(AURAS_DATABASE).map(aKey => {
+                const aDef = AURAS_DATABASE[aKey];
+                return `<option value="${aDef.id}" ${(slot.aura || 'AUTO') === aDef.id ? 'selected' : ''}>${aDef.name}</option>`;
+            }).join('');
+        }
+
+        // Opciones de Partículas
+        let particlesOptionsHtml = '';
+        if (typeof PARTICLES_DATABASE !== 'undefined') {
+            particlesOptionsHtml = Object.keys(PARTICLES_DATABASE).map(pKey => {
+                const pDef = PARTICLES_DATABASE[pKey];
+                return `<option value="${pDef.id}" ${(slot.particles || 'AUTO') === pDef.id ? 'selected' : ''}>${pDef.name}</option>`;
+            }).join('');
+        }
         
         const weaponTypeOptions = `
             <option value="NONE" ${slot.weaponType === 'NONE' ? 'selected' : ''}>[ Sin Arma ]</option>
@@ -262,6 +373,7 @@ function renderTeamBuilder(teamType) {
             <option value="TIERRA" ${slot.weaponElement === 'TIERRA' ? 'selected' : ''}>🪨 Tierra</option>
             <option value="AIRE" ${slot.weaponElement === 'AIRE' ? 'selected' : ''}>💨 Aire</option>
             <option value="NEUTRO" ${slot.weaponElement === 'NEUTRO' ? 'selected' : ''}>⚙️ Neutro</option>
+            <option value="LEGENDARIO" ${slot.weaponElement === 'LEGENDARIO' ? 'selected' : ''}>👑 Legendario (Dorado)</option>
         `;
         
         const chipOptions = `
@@ -296,9 +408,19 @@ function renderTeamBuilder(teamType) {
         return `
             <div class="robot-slot-card ${slot.enabled ? '' : 'disabled-slot'} ${isAlly ? 'slot-ally' : 'slot-enemy'}">
                 <div class="slot-top-row">
-                    <span class="slot-index-badge">
-                        ${isAlly ? '🔵 Aliado' : '🔴 Enemigo'} #${idx + 1}
-                    </span>
+                    <div class="slot-header-left">
+                        <div class="slot-avatar-badge-preview">
+                            ${previewRobot && previewRobot.getAvatarGraphicHtml ? previewRobot.getAvatarGraphicHtml() : (previewRobot ? previewRobot.emoji : '🤖')}
+                        </div>
+                        <div>
+                            <span class="slot-index-badge">
+                                ${isAlly ? '🔵 Aliado' : '🔴 Enemigo'} #${idx + 1}
+                            </span>
+                            <div style="font-size: 0.8rem; color: #66fcf1; font-weight: 700;">
+                                ${previewRobot ? previewRobot.name : ''}
+                            </div>
+                        </div>
+                    </div>
                     <label class="slot-toggle-label">
                         <input type="checkbox" ${slot.enabled ? 'checked' : ''} onchange="updateSlotField('${teamType}', ${idx}, 'enabled', this.checked)">
                         ${slot.enabled ? 'Activo en combate' : 'Desactivado'}
@@ -310,6 +432,27 @@ function renderTeamBuilder(teamType) {
                         <label>Arquetipo / Personaje</label>
                         <select class="form-control" onchange="updateSlotField('${teamType}', ${idx}, 'templateKey', this.value)">
                             ${characterOptionsHtml}
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>🎨 Chasis / Skin</label>
+                        <select class="form-control" onchange="updateSlotField('${teamType}', ${idx}, 'skin', this.value)">
+                            ${skinOptionsHtml}
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>✨ Aura de Fondo</label>
+                        <select class="form-control" onchange="updateSlotField('${teamType}', ${idx}, 'aura', this.value)">
+                            ${auraOptionsHtml}
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>🎆 Partículas</label>
+                        <select class="form-control" onchange="updateSlotField('${teamType}', ${idx}, 'particles', this.value)">
+                            ${particlesOptionsHtml}
                         </select>
                     </div>
                     
@@ -412,6 +555,42 @@ function applyCombatPreset(presetKey) {
             { enabled: false, templateKey: 'WILD_TIERRA', level: 1, weaponType: 'NONE', weaponElement: 'TIERRA', isUpgraded: false, chipType: 'NONE', mutatorType: 'NONE' }
         ];
         Sandbox.combatConfig.options.arenaBg = 'bg-boss';
+    } else if (presetKey === 'VS_TITAN_OMEGA') {
+        Sandbox.combatConfig.allies = [
+            { enabled: true, templateKey: 'IGNIS', level: 15, weaponType: 'ESPADA', weaponElement: 'FUEGO', isUpgraded: true, chipType: 'CHIP_FUEGO', mutatorType: 'NONE' },
+            { enabled: true, templateKey: 'AQUA', level: 15, weaponType: 'BACULO', weaponElement: 'AGUA', isUpgraded: true, chipType: 'CHIP_AGUA', mutatorType: 'NONE' },
+            { enabled: true, templateKey: 'TERRA', level: 15, weaponType: 'HACHA', weaponElement: 'TIERRA', isUpgraded: true, chipType: 'CHIP_TIERRA', mutatorType: 'NONE' }
+        ];
+        Sandbox.combatConfig.enemies = [
+            { enabled: true, templateKey: 'TITAN_OMEGA', level: 20, weaponType: 'NONE', weaponElement: 'NEUTRO', isUpgraded: false, chipType: 'NONE', mutatorType: 'NONE' },
+            { enabled: false, templateKey: 'WILD_AGUA', level: 1, weaponType: 'NONE', weaponElement: 'AGUA', isUpgraded: false, chipType: 'NONE', mutatorType: 'NONE' },
+            { enabled: false, templateKey: 'WILD_TIERRA', level: 1, weaponType: 'NONE', weaponElement: 'TIERRA', isUpgraded: false, chipType: 'NONE', mutatorType: 'NONE' }
+        ];
+        Sandbox.combatConfig.options.arenaBg = 'bg-boss';
+    } else if (presetKey === 'VS_SINGULARIDAD') {
+        Sandbox.combatConfig.allies = [
+            { enabled: true, templateKey: 'IGNIS', level: 25, weaponType: 'ESPADA', weaponElement: 'FUEGO', isUpgraded: true, chipType: 'CHIP_FUEGO', mutatorType: 'NONE' },
+            { enabled: true, templateKey: 'AQUA', level: 25, weaponType: 'BACULO', weaponElement: 'AGUA', isUpgraded: true, chipType: 'CHIP_AGUA', mutatorType: 'NONE' },
+            { enabled: true, templateKey: 'TERRA', level: 25, weaponType: 'HACHA', weaponElement: 'TIERRA', isUpgraded: true, chipType: 'CHIP_TIERRA', mutatorType: 'NONE' }
+        ];
+        Sandbox.combatConfig.enemies = [
+            { enabled: true, templateKey: 'SINGULARIDAD_ZERO', level: 30, weaponType: 'NONE', weaponElement: 'NEUTRO', isUpgraded: false, chipType: 'NONE', mutatorType: 'NONE' },
+            { enabled: false, templateKey: 'WILD_AGUA', level: 1, weaponType: 'NONE', weaponElement: 'AGUA', isUpgraded: false, chipType: 'NONE', mutatorType: 'NONE' },
+            { enabled: false, templateKey: 'WILD_TIERRA', level: 1, weaponType: 'NONE', weaponElement: 'TIERRA', isUpgraded: false, chipType: 'NONE', mutatorType: 'NONE' }
+        ];
+        Sandbox.combatConfig.options.arenaBg = 'bg-boss';
+    } else if (presetKey === 'LEGENDARY_SQUAD') {
+        Sandbox.combatConfig.allies = [
+            { enabled: true, templateKey: 'IGNIS', level: 12, weaponType: 'ESPADA', weaponElement: 'LEGENDARIO', isUpgraded: true, isLegendary: true, chipType: 'CHIP_FUEGO', mutatorType: 'NONE' },
+            { enabled: true, templateKey: 'AQUA', level: 12, weaponType: 'BACULO', weaponElement: 'LEGENDARIO', isUpgraded: true, isLegendary: true, chipType: 'CHIP_AGUA', mutatorType: 'NONE' },
+            { enabled: true, templateKey: 'TERRA', level: 12, weaponType: 'HACHA', weaponElement: 'LEGENDARIO', isUpgraded: true, isLegendary: true, chipType: 'CHIP_TIERRA', mutatorType: 'NONE' }
+        ];
+        Sandbox.combatConfig.enemies = [
+            { enabled: true, templateKey: 'COLOSO_SISMICO', level: 14, weaponType: 'NONE', weaponElement: 'TIERRA', isUpgraded: false, chipType: 'NONE', mutatorType: 'ESPINAS' },
+            { enabled: true, templateKey: 'BERSERKER_TERMICO', level: 14, weaponType: 'NONE', weaponElement: 'FUEGO', isUpgraded: false, chipType: 'NONE', mutatorType: 'RABIA' },
+            { enabled: true, templateKey: 'CYBER_STALKER', level: 14, weaponType: 'NONE', weaponElement: 'AIRE', isUpgraded: false, chipType: 'NONE', mutatorType: 'REGENERADOR' }
+        ];
+        Sandbox.combatConfig.options.arenaBg = 'bg-elite';
     } else if (presetKey === 'VS_3_ELITES') {
         Sandbox.combatConfig.allies = [
             { enabled: true, templateKey: 'IGNIS', level: 8, weaponType: 'ESPADA', weaponElement: 'FUEGO', isUpgraded: true, chipType: 'CHIP_FUEGO', mutatorType: 'NONE' },
@@ -438,6 +617,18 @@ function applyCombatPreset(presetKey) {
         Sandbox.combatConfig.options.arenaBg = 'bg-boss';
     } else if (presetKey === 'MIRROR') {
         Sandbox.combatConfig.enemies = JSON.parse(JSON.stringify(Sandbox.combatConfig.allies));
+    } else if (presetKey === 'SKINS_SHOWCASE') {
+        Sandbox.combatConfig.allies = [
+            { enabled: true, templateKey: 'IGNIS', level: 5, weaponType: 'ESPADA', weaponElement: 'FUEGO', isUpgraded: true, chipType: 'CHIP_FUEGO', mutatorType: 'NONE', skin: 'PRIMAL_FIRE_SHADES', aura: 'FUEGO', particles: 'FUEGO' },
+            { enabled: true, templateKey: 'AQUA', level: 5, weaponType: 'BACULO', weaponElement: 'AGUA', isUpgraded: true, chipType: 'CHIP_AGUA', mutatorType: 'NONE', skin: 'PRIMAL_WATER_SHADES', aura: 'AGUA', particles: 'AGUA' },
+            { enabled: true, templateKey: 'TERRA', level: 5, weaponType: 'HACHA', weaponElement: 'TIERRA', isUpgraded: true, chipType: 'CHIP_TIERRA', mutatorType: 'NONE', skin: 'PRIMAL_EARTH_SHADES', aura: 'TIERRA', particles: 'TIERRA' }
+        ];
+        Sandbox.combatConfig.enemies = [
+            { enabled: true, templateKey: 'ZEPHYR', level: 5, weaponType: 'DAGA', weaponElement: 'AIRE', isUpgraded: true, chipType: 'CHIP_AIRE', mutatorType: 'NONE', skin: 'PRIMAL_AIR_SHADES', aura: 'AIRE', particles: 'AIRE' },
+            { enabled: true, templateKey: 'WILD_NEUTRO', level: 5, weaponType: 'ESPADA', weaponElement: 'NEUTRO', isUpgraded: true, chipType: 'NONE', mutatorType: 'NONE', skin: 'CYBER_DINO_SHADES', aura: 'COSMIC', particles: 'COSMIC' },
+            { enabled: true, templateKey: 'TITAN_X', level: 8, weaponType: 'HACHA', weaponElement: 'NEUTRO', isUpgraded: true, chipType: 'NONE', mutatorType: 'RABIA', skin: 'CYBER_SKULL_SHADES', aura: 'GOLD', particles: 'GOLD' }
+        ];
+        Sandbox.combatConfig.options.arenaBg = 'bg-boss';
     }
     
     renderTeamBuilder('allies');
@@ -1171,4 +1362,617 @@ function openImportModal() {
         }
     }
 }
+
+/* ==========================================================================
+   SIMULADOR DE PASO ENTRE TORRES Y ARMAS LEGENDARIAS
+   ========================================================================== */
+
+function initTowersSandbox() {
+    if (!Sandbox.towersState) {
+        Sandbox.towersState = {
+            activeTowerId: 1,
+            simulatedFloor: 1,
+            transitionStep: 'IDLE',
+            simulatedResult: null,
+            legendaryWeaponType: 'ESPADA',
+            legendaryTargetRobot: 'IGNIS'
+        };
+    }
+    
+    renderTowersOverview();
+    renderTowerTransitionStage();
+    renderTowerMapPreview(Sandbox.towersState.activeTowerId, Sandbox.towersState.simulatedFloor);
+    renderLegendaryWeaponsLab();
+}
+
+function renderTowersOverview() {
+    const grid = document.getElementById('towers-cards-grid');
+    if (!grid) return;
+    
+    const activeId = (Sandbox.towersState && Sandbox.towersState.activeTowerId) ? Sandbox.towersState.activeTowerId : 1;
+    
+    grid.innerHTML = Object.keys(TOWERS_CONFIG).map(tId => {
+        const id = parseInt(tId);
+        const t = TOWERS_CONFIG[id];
+        const isActive = id === activeId;
+        const isCompleted = id < activeId;
+        
+        let statusBadge = '';
+        if (isActive) statusBadge = '<span class="tower-status-badge status-active">▶ ACTIVA</span>';
+        else if (isCompleted) statusBadge = '<span class="tower-status-badge status-completed">✔ SUPERADA</span>';
+        else statusBadge = '<span class="tower-status-badge status-locked">🔒 BLOQUEADA</span>';
+        
+        return `
+            <div class="tower-card ${isActive ? 'is-active-tower' : ''} ${isCompleted ? 'is-completed-tower' : ''}" onclick="selectTowerForMapPreview(${id})">
+                <div class="tower-card-header">
+                    <span class="tower-id-badge">TORRE 0${id}</span>
+                    ${statusBadge}
+                </div>
+                <h3 class="tower-card-title">${t.name}</h3>
+                <div class="tower-card-badge-desc">${t.badge}</div>
+                <div class="tower-card-stats">
+                    <div class="tower-stat-item">
+                        <span class="lbl">Pisos:</span>
+                        <span class="val">${t.startFloor} al ${t.endFloor}</span>
+                    </div>
+                    <div class="tower-stat-item">
+                        <span class="lbl">Jefe:</span>
+                        <span class="val">${t.bossName}</span>
+                    </div>
+                    <div class="tower-stat-item">
+                        <span class="lbl">Llave:</span>
+                        <span class="val">${id === 1 ? '🔑 Cuántica' : (id === 2 ? '🗝️ Singularidad' : '👑 Corona')}</span>
+                    </div>
+                </div>
+                <div class="tower-card-footer">
+                    <span class="click-hint">${isActive ? 'Mostrando mapa ➔' : 'Clic para explorar mapa'}</span>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+function selectTowerForMapPreview(towerId) {
+    if (typeof TOWERS_CONFIG === 'undefined' || !TOWERS_CONFIG[towerId]) return;
+    Sandbox.towersState.activeTowerId = towerId;
+    Sandbox.towersState.simulatedFloor = TOWERS_CONFIG[towerId].startFloor;
+    renderTowersOverview();
+    renderTowerMapPreview(towerId, TOWERS_CONFIG[towerId].startFloor);
+}
+
+function simulateTowerTransition(fromTowerId) {
+    fromTowerId = parseInt(fromTowerId) || 1;
+    const currentTower = TOWERS_CONFIG[fromTowerId] || TOWERS_CONFIG[1];
+    const nextTowerId = currentTower.nextTowerId;
+    const nextTower = nextTowerId ? TOWERS_CONFIG[nextTowerId] : null;
+    
+    Sandbox.towersState.activeTowerId = fromTowerId;
+    Sandbox.towersState.simulatedFloor = currentTower.endFloor;
+    
+    // Generar arma dorada legendaria
+    const legWeapon = (typeof generateLegendaryWeapon === 'function') 
+        ? generateLegendaryWeapon() 
+        : { name: 'Espada Legendaria', type: WEAPON_TYPES.ESPADA, element: ELEMENTS.LEGENDARIO, isLegendary: true, desc: '+30% Daño base y +20% Crítico. Afinidad Universal.' };
+    
+    Sandbox.towersState.lastDroppedWeapon = legWeapon;
+    
+    const checkpointPayload = {
+        user_id: "usr_sandbox_simulation_01",
+        tower_completed: fromTowerId,
+        current_tower: nextTowerId || fromTowerId,
+        floor: nextTower ? nextTower.startFloor : currentTower.endFloor,
+        scrap: 240,
+        squad: [
+            { name: "Ignis", element: "FUEGO", level: fromTowerId * 10, hp: 125, maxHp: 125, weapon: legWeapon.name },
+            { name: "Aqua", element: "AGUA", level: fromTowerId * 10, hp: 160, maxHp: 160, weapon: "Báculo de Agua +1" },
+            { name: "Terra", element: "TIERRA", level: fromTowerId * 10, hp: 220, maxHp: 220, weapon: "Hacha de Tierra +1" }
+        ],
+        inventory: {
+            weapons: [legWeapon],
+            items: [{ type: "CHIP_FUEGO", name: "Chip Fuego (Lanzallamas)" }]
+        }
+    };
+    
+    Sandbox.towersState.simulatedResult = {
+        fromTower: currentTower,
+        nextTower: nextTower,
+        bossName: currentTower.bossName,
+        legWeapon: legWeapon,
+        checkpoint: checkpointPayload,
+        hasAscended: false
+    };
+    
+    renderTowersOverview();
+    renderTowerTransitionStage();
+    renderTowerMapPreview(fromTowerId, currentTower.endFloor);
+}
+
+function renderTowerTransitionStage() {
+    const stage = document.getElementById('tower-transition-stage');
+    const badgeEl = document.getElementById('trans-current-step-badge');
+    if (!stage) return;
+    
+    const res = Sandbox.towersState.simulatedResult;
+    if (!res) {
+        if (badgeEl) badgeEl.innerText = 'SELECCIONA TRANSICIÓN';
+        stage.innerHTML = `
+            <div class="transition-empty-state">
+                <span class="empty-icon">🗼</span>
+                <p>Haz clic en uno de los botones superiores para simular el paso entre torres:</p>
+                <div style="display:flex; gap:10px; justify-content:center; flex-wrap:wrap; margin-top:10px;">
+                    <button class="btn-preset" onclick="simulateTowerTransition(1)">🔑 Torre 1 ➔ Torre 2</button>
+                    <button class="btn-preset" onclick="simulateTowerTransition(2)">🗝️ Torre 2 ➔ Torre 3</button>
+                    <button class="btn-preset" onclick="simulateTowerTransition(3)">👑 Torre 3 ➔ Victoria</button>
+                </div>
+            </div>
+        `;
+        return;
+    }
+    
+    if (badgeEl) {
+        badgeEl.innerText = res.hasAscended ? `ASCENDIDO A TORRE ${res.nextTower ? res.nextTower.id : 3}` : `PISO ${res.fromTower.endFloor} DERROTADO`;
+    }
+    
+    let keyBannerHtml = '';
+    if (res.fromTower.id === 1) {
+        keyBannerHtml = `
+            <div class="post-log-item log-key-unlocked">
+                <div class="key-banner-icon">🔑</div>
+                <div class="key-banner-text">
+                    <strong>¡LLAVE CUÁNTICA OBTENIDA!</strong>
+                    <span>ACCESO AUTORIZADO // TORRE CUÁNTICA (PISOS 11 - 20)</span>
+                </div>
+            </div>
+        `;
+    } else if (res.fromTower.id === 2) {
+        keyBannerHtml = `
+            <div class="post-log-item log-key-unlocked">
+                <div class="key-banner-icon">🗝️</div>
+                <div class="key-banner-text">
+                    <strong>¡LLAVE DE SINGULARIDAD OBTENIDA!</strong>
+                    <span>ACCESO AUTORIZADO // TORRE DE SINGULARIDAD (PISOS 21 - 30)</span>
+                </div>
+            </div>
+        `;
+    } else {
+        keyBannerHtml = `
+            <div class="post-log-item log-key-unlocked">
+                <div class="key-banner-icon">👑</div>
+                <div class="key-banner-text">
+                    <strong>¡NÚCLEO DE SINGULARIDAD NEUTRALIZADO!</strong>
+                    <span>¡HAS SUPERADO TODOS LOS SECTORES Y CONQUISTADO EL JUEGO!</span>
+                </div>
+            </div>
+        `;
+    }
+    
+    let actionsHtml = '';
+    if (!res.hasAscended) {
+        if (res.nextTower) {
+            actionsHtml = `
+                <div class="post-actions-flex">
+                    <button class="btn-post-action btn-post-scrap" onclick="simulateDismantleBossInSandbox(this)">
+                        <span>⚙️ Desmantelar Restos (+60 Chatarra, +20% HP)</span>
+                    </button>
+                    <button class="btn-post-action btn-post-ascend" onclick="executeAscentTransition(${res.nextTower.id})">
+                        <span>🚀 Ascender a ${res.nextTower.name} (Piso ${res.nextTower.startFloor}) ➔</span>
+                    </button>
+                    <button class="btn-post-action btn-post-claim-victory" onclick="alert('🏆 ¡Incursión finalizada con éxito! Se consolidan 240 ⚙️ en el pozo global.')">
+                        <span>🏆 Retirarse con Victoria y Consolidar Chatarra</span>
+                    </button>
+                </div>
+            `;
+        } else {
+            actionsHtml = `
+                <div class="post-actions-flex">
+                    <button class="btn-post-action btn-post-claim-victory btn-pulse-gold" onclick="alert('👑 ¡FELICITACIONES! Has conquistado el 100% de los sectores roguelike.')">
+                        <span>👑 ¡CONQUISTAR SINGULARIDAD Y FINALIZAR EXPEDICIÓN! 🏆</span>
+                    </button>
+                </div>
+            `;
+        }
+    } else {
+        actionsHtml = `
+            <div class="ascent-success-banner">
+                <span style="font-size: 1.8rem;">🚀</span>
+                <div>
+                    <strong style="color:#1dd1a1; font-size:1.1rem;">¡ASCENSO COMPLETADO CON ÉXITO!</strong>
+                    <div style="font-size:0.85rem; color:#c8d6e5;">Ahora te encuentras en ${res.nextTower ? res.nextTower.name : 'Nueva Torre'} (Piso ${res.nextTower ? res.nextTower.startFloor : 1}). Observa el mapa en el panel derecho.</div>
+                </div>
+            </div>
+        `;
+    }
+    
+    stage.innerHTML = `
+        <div class="transition-summary-header">
+            <div class="boss-trophy-row">
+                <span class="boss-emoji-large">👹</span>
+                <div>
+                    <h3 class="boss-defeated-title">⚔️ ${res.bossName} NEUTRALIZADO</h3>
+                    <div class="reward-pill-row">
+                        <span class="reward-pill pill-scrap">⚙️ +60 Chatarra</span>
+                        <span class="reward-pill pill-xp">⭐ +1500 XP</span>
+                        <span class="reward-pill pill-boss">🏆 JEFE DERROTADO</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Banner Llave Psicológica -->
+        ${keyBannerHtml}
+
+        <!-- Drop de Arma Dorada Legendaria -->
+        <div class="legendary-drop-box">
+            <div class="legendary-drop-label">🎁 BOTÍN LEGENDARIO DORADO GARANTIZADO:</div>
+            <div class="inv-item-card is-legendary" style="margin: 0;">
+                <div class="inv-item-top">
+                    <span class="inv-item-emoji elem-LEGENDARIO" style="font-size: 2rem;">${WEAPON_EMOJIS[res.legWeapon.type]}</span>
+                    <div class="inv-item-info">
+                        <div class="inv-item-title elem-LEGENDARIO">
+                            ${res.legWeapon.name} <span class="badge-legendary">👑 LEGENDARIA</span>
+                        </div>
+                        <div class="inv-item-desc" style="color: #ffd700;">${res.legWeapon.desc}</div>
+                        <div class="inv-item-desc" style="color: #66fcf1; font-size: 0.78rem; margin-top: 4px;">
+                            ✨ Afinidad universal activa con cualquier aliado (+25% ATQ / +15% HP) • 1.15x Daño
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Botones de Acción Post-Batalla -->
+        <div class="transition-interactive-actions">
+            ${actionsHtml}
+        </div>
+
+        <!-- Inspección de Checkpoint en Base de Datos (Cero LocalStorage) -->
+        <details class="checkpoint-telemetry-box">
+            <summary class="checkpoint-telemetry-summary">
+                <span>💾 Ver Checkpoint Guardado en Supabase (saved_tower_runs)</span>
+                <span class="zero-storage-tag">0% LocalStorage // 100% DB</span>
+            </summary>
+            <pre class="checkpoint-json-code">${JSON.stringify(res.checkpoint, null, 2)}</pre>
+        </details>
+    `;
+}
+
+function executeAscentTransition(nextTowerId) {
+    if (!TOWERS_CONFIG[nextTowerId]) return;
+    const nextTower = TOWERS_CONFIG[nextTowerId];
+    
+    if (Sandbox.towersState.simulatedResult) {
+        Sandbox.towersState.simulatedResult.hasAscended = true;
+    }
+    Sandbox.towersState.activeTowerId = nextTowerId;
+    Sandbox.towersState.simulatedFloor = nextTower.startFloor;
+    
+    renderTowersOverview();
+    renderTowerTransitionStage();
+    renderTowerMapPreview(nextTowerId, nextTower.startFloor);
+}
+
+function simulateDismantleBossInSandbox(buttonEl) {
+    if (buttonEl) {
+        buttonEl.disabled = true;
+        buttonEl.classList.add('btn-dismantled');
+        buttonEl.innerHTML = `<span>✔ Restos del Jefe Desmantelados (+60 ⚙️, +20% HP)</span>`;
+    }
+}
+
+function renderTowerMapPreview(towerId, activeFloor) {
+    towerId = parseInt(towerId) || 1;
+    const tower = (typeof TOWERS_CONFIG !== 'undefined' && TOWERS_CONFIG[towerId]) ? TOWERS_CONFIG[towerId] : { name: 'Torre Cibernética', startFloor: 1, endFloor: 10, bossName: 'TITAN-X' };
+    
+    if (activeFloor === undefined || activeFloor === null) {
+        activeFloor = tower.startFloor;
+    }
+    activeFloor = parseInt(activeFloor);
+    Sandbox.towersState.simulatedFloor = activeFloor;
+    
+    const towerNameEl = document.getElementById('map-preview-tower-name');
+    if (towerNameEl) towerNameEl.innerText = tower.name.toUpperCase();
+    
+    // Generar mapa con el motor real de mapGenerator.js
+    if (typeof generateFullMap === 'function') {
+        generateFullMap(towerId);
+    }
+    
+    // Actualizar selector de pisos (startFloor a endFloor)
+    const selectEl = document.getElementById('map-preview-floor-select');
+    if (selectEl) {
+        let opts = '';
+        for (let fl = tower.startFloor; fl <= tower.endFloor; fl++) {
+            opts += `<option value="${fl}" ${fl === activeFloor ? 'selected' : ''}>Piso ${fl}${fl === tower.endFloor ? ' 👑 (Jefe)' : ''}</option>`;
+        }
+        selectEl.innerHTML = opts;
+    }
+    
+    const container = document.getElementById('sandbox-map-preview-container');
+    if (!container) return;
+    container.innerHTML = '';
+    
+    // Crear SVG para las líneas
+    const svgContainer = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svgContainer.id = 'sandbox-map-svg-lines';
+    container.appendChild(svgContainer);
+    
+    if (typeof fullMap === 'undefined' || !fullMap || fullMap.length === 0) return;
+    
+    // Renderizamos de arriba a abajo (del piso más alto al primero)
+    for (let f = fullMap.length - 1; f >= 0; f--) {
+        const floorData = fullMap[f];
+        if (!floorData || floorData.length === 0) continue;
+        const floorNum = floorData[0].floor;
+        const isCurrent = floorNum === activeFloor;
+        const isPast = floorNum < activeFloor;
+        const isBoss = floorNum === tower.endFloor;
+        
+        const row = document.createElement('div');
+        row.className = `map-floor-row ${isBoss ? 'floor-boss-chamber' : ''} ${isCurrent ? 'floor-current' : ''} ${isPast ? 'floor-passed' : 'floor-future'}`;
+        
+        const label = document.createElement('div');
+        label.className = 'floor-label-box';
+        label.innerHTML = `
+            <span class="${isBoss ? 'floor-badge-boss' : (isCurrent ? 'floor-badge-current' : (isPast ? 'floor-badge-passed' : 'floor-badge-future'))}">
+                ${isBoss ? '👑' : ''} PISO ${floorNum}
+            </span>
+        `;
+        row.appendChild(label);
+        
+        const nodesContainer = document.createElement('div');
+        nodesContainer.className = 'nodes-container';
+        if (isBoss) nodesContainer.style.justifyContent = 'center';
+        
+        floorData.forEach(node => {
+            const nodeDiv = document.createElement('div');
+            nodeDiv.className = `map-node node-type-${node.type} ${isPast ? 'node-disabled' : ''} ${isCurrent ? 'node-selectable' : ''}`;
+            nodeDiv.id = `sb-node-ui-${node.id}`;
+            nodeDiv.title = `Nodo: ${NODE_LABELS[node.type] || node.type} (Piso ${node.floor})`;
+            
+            nodeDiv.innerHTML = `
+                <div class="node-icon-wrapper">
+                    <span class="node-emoji">${NODE_EMOJIS[node.type] || '❓'}</span>
+                </div>
+                <span class="node-name">${NODE_LABELS[node.type] || node.type}</span>
+            `;
+            nodeDiv.onclick = () => inspectSandboxMapNode(node, tower);
+            nodesContainer.appendChild(nodeDiv);
+        });
+        
+        row.appendChild(nodesContainer);
+        container.appendChild(row);
+    }
+    
+    // Dibujar líneas SVG entre capas
+    setTimeout(() => {
+        drawSandboxMapLines(container, svgContainer);
+    }, 60);
+}
+
+function drawSandboxMapLines(container, svg) {
+    if (!svg || !container || typeof fullMap === 'undefined' || !fullMap) return;
+    svg.innerHTML = '';
+    const containerRect = container.getBoundingClientRect();
+    
+    for (let f = 0; f < fullMap.length - 1; f++) {
+        const floorNodes = fullMap[f];
+        if (!floorNodes) continue;
+        floorNodes.forEach(node => {
+            const el1 = document.getElementById(`sb-node-ui-${node.id}`);
+            if (!el1) return;
+            node.nextNodes.forEach(nextId => {
+                const el2 = document.getElementById(`sb-node-ui-${nextId}`);
+                if (!el2) return;
+                const r1 = el1.getBoundingClientRect();
+                const r2 = el2.getBoundingClientRect();
+                const x1 = r1.left - containerRect.left + r1.width / 2;
+                const y1 = r1.top - containerRect.top + r1.height / 2 + container.scrollTop;
+                const x2 = r2.left - containerRect.left + r2.width / 2;
+                const y2 = r2.top - containerRect.top + r2.height / 2 + container.scrollTop;
+                
+                const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                line.setAttribute('x1', x1);
+                line.setAttribute('y1', y1);
+                line.setAttribute('x2', x2);
+                line.setAttribute('y2', y2);
+                line.setAttribute('stroke', 'rgba(102, 252, 241, 0.35)');
+                line.setAttribute('stroke-width', '2');
+                svg.appendChild(line);
+            });
+        });
+    }
+}
+
+function inspectSandboxMapNode(node, tower) {
+    const detailsEl = document.getElementById('sandbox-node-details');
+    const badgeEl = document.getElementById('node-detail-badge');
+    const infoEl = document.getElementById('node-detail-info');
+    if (!detailsEl || !badgeEl || !infoEl) return;
+    
+    detailsEl.style.display = 'flex';
+    badgeEl.innerHTML = `${NODE_EMOJIS[node.type] || '❓'} ${NODE_LABELS[node.type] || node.type}`;
+    badgeEl.className = `node-detail-badge node-type-${node.type}`;
+    
+    let infoText = `Piso ${node.floor} // ${tower.name} (Rutas conectadas: ${node.nextNodes.length})`;
+    if (node.type === NODE_TYPES.BOSS) {
+        infoText += ` • Cámara del Jefe ${tower.bossName}. Al derrotarlo suelta 1 Arma Legendaria Dorada y la Llave de sector.`;
+    } else if (node.type === NODE_TYPES.ELITE) {
+        infoText += ` • Robot Élite potenciado con mutador. Recompensa doble y riesgo de explosión.`;
+    } else if (node.type === NODE_TYPES.CHEST) {
+        infoText += ` • Suministros o armas mejoradas (+1) garantizadas sin combate.`;
+    } else if (node.type === NODE_TYPES.SHOP) {
+        infoText += ` • Mercado de armas, chips y suministros por chatarra.`;
+    } else if (node.type === NODE_TYPES.REPAIR_SHOP) {
+        infoText += ` • Taller de mantenimiento: cura 30%, entrena 300 XP o forja +1.`;
+    }
+    infoEl.innerText = infoText;
+}
+
+function onTowerFloorSelectChange(val) {
+    const floor = parseInt(val);
+    Sandbox.towersState.simulatedFloor = floor;
+    renderTowerMapPreview(Sandbox.towersState.activeTowerId, floor);
+}
+
+function renderLegendaryWeaponsLab() {
+    const container = document.getElementById('legendary-lab-content');
+    if (!container) return;
+    
+    const state = Sandbox.towersState;
+    const activeType = state.legendaryWeaponType || 'ESPADA';
+    const activeRobotKey = state.legendaryTargetRobot || 'IGNIS';
+    
+    const wType = WEAPON_TYPES[activeType] || WEAPON_TYPES.ESPADA;
+    const template = ROBOT_TEMPLATES[activeRobotKey] || ROBOT_TEMPLATES.IGNIS;
+    
+    // Robot base sin arma
+    const baseRobot = new Robot(template);
+    const baseAtk = baseRobot.atk;
+    const baseHp = baseRobot.maxHp;
+    
+    // Robot equipado con arma legendaria dorada
+    const legWp = (typeof generateLegendaryWeapon === 'function') 
+        ? generateLegendaryWeapon(wType)
+        : { name: `${activeType.charAt(0) + activeType.slice(1).toLowerCase()} Legendaria`, type: wType, element: ELEMENTS.LEGENDARIO, isLegendary: true, desc: 'Afinidad Universal (+25% ATQ / +15% HP).' };
+    
+    const legRobot = new Robot(template);
+    legRobot.equipWeapon(legWp);
+    
+    const atkDiff = legRobot.atk - baseAtk;
+    const hpDiff = legRobot.maxHp - baseHp;
+    
+    const weaponButtons = Object.keys(WEAPON_TYPES).map(k => {
+        const wt = WEAPON_TYPES[k];
+        const isSel = k === activeType;
+        return `
+            <button class="btn-lab-choice ${isSel ? 'active-lab-choice' : ''}" onclick="changeLegendaryLabWeapon('${k}')">
+                ${WEAPON_EMOJIS[wt]} ${k.charAt(0) + k.slice(1).toLowerCase()}
+            </button>
+        `;
+    }).join('');
+    
+    const robotButtons = Object.keys(ROBOT_TEMPLATES).map(rKey => {
+        const rTemp = ROBOT_TEMPLATES[rKey];
+        const isSel = rKey === activeRobotKey;
+        return `
+            <button class="btn-lab-choice ${isSel ? 'active-lab-choice' : ''}" onclick="changeLegendaryLabRobot('${rKey}')">
+                ${rTemp.emoji} ${rTemp.name} (${rTemp.element})
+            </button>
+        `;
+    }).join('');
+    
+    container.innerHTML = `
+        <div class="lab-col-selectors">
+            <div class="lab-selector-group">
+                <span class="lab-group-title">1. TIPO DE ARMA DORADA LEGENDARIA:</span>
+                <div class="lab-buttons-row">${weaponButtons}</div>
+            </div>
+            
+            <div class="lab-selector-group" style="margin-top: 14px;">
+                <span class="lab-group-title">2. SELECCIONA ROBOT DE PRUEBA:</span>
+                <div class="lab-buttons-row">${robotButtons}</div>
+            </div>
+            
+            <!-- Tarjeta de Arma Dorada -->
+            <div class="inv-item-card is-legendary" style="margin-top: 20px;">
+                <div class="inv-item-top">
+                    <span class="inv-item-emoji elem-LEGENDARIO" style="font-size: 2.2rem;">${WEAPON_EMOJIS[wType]}</span>
+                    <div class="inv-item-info">
+                        <div class="inv-item-title elem-LEGENDARIO">
+                            ${legWp.name} <span class="badge-legendary">👑 LEGENDARIA</span>
+                        </div>
+                        <div class="inv-item-desc" style="color: #ffd700; font-weight: 600;">${legWp.desc}</div>
+                        <div class="inv-item-desc" style="color: #c8d6e5; margin-top: 6px;">
+                            🌟 <strong>Afinidad Universal:</strong> +25% ATQ y +15% HP Máx activados en ${template.name} (${template.element}).
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="lab-col-stats">
+            <div class="stat-comparison-box">
+                <div class="stat-comp-header">
+                    <span class="comp-title">📊 COMPARATIVA DE ESTADÍSTICAS EN VIVO</span>
+                    <span class="badge-legendary-mini">ARMONÍA ACTIVA</span>
+                </div>
+                
+                <div class="comp-stat-row">
+                    <span class="comp-stat-name">⚔️ Ataque Base:</span>
+                    <span class="comp-val-base">${baseAtk}</span>
+                    <span class="comp-arrow">➔</span>
+                    <span class="comp-val-boosted elem-LEGENDARIO">${legRobot.atk} <small>(+${atkDiff} / +25%)</small></span>
+                </div>
+                
+                <div class="comp-stat-row">
+                    <span class="comp-stat-name">❤️ HP Máximo:</span>
+                    <span class="comp-val-base">${baseHp}</span>
+                    <span class="comp-arrow">➔</span>
+                    <span class="comp-val-boosted elem-LEGENDARIO">${legRobot.maxHp} <small>(+${hpDiff} / +15%)</small></span>
+                </div>
+                
+                <div class="comp-stat-row">
+                    <span class="comp-stat-name">💥 Prob. Crítico:</span>
+                    <span class="comp-val-base">${baseRobot.critChance}%</span>
+                    <span class="comp-arrow">➔</span>
+                    <span class="comp-val-boosted">${legRobot.critChance}%</span>
+                </div>
+                
+                <div class="comp-stat-row">
+                    <span class="comp-stat-name">⚡ Multiplicador Elemental:</span>
+                    <div class="multipliers-pill-row">
+                        <span class="mult-pill" title="Contra Fuego">🔥 1.15x</span>
+                        <span class="mult-pill" title="Contra Agua">💧 1.15x</span>
+                        <span class="mult-pill" title="Contra Tierra">🪨 1.15x</span>
+                        <span class="mult-pill" title="Contra Aire">💨 1.15x</span>
+                        <span class="mult-pill" title="Contra Neutro">⚙️ 1.15x</span>
+                    </div>
+                </div>
+                
+                <div class="comp-stat-hint">
+                    ✨ <strong>Ventaja Táctica:</strong> A diferencia de las armas elementales que sufren 0.75x (desventaja), las armas doradas siempre golpean con <strong>1.15x (+15% daño)</strong> contra cualquier oponente y nunca sufren penalización.
+                </div>
+                
+                <button class="btn-send-to-combat" onclick="sendLegendaryToCombatSimulator('${activeType}', '${activeRobotKey}')">
+                    <span>⚔️</span> CARGAR EN SIMULADOR DE COMBATE (PROBAR AHORA)
+                </button>
+            </div>
+        </div>
+    `;
+}
+
+function changeLegendaryLabWeapon(wType) {
+    Sandbox.towersState.legendaryWeaponType = wType;
+    renderLegendaryWeaponsLab();
+}
+
+function changeLegendaryLabRobot(rKey) {
+    Sandbox.towersState.legendaryTargetRobot = rKey;
+    renderLegendaryWeaponsLab();
+}
+
+function sendLegendaryToCombatSimulator(weaponType, robotKey) {
+    weaponType = weaponType || (Sandbox.towersState && Sandbox.towersState.legendaryWeaponType) || 'ESPADA';
+    robotKey = robotKey || (Sandbox.towersState && Sandbox.towersState.legendaryTargetRobot) || 'IGNIS';
+    
+    Sandbox.combatConfig.allies[0] = {
+        enabled: true,
+        templateKey: robotKey,
+        level: 10,
+        weaponType: weaponType,
+        weaponElement: 'LEGENDARIO',
+        isUpgraded: true,
+        isLegendary: true,
+        chipType: 'NONE',
+        mutatorType: 'NONE',
+        skin: 'DEFAULT',
+        aura: 'GOLD',
+        particles: 'GOLD'
+    };
+    
+    switchSandboxTab('combat');
+    renderTeamBuilder('allies');
+    alert(`👑 ¡${robotKey} equipado con ${weaponType} Legendaria Dorada listo en el Slot 1 del Simulador de Combate!`);
+}
+
 

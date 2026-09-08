@@ -43,6 +43,10 @@ const AuthManager = {
                     if (typeof SkillsManager !== 'undefined') {
                         await SkillsManager.loadProfile();
                     }
+                    if (typeof CosmeticsManager !== 'undefined') {
+                        await CosmeticsManager.loadCosmeticsFromDB();
+                        CosmeticsManager.updateEquippedDisplay();
+                    }
                 });
             } catch (err) {
                 console.warn('[AuthManager] Error al inicializar sesión:', err);
@@ -51,6 +55,10 @@ const AuthManager = {
         this.updateAuthUI();
         if (typeof SkillsManager !== 'undefined') {
             await SkillsManager.loadProfile();
+        }
+        if (typeof CosmeticsManager !== 'undefined') {
+            await CosmeticsManager.loadCosmeticsFromDB();
+            CosmeticsManager.updateEquippedDisplay();
         }
     },
 
@@ -200,6 +208,10 @@ const AuthManager = {
         if (typeof SkillsManager !== 'undefined') {
             await SkillsManager.loadProfile();
         }
+        if (typeof CosmeticsManager !== 'undefined') {
+            await CosmeticsManager.loadCosmeticsFromDB();
+            CosmeticsManager.updateEquippedDisplay();
+        }
 
         this.loadAndRenderHistory();
     },
@@ -237,6 +249,77 @@ const AuthManager = {
             }
         } else {
             console.warn('[Supabase] No se guardó match_run en la nube (sin usuario o sin cliente Supabase).');
+        }
+    },
+
+    async saveTowerCheckpoint(checkpointData) {
+        if (!this.currentUser || !isSupabaseConfigured() || !supabaseClient) {
+            console.warn('[AuthManager] No se puede guardar punto de control sin usuario o sin Supabase');
+            return null;
+        }
+        try {
+            const payload = {
+                user_id: this.currentUser.id,
+                tower_completed: checkpointData.tower_completed,
+                current_tower: checkpointData.current_tower,
+                floor: checkpointData.floor,
+                scrap: checkpointData.scrap || 0,
+                squad: checkpointData.squad,
+                inventory: checkpointData.inventory,
+                updated_at: new Date().toISOString()
+            };
+            const { data, error } = await supabaseClient
+                .from('saved_tower_runs')
+                .upsert(payload, { onConflict: 'user_id' });
+            if (error) {
+                console.error('[AuthManager] Error al guardar punto de control de torre:', error);
+            } else {
+                console.info('[AuthManager] Punto de control de torre guardado con éxito en Supabase:', payload);
+            }
+            return data;
+        } catch (err) {
+            console.error('[AuthManager] Excepción al guardar punto de control de torre:', err);
+            return null;
+        }
+    },
+
+    async getSavedTowerCheckpoint() {
+        if (!this.currentUser || !isSupabaseConfigured() || !supabaseClient) {
+            return null;
+        }
+        try {
+            const { data, error } = await supabaseClient
+                .from('saved_tower_runs')
+                .select('*')
+                .eq('user_id', this.currentUser.id)
+                .maybeSingle();
+            if (error) {
+                console.warn('[AuthManager] Error al consultar punto de control de torre:', error);
+                return null;
+            }
+            return data;
+        } catch (err) {
+            console.warn('[AuthManager] Excepción al consultar punto de control de torre:', err);
+            return null;
+        }
+    },
+
+    async clearTowerCheckpoint() {
+        if (!this.currentUser || !isSupabaseConfigured() || !supabaseClient) {
+            return;
+        }
+        try {
+            const { error } = await supabaseClient
+                .from('saved_tower_runs')
+                .delete()
+                .eq('user_id', this.currentUser.id);
+            if (error) {
+                console.warn('[AuthManager] Error al eliminar punto de control de torre:', error);
+            } else {
+                console.info('[AuthManager] Punto de control de torre eliminado de Supabase.');
+            }
+        } catch (err) {
+            console.warn('[AuthManager] Excepción al eliminar punto de control de torre:', err);
         }
     },
 

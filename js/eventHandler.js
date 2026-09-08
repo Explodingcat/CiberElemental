@@ -51,8 +51,8 @@ function initChestEvent() {
         weapon.isUpgraded = true;
         weapon.name += " +1";
         if (weapon.type === WEAPON_TYPES.DAGA) weapon.desc = '40% prob. doble ataque (con +1). Cada golpe puede aplicar marca.';
-        if (weapon.type === WEAPON_TYPES.HACHA) weapon.desc = 'Perfora 75% barreras/defensa (con +1). +35% Daño a ≤40% HP (Verdugo).';
-        if (weapon.type === WEAPON_TYPES.BACULO) weapon.desc = 'Regenera 7% HP por ronda (con +1). Potenciado por afinidad de Agua.';
+        if (weapon.type === WEAPON_TYPES.HACHA) weapon.desc = '+10% ATQ base. Perfora 75% defensas (con +1). 20% prob. Rompearmaduras. +45% Daño a ≤40% HP (Verdugo +1).';
+        if (weapon.type === WEAPON_TYPES.BACULO) weapon.desc = 'Regenera 7% HP portador (con +1) + 5% a un aliado. 20% prob. de reducir 1 CD.';
         if (weapon.type === WEAPON_TYPES.ESPADA) weapon.desc = '+30% Daño base y +20% Crítico (con +1). Críticos activan Racha (+10% ATQ).';
         
         rewardObj = weapon;
@@ -370,8 +370,8 @@ function executeCampForge(robotId) {
     w.isUpgraded = true;
     w.name += ' +1';
     if (w.type === WEAPON_TYPES.DAGA) w.desc = '40% prob. doble ataque (con +1). Cada golpe puede aplicar marca.';
-    if (w.type === WEAPON_TYPES.HACHA) w.desc = 'Perfora 75% barreras/defensa (con +1). +35% Daño a ≤40% HP (Verdugo).';
-    if (w.type === WEAPON_TYPES.BACULO) w.desc = 'Regenera 7% HP por ronda (con +1). Potenciado por afinidad de Agua.';
+    if (w.type === WEAPON_TYPES.HACHA) w.desc = '+10% ATQ base. Perfora 75% defensas (con +1). 20% prob. Rompearmaduras. +45% Daño a ≤40% HP (Verdugo +1).';
+    if (w.type === WEAPON_TYPES.BACULO) w.desc = 'Regenera 7% HP portador (con +1) + 5% a un aliado. 20% prob. de reducir 1 CD.';
     if (w.type === WEAPON_TYPES.ESPADA) w.desc = '+30% Daño base y +20% Crítico (con +1). Críticos activan Racha (+10% ATQ).';
     robot.recalculateStats();
     

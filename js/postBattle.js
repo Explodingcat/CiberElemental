@@ -52,21 +52,20 @@ function initPostBattle(enemies) {
 
         // Botín por robot
         if (isBoss) {
-            // Boss drop: 50% Upgraded Weapon, 50% Chip
-            if (Math.random() < 0.5) {
+            // Boss drop: Garantizado Arma Legendaria Dorada + Chip + Consumible
+            if (typeof generateLegendaryWeapon === 'function') {
+                let legWp = generateLegendaryWeapon();
+                allDroppedWeapons.push(legWp);
+            } else {
                 let wp = generateRandomWeapon(enemy.element);
                 wp.isUpgraded = true;
                 wp.name += " +1";
-                if (wp.type === WEAPON_TYPES.DAGA) wp.desc = '40% prob. doble ataque (con +1). Cada golpe puede aplicar marca.';
-                if (wp.type === WEAPON_TYPES.HACHA) wp.desc = 'Perfora 75% barreras/defensa (con +1). +35% Daño a ≤40% HP (Verdugo).';
-                if (wp.type === WEAPON_TYPES.BACULO) wp.desc = 'Regenera 7% HP por ronda (con +1). Potenciado por afinidad de Agua.';
-                if (wp.type === WEAPON_TYPES.ESPADA) wp.desc = '+30% Daño base y +20% Crítico (con +1). Críticos activan Racha (+10% ATQ).';
                 allDroppedWeapons.push(wp);
-            } else {
-                let chipKeys = Object.keys(ITEM_TYPES).filter(k => k.includes('CHIP'));
-                let randomChipType = ITEM_TYPES[chipKeys[Math.floor(Math.random() * chipKeys.length)]];
-                allDroppedItems.push({ type: randomChipType, ...ITEM_DEFS[randomChipType] });
             }
+            
+            let chipKeys = Object.keys(ITEM_TYPES).filter(k => k.includes('CHIP'));
+            let randomChipType = ITEM_TYPES[chipKeys[Math.floor(Math.random() * chipKeys.length)]];
+            allDroppedItems.push({ type: randomChipType, ...ITEM_DEFS[randomChipType] });
             
             let consumableKeys = Object.keys(ITEM_TYPES).filter(k => !k.includes('CHIP'));
             let randomConsumableType = ITEM_TYPES[consumableKeys[Math.floor(Math.random() * consumableKeys.length)]];
@@ -81,8 +80,8 @@ function initPostBattle(enemies) {
                 wp.isUpgraded = true;
                 wp.name += " +1";
                 if (wp.type === WEAPON_TYPES.DAGA) wp.desc = '40% prob. doble ataque (con +1). Cada golpe puede aplicar marca.';
-                if (wp.type === WEAPON_TYPES.HACHA) wp.desc = 'Perfora 75% barreras/defensa (con +1). +35% Daño a ≤40% HP (Verdugo).';
-                if (wp.type === WEAPON_TYPES.BACULO) wp.desc = 'Regenera 7% HP por ronda (con +1). Potenciado por afinidad de Agua.';
+                if (wp.type === WEAPON_TYPES.HACHA) wp.desc = '+10% ATQ base. Perfora 75% defensas (con +1). 20% prob. Rompearmaduras. +45% Daño a ≤40% HP (Verdugo +1).';
+                if (wp.type === WEAPON_TYPES.BACULO) wp.desc = 'Regenera 7% HP portador (con +1) + 5% a un aliado. 20% prob. de reducir 1 CD.';
                 if (wp.type === WEAPON_TYPES.ESPADA) wp.desc = '+30% Daño base y +20% Crítico (con +1). Críticos activan Racha (+10% ATQ).';
                 allDroppedWeapons.push(wp);
             } else if (eliteRoll < 0.66) {
@@ -150,9 +149,88 @@ function initPostBattle(enemies) {
             logsHTML.push(`<div class="post-log-item log-lvl-up">🎉 ${msg}</div>`);
         });
     }
+
+    // Identificar torre actual y siguiente
+    const currentTowerId = (typeof GAME_STATE !== 'undefined' && GAME_STATE.currentTower)
+        ? GAME_STATE.currentTower
+        : ((GAME_STATE.floor <= 10) ? 1 : ((GAME_STATE.floor <= 20) ? 2 : 3));
+    const currentTowerConfig = (typeof TOWERS_CONFIG !== 'undefined' && TOWERS_CONFIG[currentTowerId])
+        ? TOWERS_CONFIG[currentTowerId]
+        : { id: 1, name: 'Torre Cibernética', endFloor: 10, nextTowerId: 2 };
+    const nextTowerId = currentTowerConfig ? currentTowerConfig.nextTowerId : null;
+    const nextTowerConfig = (nextTowerId && typeof TOWERS_CONFIG !== 'undefined') ? TOWERS_CONFIG[nextTowerId] : null;
+
+    if (hasBoss) {
+        if (currentTowerId === 1) {
+            logsHTML.push(`
+                <div class="post-log-item log-key-unlocked">
+                    <div class="key-banner-icon">🔑</div>
+                    <div class="key-banner-text">
+                        <strong>¡LLAVE CUÁNTICA OBTENIDA!</strong>
+                        <span>ACCESO AUTORIZADO // TORRE CUÁNTICA (PISOS 11 - 20)</span>
+                    </div>
+                </div>
+            `);
+        } else if (currentTowerId === 2) {
+            logsHTML.push(`
+                <div class="post-log-item log-key-unlocked">
+                    <div class="key-banner-icon">🗝️</div>
+                    <div class="key-banner-text">
+                        <strong>¡LLAVE DE SINGULARIDAD OBTENIDA!</strong>
+                        <span>ACCESO AUTORIZADO // TORRE DE SINGULARIDAD (PISOS 21 - 30)</span>
+                    </div>
+                </div>
+            `);
+        } else {
+            logsHTML.push(`
+                <div class="post-log-item log-key-unlocked">
+                    <div class="key-banner-icon">👑</div>
+                    <div class="key-banner-text">
+                        <strong>¡NÚCLEO DE SINGULARIDAD NEUTRALIZADO!</strong>
+                        <span>¡HAS SUPERADO TODOS LOS SECTORES Y CONQUISTADO EL JUEGO!</span>
+                    </div>
+                </div>
+            `);
+        }
+
+        // Guardar checkpoint en Base de Datos (cero localStorage)
+        if (typeof AuthManager !== 'undefined' && typeof AuthManager.saveTowerCheckpoint === 'function') {
+            const checkpointData = {
+                tower_completed: currentTowerId,
+                current_tower: nextTowerId || currentTowerId,
+                floor: nextTowerConfig ? nextTowerConfig.startFloor : currentTowerConfig.endFloor,
+                scrap: GAME_STATE.scrap,
+                squad: GAME_STATE.team.map(r => r.serialize ? r.serialize() : {
+                    id: r.id,
+                    name: r.name,
+                    element: r.element,
+                    emoji: r.emoji,
+                    level: r.level,
+                    hp: r.hp,
+                    maxHp: r.maxHp,
+                    attack: r.attack,
+                    defense: r.defense,
+                    speed: r.speed,
+                    equippedWeapon: r.equippedWeapon,
+                    skills: r.skills
+                }),
+                inventory: {
+                    items: GAME_STATE.inventory.items,
+                    weapons: GAME_STATE.inventory.weapons
+                }
+            };
+            AuthManager.saveTowerCheckpoint(checkpointData).then(res => {
+                console.log('✅ Checkpoint de torre guardado en BD:', res);
+            }).catch(err => {
+                console.error('❌ Error guardando checkpoint de torre:', err);
+            });
+        }
+    }
     
     allDroppedWeapons.forEach(wp => {
-        logsHTML.push(`<div class="post-log-item log-weapon">🎁 ¡Soltó un arma: <strong>${wp.name}</strong> ${WEAPON_EMOJIS[wp.type]}!</div>`);
+        let isGold = wp.isLegendary || wp.element === 'LEGENDARIO';
+        let goldTag = isGold ? ' 👑 [DORADA LEGENDARIA]' : '';
+        logsHTML.push(`<div class="post-log-item log-weapon ${isGold ? 'log-weapon-legendary' : ''}">🎁 ¡Soltó un arma: <strong>${wp.name}${goldTag}</strong> ${WEAPON_EMOJIS[wp.type]}!</div>`);
         GAME_STATE.inventory.weapons.push(wp);
         droppedWeapon = wp;
     });
@@ -210,23 +288,76 @@ function initPostBattle(enemies) {
     const btnScrap = document.createElement('button');
     btnScrap.className = 'btn-post-action btn-post-scrap';
     btnScrap.innerHTML = `<span>⚙️ Desmantelar Restos (+${dismantleScrap} Chatarra, +${Math.round(dismantleHeal * 100)}% Reparación)</span>`;
-    btnScrap.onclick = () => {
-        addScrap(dismantleScrap);
-        GAME_STATE.team.forEach(r => {
-            if (!r.isOffline) {
-                r.heal(r.maxHp * dismantleHeal);
-            }
-        });
-        advanceFloor();
-    };
-    actionsContainer.appendChild(btnScrap);
+    
+    if (hasBoss) {
+        btnScrap.onclick = () => {
+            addScrap(dismantleScrap);
+            GAME_STATE.team.forEach(r => {
+                if (!r.isOffline) {
+                    r.heal(r.maxHp * dismantleHeal);
+                }
+            });
+            updateTeamUI();
+            btnScrap.disabled = true;
+            btnScrap.classList.add('btn-dismantled');
+            btnScrap.innerHTML = `<span>✔ Restos del Jefe Desmantelados (+${dismantleScrap} ⚙️, +${Math.round(dismantleHeal * 100)}% HP)</span>`;
+        };
+        actionsContainer.appendChild(btnScrap);
 
-    // Botón avanzar
-    const btnIgnore = document.createElement('button');
-    btnIgnore.className = 'btn-post-action btn-post-advance';
-    btnIgnore.innerHTML = `<span>Avanzar Incursión ➔</span>`;
-    btnIgnore.onclick = () => advanceFloor();
-    actionsContainer.appendChild(btnIgnore);
+        if (nextTowerId && nextTowerConfig) {
+            // Botón de Ascenso a la siguiente Torre
+            const btnAscend = document.createElement('button');
+            btnAscend.className = 'btn-post-action btn-post-ascend';
+            btnAscend.innerHTML = `<span>🚀 Ascender a ${nextTowerConfig.name} (Piso ${nextTowerConfig.startFloor}) ➔</span>`;
+            btnAscend.onclick = () => {
+                btnAscend.disabled = true;
+                advanceToNextTower(nextTowerId);
+            };
+            actionsContainer.appendChild(btnAscend);
+
+            // Botón de Finalizar Incursión y Consolidar
+            const btnRetire = document.createElement('button');
+            btnRetire.className = 'btn-post-action btn-post-claim-victory';
+            btnRetire.innerHTML = `<span>🏆 Retirarse con Victoria y Consolidar Chatarra</span>`;
+            btnRetire.onclick = () => {
+                if (typeof AuthManager !== 'undefined' && typeof AuthManager.clearTowerCheckpoint === 'function') {
+                    AuthManager.clearTowerCheckpoint();
+                }
+                showScreen('screen-victory');
+            };
+            actionsContainer.appendChild(btnRetire);
+        } else {
+            // Victoria Absoluta (Torre 3 Final)
+            const btnFinalVictory = document.createElement('button');
+            btnFinalVictory.className = 'btn-post-action btn-post-claim-victory btn-pulse-gold';
+            btnFinalVictory.innerHTML = `<span>👑 ¡CONQUISTAR SINGULARIDAD Y FINALIZAR EXPEDICIÓN! 🏆</span>`;
+            btnFinalVictory.onclick = () => {
+                if (typeof AuthManager !== 'undefined' && typeof AuthManager.clearTowerCheckpoint === 'function') {
+                    AuthManager.clearTowerCheckpoint();
+                }
+                showScreen('screen-victory');
+            };
+            actionsContainer.appendChild(btnFinalVictory);
+        }
+    } else {
+        btnScrap.onclick = () => {
+            addScrap(dismantleScrap);
+            GAME_STATE.team.forEach(r => {
+                if (!r.isOffline) {
+                    r.heal(r.maxHp * dismantleHeal);
+                }
+            });
+            advanceFloor();
+        };
+        actionsContainer.appendChild(btnScrap);
+
+        // Botón avanzar normal
+        const btnIgnore = document.createElement('button');
+        btnIgnore.className = 'btn-post-action btn-post-advance';
+        btnIgnore.innerHTML = `<span>Avanzar Incursión ➔</span>`;
+        btnIgnore.onclick = () => advanceFloor();
+        actionsContainer.appendChild(btnIgnore);
+    }
     
     updateTeamUI();
 }

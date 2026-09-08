@@ -65,8 +65,14 @@
                 <h1 class="game-title">CYBER-ELEMENTAL</h1>
 
                 <div class="main-menu-buttons">
+                    <button id="btn-resume-run" class="btn-main-menu btn-resume-run" style="display: none;" onclick="resumeSavedRun()">
+                        <span class="btn-icon">💾</span> REANUDAR INCURSIÓN (<span id="resume-tower-badge">TORRE 2</span>)
+                    </button>
                     <button id="btn-menu-new-run" class="btn-main-menu" onclick="showScreen('screen-start')">
                         <span class="btn-icon">⚡</span> NUEVA INCURSIÓN
+                    </button>
+                    <button id="btn-menu-cosmetics-shop" class="btn-main-menu btn-cosmetics-highlight" onclick="openCosmeticsShopModal()">
+                        <span class="btn-icon">🛍️</span> TIENDA DE COSMÉTICOS
                     </button>
                     <button id="btn-menu-skill-tree" class="btn-main-menu" onclick="openSkillTreeModal()">
                         <span class="btn-icon">🌳</span> ÁRBOL DE HABILIDADES
@@ -84,6 +90,16 @@
                 <div class="sub-header-badge">SISTEMA DE DESPLIEGUE // ROGUELIKE v2.0</div>
                 <h1 class="game-title">CYBER-ELEMENTAL</h1>
                 <p class="start-instruction">Configura tu unidad táctica y armamento inicial para la incursión</p>
+                <div class="start-cosmetics-bar">
+                    <div id="start-screen-cosmetics-pill" class="cosmetics-status-pill">
+                        <span class="cosmetics-indicator-label">✨ Cosméticos:</span>
+                        <span class="cosmetics-tag">Sin Aura</span> + 
+                        <span class="cosmetics-tag">Sin Partículas</span>
+                    </div>
+                    <button class="btn-mini-shop" onclick="openCosmeticsShopModal()" title="Abrir Tienda de Cosméticos">
+                        🛍️ Cambiar Auras / Partículas
+                    </button>
+                </div>
             </div>
             
             <div class="selector-container">
@@ -132,7 +148,7 @@
             <div class="map-header-panel">
                 <div class="map-header-badge">🗼 SISTEMA DE NAVEGACIÓN // TORRE SECTORIAL</div>
                 <div class="map-title-row">
-                    <h2 class="map-main-title">TORRE CIBERNÉTICA</h2>
+                    <h2 id="map-tower-title" class="map-main-title">TORRE CIBERNÉTICA</h2>
                     <div class="map-floor-pill">
                         <span class="pill-label">PISO ACTUAL:</span>
                         <span id="current-floor" class="pill-val">1</span>
@@ -285,7 +301,7 @@
                 <div class="endgame-stats-card">
                     <div class="endgame-stat-item">
                         <span class="endgame-stat-label">Sector Conquistado</span>
-                        <span class="endgame-stat-val" style="color: #66fcf1;">NIVEL 10 ✔</span>
+                        <span id="victory-sector-conquered" class="endgame-stat-val" style="color: #66fcf1;">NIVEL 10 ✔</span>
                     </div>
                     <div class="endgame-stat-item">
                         <span class="endgame-stat-label">Chatarra Total</span>
@@ -549,6 +565,52 @@
                 </div>
             </div>
         </div>
+
+        <!-- Modal de la Tienda de Cosméticos (Auras y Partículas) -->
+        <div id="cosmetics-modal" class="modal" style="display: none;">
+            <div class="modal-content cosmetics-modal-box">
+                <button class="close-btn" onclick="closeCosmeticsShopModal()" title="Cerrar ventana">&times;</button>
+                
+                <div class="cosmetics-modal-header">
+                    <div class="cosmetics-header-badge">🛍️ MODIFICACIONES VISUALES // HANGAR DE PERSONALIZACIÓN</div>
+                    <div class="cosmetics-header-main-row">
+                        <div class="cosmetics-title-group">
+                            <h2 class="cosmetics-modal-title">TIENDA DE COSMÉTICOS</h2>
+                            <div class="cosmetics-subtitle">Auras elementales y sistemas de partículas. Los cosméticos se desbloquean y ganan en combate (999.999 ⚙️).</div>
+                        </div>
+                        <div class="cosmetics-global-scrap-card">
+                            <span class="scrap-card-label">CHATARRA GLOBAL</span>
+                            <span id="cosmetics-modal-global-scrap" class="scrap-card-val">0 ⚙️</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Holo-Pod de Previsualización en Vivo -->
+                <div id="cosmetics-preview-pod" class="cosmetics-preview-pod">
+                    <!-- Generado dinámicamente por CosmeticsManager -->
+                </div>
+
+                <!-- Pestañas de Categorías -->
+                <div class="cosmetics-tabs-bar">
+                    <button id="cosmetics-tab-btn-auras" class="cosmetics-tab-btn active" onclick="CosmeticsManager.switchTab('AURAS')">
+                        <span>✨</span> AURAS DE FONDO
+                    </button>
+                    <button id="cosmetics-tab-btn-particles" class="cosmetics-tab-btn" onclick="CosmeticsManager.switchTab('PARTICLES')">
+                        <span>🎆</span> PARTÍCULAS ANIMADAS
+                    </button>
+                </div>
+
+                <!-- Toast de notificaciones de la tienda -->
+                <div id="cosmetics-modal-toast" class="cosmetics-toast"></div>
+
+                <!-- Grid de Tarjetas de Cosméticos -->
+                <div class="cosmetics-modal-body">
+                    <div id="cosmetics-cards-grid" class="cosmetics-cards-grid">
+                        <!-- Generado dinámicamente por CosmeticsManager -->
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- SDK Supabase vía CDN -->
@@ -564,6 +626,8 @@
     <script src="js/constants.js"></script>
     <script src="js/balanceManager.js"></script>
     <script src="js/database.js"></script>
+    <script src="js/skinsData.js"></script>
+    <script src="js/cosmeticsManager.js"></script>
     <script src="js/eventsDatabase.js"></script>
     <script src="js/Robot.js"></script>
     <script src="js/teamManager.js"></script>

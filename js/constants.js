@@ -5,7 +5,8 @@ const ELEMENTS = {
     AGUA: 'AGUA',
     TIERRA: 'TIERRA',
     AIRE: 'AIRE',
-    NEUTRO: 'NEUTRO'
+    NEUTRO: 'NEUTRO',
+    LEGENDARIO: 'LEGENDARIO'
 };
 
 const ELEMENT_EMOJIS = {
@@ -13,7 +14,8 @@ const ELEMENT_EMOJIS = {
     [ELEMENTS.AGUA]: '💧',
     [ELEMENTS.TIERRA]: '🪨',
     [ELEMENTS.AIRE]: '💨',
-    [ELEMENTS.NEUTRO]: '⚙️'
+    [ELEMENTS.NEUTRO]: '⚙️',
+    [ELEMENTS.LEGENDARIO]: '👑'
 };
 
 const NODE_TYPES = {
@@ -98,9 +100,46 @@ const ITEM_DEFS = {
 };
 
 function getMultiplier(attackerElement, defenderElement) {
+    if (attackerElement === ELEMENTS.LEGENDARIO) return 1.15;
     if (attackerElement === defenderElement) return 1.0;
     if (ELEMENTAL_MULTIPLIERS[attackerElement] && ELEMENTAL_MULTIPLIERS[attackerElement][defenderElement]) {
         return ELEMENTAL_MULTIPLIERS[attackerElement][defenderElement];
     }
     return 1.0;
 }
+
+const TOWERS_CONFIG = {
+    1: {
+        id: 1,
+        name: 'Torre Cibernética',
+        badge: '🗼 SECTOR 01 // RED CENTRAL',
+        startFloor: 1,
+        endFloor: 10,
+        bossName: 'TITAN-X (Jefe)',
+        keyRewardName: 'Llave Cuántica',
+        keyRewardDesc: 'Acceso autorizado a la Torre Cuántica (Pisos 11 al 20)',
+        nextTowerId: 2
+    },
+    2: {
+        id: 2,
+        name: 'Torre Cuántica',
+        badge: '🌌 SECTOR 02 // SUBESPACIO CUÁNTICO',
+        startFloor: 11,
+        endFloor: 20,
+        bossName: 'TITAN-OMEGA (Jefe Cuántico)',
+        keyRewardName: 'Llave de Singularidad',
+        keyRewardDesc: 'Acceso autorizado a la Torre de Singularidad (Pisos 21 al 30)',
+        nextTowerId: 3
+    },
+    3: {
+        id: 3,
+        name: 'Torre de Singularidad',
+        badge: '👑 SECTOR 03 // NÚCLEO DE SINGULARIDAD',
+        startFloor: 21,
+        endFloor: 30,
+        bossName: 'SINGULARIDAD-ZERO (Jefe Supremo)',
+        keyRewardName: null,
+        keyRewardDesc: null,
+        nextTowerId: null
+    }
+};

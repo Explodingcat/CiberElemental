@@ -263,11 +263,11 @@ function generateRandomWeapon(forcedElement = null) {
             break;
         case WEAPON_TYPES.HACHA:
             name = 'Hacha';
-            abilityDesc = 'Perfora 50% barreras/defensa (75% con +1). +35% Daño a enemigos con <40% HP (Verdugo).';
+            abilityDesc = '+10% ATQ base. 20% prob. Rompearmaduras (-25% DEF). Perfora 50% defensas (75% con +1). +35% Daño a ≤40% HP (+45% con +1).';
             break;
         case WEAPON_TYPES.BACULO:
             name = 'Báculo';
-            abilityDesc = 'Regenera 5% HP por ronda (7% con +1). Potenciado por afinidad de Agua.';
+            abilityDesc = 'Regenera 5% HP al portador por ronda (7% con +1). En +1 cura 5% a un aliado y 20% prob. de -1 CD.';
             break;
         case WEAPON_TYPES.ESPADA:
             name = 'Espada';
@@ -281,6 +281,45 @@ function generateRandomWeapon(forcedElement = null) {
         element: element,
         name: `${name} de ${element}`,
         desc: abilityDesc
+    };
+}
+
+function generateLegendaryWeapon(forcedType = null) {
+    const types = Object.keys(WEAPON_TYPES);
+    const type = forcedType || WEAPON_TYPES[types[Math.floor(Math.random() * types.length)]];
+    const element = ELEMENTS.LEGENDARIO;
+    
+    let name = '';
+    let abilityDesc = '';
+    
+    switch(type) {
+        case WEAPON_TYPES.DAGA:
+            name = 'Daga Legendaria';
+            abilityDesc = '40% prob. doble ataque. Cada golpe adhiere marca. Afinidad Universal con cualquier robot (+25% ATQ y +15% HP).';
+            break;
+        case WEAPON_TYPES.HACHA:
+            name = 'Hacha Legendaria';
+            abilityDesc = '+10% ATQ base. Perfora 75% defensas. 20% prob. Rompearmaduras (-25% DEF). +45% Daño a ≤40% HP (Verdugo). Afinidad Universal (+25% ATQ y +15% HP).';
+            break;
+        case WEAPON_TYPES.BACULO:
+            name = 'Báculo Legendario';
+            abilityDesc = 'Regenera 7% HP portador + 5% al aliado más herido por ronda. 20% prob. de reducir 1 CD. Afinidad Universal (+25% ATQ y +15% HP).';
+            break;
+        case WEAPON_TYPES.ESPADA:
+            name = 'Espada Legendaria';
+            abilityDesc = '+30% Daño base y +20% Crítico. Críticos activan Racha (+10% ATQ). Afinidad Universal (+25% ATQ y +15% HP).';
+            break;
+    }
+    
+    return {
+        id: 'leg_' + Math.random().toString(36).substr(2, 9),
+        type: type,
+        element: element,
+        name: name,
+        desc: abilityDesc,
+        isLegendary: true,
+        isUpgraded: true,
+        rarity: 'LEGENDARIA'
     };
 }
 
@@ -459,9 +498,19 @@ function generateWildRobot(floor, isElite = false, equipWeapon = false) {
         isElite: false
     });
     
-    // Probabilidad de arma: 30% en piso 1, sube 10% por piso.
-    let weaponProb = Math.min(0.3 + (floor - 1) * 0.1, 1.0);
-    if (Math.random() < weaponProb) {
+    // Regla de armas en enemigos regulares (no élites):
+    // - En la Torre 1 (pisos 1 al 10): los enemigos normales NO portan armas.
+    // - Desde la Torre 2 (piso 11 en adelante): los enemigos no élites pueden tener armas.
+    let hasWeapon = equipWeapon;
+    if (!hasWeapon && floor >= 11) {
+        // Probabilidad de arma a partir de Torre 2: 30% en piso 11, +10% por piso (hasta 100% en pisos 18-30)
+        let weaponProb = Math.min(0.30 + (floor - 11) * 0.10, 1.0);
+        if (Math.random() < weaponProb) {
+            hasWeapon = true;
+        }
+    }
+    
+    if (hasWeapon) {
         let weapon = generateRandomWeapon(robot.element); // Arma del mismo elemento
         robot.equipWeapon(weapon);
     }
@@ -469,83 +518,197 @@ function generateWildRobot(floor, isElite = false, equipWeapon = false) {
     return robot;
 }
 
-function generateBoss(equipWeapon = false) {
-    let boss = new Robot({
-        name: 'TITAN-X (Jefe)',
-        element: ELEMENTS.NEUTRO,
-        emoji: '👹',
-        level: 10,
-        baseStatsOverride: {
-            maxHp: 260,
-            atk: 20,
-            spd: 10,
-            dodge: 10,
-            acc: 100,
-            critChance: 10
-        },
-        turnPattern: ['Golpe Titánico', 'Pulso PEM Titánico', 'Protocolo Exterminio'],
-        skills: [
-            { 
-                name: 'Golpe Titánico', 
-                cd: 0, 
-                currentCd: 0, 
-                desc: 'Ataque demoledor neutro (1.4x de daño).', 
-                type: 'DAMAGE', 
-                power: 1.4 
+function generateBoss(towerId = 1, equipWeapon = false) {
+    if (typeof towerId === 'boolean') {
+        equipWeapon = towerId;
+        towerId = 1;
+    }
+    
+    if (typeof GAME_STATE !== 'undefined' && GAME_STATE.floor) {
+        if (GAME_STATE.floor >= 21) towerId = 3;
+        else if (GAME_STATE.floor >= 11) towerId = 2;
+    }
+
+    let bossConfig;
+    if (towerId === 2) {
+        bossConfig = {
+            name: 'TITAN-OMEGA (Jefe)',
+            element: ELEMENTS.NEUTRO,
+            emoji: '🔱',
+            level: 20,
+            isBoss: true,
+            baseStatsOverride: {
+                maxHp: 420,
+                atk: 28,
+                spd: 13,
+                dodge: 12,
+                acc: 100,
+                critChance: 15
             },
-            { 
-                name: 'Pulso PEM Titánico', 
-                cd: 3, 
-                currentCd: 1, 
-                desc: 'Pulso electromagnético masivo que daña a todo el escuadrón (0.8x) y desactiva todas las Barreras y Escudos aliados.', 
-                type: 'DAMAGE_AOE_STATUS', 
-                target: 'ALL_ENEMIES', 
-                power: 0.8, 
-                purgeShields: true 
+            turnPattern: ['Golpe Cuántico', 'Sobrecarga Cuántica', 'Protocolo Aniquilación'],
+            skills: [
+                {
+                    name: 'Golpe Cuántico',
+                    cd: 0,
+                    currentCd: 0,
+                    desc: 'Impacto cuántico masivo neutro (1.45x) que sacude el subespacio.',
+                    type: 'DAMAGE',
+                    power: 1.45
+                },
+                {
+                    name: 'Sobrecarga Cuántica',
+                    cd: 3,
+                    currentCd: 1,
+                    desc: 'Onda electromagnética que barre al escuadrón (0.85x), destruyendo todas las Barreras y Escudos.',
+                    type: 'DAMAGE_AOE_STATUS',
+                    target: 'ALL_ENEMIES',
+                    power: 0.85,
+                    purgeShields: true
+                },
+                {
+                    name: 'Protocolo Aniquilación',
+                    cd: 4,
+                    currentCd: 2,
+                    desc: 'Haz de antimateria concentrado (2.3x). Infalible: Fijación balística absoluta, imposible de esquivar.',
+                    type: 'DAMAGE',
+                    power: 2.3,
+                    cannotMiss: true
+                }
+            ]
+        };
+    } else if (towerId === 3) {
+        bossConfig = {
+            name: 'SINGULARIDAD-ZERO (Jefe)',
+            element: ELEMENTS.NEUTRO,
+            emoji: '🌌',
+            level: 30,
+            isBoss: true,
+            baseStatsOverride: {
+                maxHp: 500,
+                atk: 32,
+                spd: 15,
+                dodge: 15,
+                acc: 100,
+                critChance: 18
             },
-            { 
-                name: 'Protocolo Exterminio', 
-                cd: 4, 
-                currentCd: 2, 
-                desc: 'Ataque masivo devastador concentrado en un objetivo (2.2x de daño).', 
-                type: 'DAMAGE', 
-                power: 2.2 
-            }
-        ]
-    });
-    // Por defecto no lleva arma para balance controlado y limpio, pero admite equiparla
+            turnPattern: ['Colapso Gravitatorio', 'Tormenta del Vacío', 'Protocolo Singularidad'],
+            skills: [
+                {
+                    name: 'Colapso Gravitatorio',
+                    cd: 0,
+                    currentCd: 0,
+                    desc: 'Aplastamiento de gravedad hiperdensa neutro (1.5x) que hace temblar la realidad.',
+                    type: 'DAMAGE',
+                    power: 1.5
+                },
+                {
+                    name: 'Tormenta del Vacío',
+                    cd: 3,
+                    currentCd: 1,
+                    desc: 'Singularidad que absorbe el campo de batalla (0.9x), desintegrando todas las defensas y barreras aliadas.',
+                    type: 'DAMAGE_AOE_STATUS',
+                    target: 'ALL_ENEMIES',
+                    power: 0.9,
+                    purgeShields: true
+                },
+                {
+                    name: 'Protocolo Singularidad',
+                    cd: 4,
+                    currentCd: 2,
+                    desc: 'Ruptura espacio-temporal terminal (2.4x). Infalible: Fijación absoluta, trasciende la esquiva.',
+                    type: 'DAMAGE',
+                    power: 2.4,
+                    cannotMiss: true
+                }
+            ]
+        };
+    } else {
+        bossConfig = {
+            name: 'TITAN-X (Jefe)',
+            element: ELEMENTS.NEUTRO,
+            emoji: '👹',
+            level: 10,
+            isBoss: true,
+            baseStatsOverride: {
+                maxHp: 350,
+                atk: 26,
+                spd: 11,
+                dodge: 10,
+                acc: 100,
+                critChance: 12
+            },
+            turnPattern: ['Golpe Titánico', 'Pulso PEM Titánico', 'Protocolo Exterminio'],
+            skills: [
+                { 
+                    name: 'Golpe Titánico', 
+                    cd: 0, 
+                    currentCd: 0, 
+                    desc: 'Ataque demoledor neutro (1.4x de daño) que sacude la arena.', 
+                    type: 'DAMAGE', 
+                    power: 1.4 
+                },
+                { 
+                    name: 'Pulso PEM Titánico', 
+                    cd: 3, 
+                    currentCd: 1, 
+                    desc: 'Tormenta electromagnética masiva que descarga rayos sobre todo el escuadrón (0.8x) y desactiva todas las Barreras y Escudos aliados.', 
+                    type: 'DAMAGE_AOE_STATUS', 
+                    target: 'ALL_ENEMIES', 
+                    power: 0.8, 
+                    purgeShields: true 
+                },
+                { 
+                    name: 'Protocolo Exterminio', 
+                    cd: 4, 
+                    currentCd: 2, 
+                    desc: 'Haz orbital aniquilador concentrado (2.2x de daño masivo). Infalible: Fijación balística absoluta, no puede fallar ni ser esquivado.', 
+                    type: 'DAMAGE', 
+                    power: 2.2, 
+                    cannotMiss: true 
+                }
+            ]
+        };
+    }
+
+    let boss = new Robot(bossConfig);
     if (equipWeapon) {
-        boss.equipWeapon(generateRandomWeapon());
+        boss.equipWeapon(generateLegendaryWeapon());
     }
     return boss;
 }
 
 function generateEncounter(floor, nodeType) {
-    if (nodeType === NODE_TYPES.BOSS || floor === 10) {
-        return [generateBoss()];
+    if (nodeType === NODE_TYPES.BOSS || floor === 10 || floor === 20 || floor === 30) {
+        let towerId = (floor <= 10) ? 1 : ((floor <= 20) ? 2 : 3);
+        return [generateBoss(towerId)];
     }
     
     const isElite = (nodeType === NODE_TYPES.ELITE);
     
-    // Pisos 1-5: 1 enemigo
-    // Pisos 6-9: Probabilidad escalable de generar 2 enemigos (Piso 6: 40%, Piso 7: 50%, Piso 8: 60%, Piso 9: 70%)
     let enemyCount = 1;
     if (floor >= 6 && floor <= 9) {
-        let multiChance = 0.40 + (floor - 6) * 0.10; // 0.40, 0.50, 0.60, 0.70
-        if (Math.random() < multiChance) {
-            enemyCount = 2;
-        }
+        let multiChance = 0.40 + (floor - 6) * 0.10;
+        if (Math.random() < multiChance) enemyCount = 2;
+    } else if (floor >= 11 && floor <= 15) {
+        if (Math.random() < 0.60) enemyCount = 2;
+    } else if (floor >= 16 && floor <= 19) {
+        let roll = Math.random();
+        enemyCount = (roll < 0.25) ? 3 : 2;
+    } else if (floor >= 21 && floor <= 25) {
+        let roll = Math.random();
+        enemyCount = (roll < 0.35) ? 3 : 2;
+    } else if (floor >= 26 && floor <= 29) {
+        let roll = Math.random();
+        enemyCount = (roll < 0.50) ? 3 : 2;
     }
     
     let enemies = [];
     if (isElite) {
-        // En Élite: 1 Élite principal + secuaces normales si hay múltiples
         enemies.push(generateWildRobot(floor, true));
         for (let i = 1; i < enemyCount; i++) {
             enemies.push(generateWildRobot(floor, false));
         }
     } else {
-        // Combate normal: 1 a N enemigos salvajes
         for (let i = 0; i < enemyCount; i++) {
             enemies.push(generateWildRobot(floor, false));
         }

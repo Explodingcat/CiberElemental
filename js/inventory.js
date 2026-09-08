@@ -25,12 +25,13 @@ function renderInventory() {
             let weaponSlotHtml = '';
             if (robot.equippedWeapon) {
                 const w = robot.equippedWeapon;
+                const isLeg = w.isLegendary || w.element === (typeof ELEMENTS !== 'undefined' ? ELEMENTS.LEGENDARIO : 'LEGENDARIO');
                 const hasAff = (robot.hasAffinity && robot.hasAffinity());
                 const affDesc = hasAff ? `<div class="inv-slot-affinity" style="margin-top: 6px; font-size: 0.78rem; color: #ffd32a; font-weight: bold;">🌟 ${robot.getAffinityDescription()}</div>` : '';
                 weaponSlotHtml = `
-                    <div class="inv-slot-box inv-slot-equipped elem-${w.element}">
+                    <div class="inv-slot-box inv-slot-equipped ${isLeg ? 'is-legendary' : ''} elem-${w.element}">
                         <div class="inv-slot-header">
-                            <span class="inv-slot-name">${WEAPON_EMOJIS[w.type]} ${w.name}</span>
+                            <span class="inv-slot-name">${WEAPON_EMOJIS[w.type]} ${w.name} ${isLeg ? '<span class="badge-legendary-mini">👑 LEGENDARIA</span>' : ''}</span>
                             <button class="btn-inv-unequip" onclick="unequipWeaponFrom(${idx})" title="Desequipar y guardar en mochila">Desequipar</button>
                         </div>
                         <div class="inv-slot-desc">${w.desc}</div>
@@ -147,8 +148,9 @@ function renderInventory() {
         } else {
             weaponsList.innerHTML = '';
             GAME_STATE.inventory.weapons.forEach((w, idx) => {
+                const isLegendary = w.isLegendary || w.element === (typeof ELEMENTS !== 'undefined' ? ELEMENTS.LEGENDARIO : 'LEGENDARIO');
                 const card = document.createElement('div');
-                card.className = `inv-item-card ${selectedInventoryWeapon === idx ? 'is-selected' : ''}`;
+                card.className = `inv-item-card ${isLegendary ? 'is-legendary' : ''} ${selectedInventoryWeapon === idx ? 'is-selected' : ''}`;
                 
                 let equipButtonsHtml = '';
                 if (selectedInventoryWeapon === idx) {
@@ -156,25 +158,28 @@ function renderInventory() {
                         <div class="inv-card-actions">
                             ${GAME_STATE.team.map((r, rIdx) => {
                                 if (r.isOffline) return '';
-                                const isAffinity = r.element === w.element;
+                                const isAffinity = isLegendary || (r.element === w.element);
+                                const affinityIcon = isLegendary ? '👑' : '🌟';
                                 return `
-                                    <button class="btn-inv-action btn-equip-ally" onclick="event.stopPropagation(); equipWeaponToItem(${idx}, ${rIdx})">
-                                        Equipar a ${r.name} ${isAffinity ? '🌟' : ''}
+                                    <button class="btn-inv-action btn-equip-ally ${isLegendary ? 'btn-equip-legendary' : ''}" onclick="event.stopPropagation(); equipWeaponToItem(${idx}, ${rIdx})">
+                                        Equipar a ${r.name} ${isAffinity ? affinityIcon : ''}
                                     </button>
                                 `;
                             }).join('')}
                             <button class="btn-inv-action btn-scrap-item" onclick="event.stopPropagation(); scrapInventoryWeapon(${idx})">
-                                ⚙️ Desmantelar (+20 Chatarra)
+                                ⚙️ Desmantelar (+${isLegendary ? '100' : '20'} Chatarra)
                             </button>
                         </div>
                     `;
                 }
 
+                const legendBadge = isLegendary ? '<span class="badge-legendary">👑 LEGENDARIA</span>' : '';
+
                 card.innerHTML = `
                     <div class="inv-item-top">
                         <span class="inv-item-emoji elem-${w.element}">${WEAPON_EMOJIS[w.type]}</span>
                         <div class="inv-item-info">
-                            <div class="inv-item-title elem-${w.element}">${w.name}</div>
+                            <div class="inv-item-title elem-${w.element}">${w.name} ${legendBadge}</div>
                             <div class="inv-item-desc">${w.desc}</div>
                         </div>
                     </div>
@@ -358,7 +363,9 @@ function equipWeaponToItem(weaponIndex, robotIndex) {
 }
 
 function scrapInventoryWeapon(weaponIndex) {
-    addScrap(20);
+    const weapon = GAME_STATE.inventory.weapons[weaponIndex];
+    const scrapAmount = (weapon && (weapon.isLegendary || weapon.element === (typeof ELEMENTS !== 'undefined' ? ELEMENTS.LEGENDARIO : 'LEGENDARIO'))) ? 100 : 20;
+    addScrap(scrapAmount);
     GAME_STATE.inventory.weapons.splice(weaponIndex, 1);
     selectedInventoryWeapon = null;
     renderInventory();

@@ -2,35 +2,52 @@
 
 let fullMap = []; // Array de 10 pisos
 
-function generateFullMap() {
+function generateFullMap(towerId = null) {
+    if (!towerId) {
+        if (typeof GAME_STATE !== 'undefined' && GAME_STATE.floor) {
+            towerId = (GAME_STATE.floor <= 10) ? 1 : ((GAME_STATE.floor <= 20) ? 2 : 3);
+        } else {
+            towerId = 1;
+        }
+    }
+    if (typeof GAME_STATE !== 'undefined') {
+        GAME_STATE.currentTower = towerId;
+    }
+    const tower = (typeof TOWERS_CONFIG !== 'undefined' && TOWERS_CONFIG[towerId]) ? TOWERS_CONFIG[towerId] : { startFloor: 1, endFloor: 10, id: 1 };
+    const startFloor = tower.startFloor;
+    const endFloor = tower.endFloor;
+
     fullMap = [];
     const numLanes = 3;
 
-    // 1er Mercado: Garantizado exactamente 1 mercado entre los pisos 2, 3 o 4
-    const shopFloor1 = Math.floor(Math.random() * 3) + 2; // 2, 3 o 4
+    // 1er Mercado: Garantizado exactamente 1 mercado entre los primeros pisos
+    const shopFloor1 = startFloor + Math.floor(Math.random() * 3) + 1; // startFloor + 1, 2 o 3
     const shopLane1 = Math.floor(Math.random() * numLanes);
 
-    // 2do Mercado: Garantizado exactamente 1 mercado entre los pisos 6, 7, 8 o 9
-    const shopFloor2 = Math.floor(Math.random() * 4) + 6; // 6, 7, 8 o 9
+    // 2do Mercado: Garantizado entre los pisos medios-altos
+    const shopFloor2 = startFloor + Math.floor(Math.random() * 4) + 5; // startFloor + 5, 6, 7 u 8
     const shopLane2 = Math.floor(Math.random() * numLanes);
 
-    // Taller de Reparación (Campamento): Piso 6, 7 u 8
-    let possibleRepairFloors = [6, 7, 8].filter(f => f !== shopFloor2);
-    if (possibleRepairFloors.length === 0) possibleRepairFloors = [6, 7, 8];
+    // Taller de Reparación (Campamento)
+    let possibleRepairFloors = [startFloor + 5, startFloor + 6, startFloor + 7].filter(f => f !== shopFloor2);
+    if (possibleRepairFloors.length === 0) possibleRepairFloors = [startFloor + 5, startFloor + 6, startFloor + 7];
     const repairShopFloor = possibleRepairFloors[Math.floor(Math.random() * possibleRepairFloors.length)];
     const repairShopLane = (repairShopFloor === shopFloor2) ? ((shopLane2 + 1) % numLanes) : 1;
 
+    // Tesoro garantizado en el piso intermedio (piso 5, 15 o 25)
+    const chestFloor = startFloor + 4;
+
     // Generar Nodos
-    for (let floor = 1; floor <= 10; floor++) {
+    for (let floor = startFloor; floor <= endFloor; floor++) {
         let floorNodes = [];
-        let nodesInThisFloor = (floor === 10) ? 1 : numLanes;
+        let isBoss = (floor === endFloor);
+        let nodesInThisFloor = isBoss ? 1 : numLanes;
 
         for (let i = 0; i < nodesInThisFloor; i++) {
             let type;
-            if (floor === 10) {
+            if (isBoss) {
                 type = NODE_TYPES.BOSS;
-            } else if (floor === 5) {
-                // Piso 5: Siempre son puros tesoros (el jugador escoge 1 en su ruta)
+            } else if (floor === chestFloor) {
                 type = NODE_TYPES.CHEST;
             } else if (floor === shopFloor1 && i === shopLane1) {
                 type = NODE_TYPES.SHOP;
@@ -38,16 +55,14 @@ function generateFullMap() {
                 type = NODE_TYPES.SHOP;
             } else if (floor === repairShopFloor && i === repairShopLane) {
                 type = NODE_TYPES.REPAIR_SHOP;
-            } else if (floor === 1) {
-                // Piso 1: Combates iniciales o misterio
+            } else if (floor === startFloor) {
                 type = (Math.random() < 0.8) ? NODE_TYPES.COMBAT : NODE_TYPES.MYSTERY;
             } else {
                 let rand = Math.random();
                 if (rand < 0.45) {
                     type = NODE_TYPES.COMBAT;
                 } else if (rand < 0.75) {
-                    // Élite disponible desde piso 3
-                    if (floor >= 3) {
+                    if (floor >= startFloor + 2) {
                         type = NODE_TYPES.ELITE;
                     } else {
                         type = NODE_TYPES.COMBAT;
@@ -67,31 +82,26 @@ function generateFullMap() {
         fullMap.push(floorNodes);
     }
 
-    // Generar Conexiones
-    for (let floor = 1; floor < 10; floor++) {
-        const currentFloorNodes = fullMap[floor - 1];
-        const nextFloorNodes = fullMap[floor];
+    // Generar Conexiones entre capas relativas
+    for (let layer = 0; layer < fullMap.length - 1; layer++) {
+        const currentFloorNodes = fullMap[layer];
+        const nextFloorNodes = fullMap[layer + 1];
 
-        if (floor === 9) {
-            // Todos al jefe
+        if (layer === fullMap.length - 2) {
+            // Todos al nodo del jefe
             currentFloorNodes.forEach(node => {
                 node.nextNodes.push(nextFloorNodes[0].id);
             });
         } else {
-            // Conectar a la siguiente capa
             currentFloorNodes.forEach((node, i) => {
-                // Siempre conecta de frente
                 node.nextNodes.push(nextFloorNodes[i].id);
-                // 30% chance de cruzar a la izquierda
                 if (i > 0 && Math.random() < 0.3) {
                     node.nextNodes.push(nextFloorNodes[i - 1].id);
                 }
-                // 30% chance de cruzar a la derecha
                 if (i < numLanes - 1 && Math.random() < 0.3) {
                     node.nextNodes.push(nextFloorNodes[i + 1].id);
                 }
             });
-            // Garantizar que todos los nodos de la siguiente capa tengan al menos un padre
             nextFloorNodes.forEach((nextNode, j) => {
                 const hasParent = currentFloorNodes.some(n => n.nextNodes.includes(nextNode.id));
                 if (!hasParent) {
@@ -106,18 +116,36 @@ function renderMap() {
     const container = document.getElementById('map-container');
     container.innerHTML = '';
     
+    const towerId = (typeof GAME_STATE !== 'undefined' && GAME_STATE.currentTower) 
+        ? GAME_STATE.currentTower 
+        : ((GAME_STATE.floor <= 10) ? 1 : ((GAME_STATE.floor <= 20) ? 2 : 3));
+    const tower = (typeof TOWERS_CONFIG !== 'undefined' && TOWERS_CONFIG[towerId]) 
+        ? TOWERS_CONFIG[towerId] 
+        : { name: 'Torre Cibernética', badge: '🗼 SECTOR 01 // RED CENTRAL', endFloor: 10 };
+
+    // Actualizar título y badge dinámicos de la torre
+    const towerTitleEl = document.getElementById('map-tower-title') || document.querySelector('.map-main-title');
+    if (towerTitleEl) towerTitleEl.innerText = tower.name.toUpperCase();
+
+    const towerBadgeEl = document.querySelector('.map-header-badge');
+    if (towerBadgeEl) towerBadgeEl.innerText = tower.badge;
+
+    const maxFloorEl = document.querySelector('.pill-max');
+    if (maxFloorEl) maxFloorEl.innerText = `/ ${tower.endFloor}`;
+
     // Crear contenedor para las líneas SVG
     const svgContainer = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
     svgContainer.id = 'map-svg-lines';
     container.appendChild(svgContainer);
     
-    // Renderizamos de arriba hacia abajo (Piso 10 primero, Piso 1 último)
-    for (let f = 9; f >= 0; f--) {
+    // Renderizamos de arriba hacia abajo (Último piso primero)
+    for (let f = fullMap.length - 1; f >= 0; f--) {
         const floorData = fullMap[f];
-        const floorNum = f + 1;
+        if (!floorData || floorData.length === 0) continue;
+        const floorNum = floorData[0].floor;
         const isCurrentFloor = floorNum === GAME_STATE.floor;
         const isPastFloor = floorNum < GAME_STATE.floor;
-        const isBossFloor = floorNum === 10;
+        const isBossFloor = (floorNum === tower.endFloor);
         
         const floorRow = document.createElement('div');
         let rowClass = 'map-floor-row';
@@ -134,7 +162,7 @@ function renderMap() {
         
         if (isBossFloor) {
             floorLabel.innerHTML = `
-                <span class="floor-badge-boss">👑 PISO 10</span>
+                <span class="floor-badge-boss">👑 PISO ${floorNum}</span>
                 <span class="floor-sub-label boss-sub">NÚCLEO FINAL</span>
             `;
         } else if (isCurrentFloor) {
@@ -157,7 +185,7 @@ function renderMap() {
 
         const nodesContainer = document.createElement('div');
         nodesContainer.className = 'nodes-container';
-        if (floorNum === 10) nodesContainer.style.justifyContent = 'center';
+        if (isBossFloor) nodesContainer.style.justifyContent = 'center';
 
         floorData.forEach(node => {
             const nodeDiv = document.createElement('div');
@@ -170,10 +198,10 @@ function renderMap() {
             let isVisited = node.id === GAME_STATE.currentNodeId;
             
             if (floorNum === GAME_STATE.floor) {
-                if (floorNum === 1) {
+                if (f === 0) {
                     isSelectable = true;
                 } else {
-                    const prevFloorData = fullMap[floorNum - 2];
+                    const prevFloorData = fullMap[f - 1];
                     const parentNode = prevFloorData.find(n => n.id === GAME_STATE.currentNodeId);
                     if (parentNode && parentNode.nextNodes.includes(node.id)) {
                         isSelectable = true;
@@ -233,8 +261,10 @@ function drawLines() {
     
     const containerRect = container.getBoundingClientRect();
     
-    for (let f = 0; f < 9; f++) {
+    for (let f = 0; f < fullMap.length - 1; f++) {
         const floorNodes = fullMap[f];
+        if (!floorNodes || floorNodes.length === 0) continue;
+        const floorNum = floorNodes[0].floor;
         floorNodes.forEach(node => {
             const el1 = document.getElementById(`node-ui-${node.id}`);
             if (!el1) return;
@@ -259,15 +289,14 @@ function drawLines() {
                 line.setAttribute('x2', x2);
                 line.setAttribute('y2', y2);
                 
-                const isPathFromCurrent = (f + 1 === GAME_STATE.floor - 1 && node.id === GAME_STATE.currentNodeId);
-                const isPathActiveLevel1 = (GAME_STATE.floor === 1 && f === 0);
+                const isPathFromCurrent = (floorNum === GAME_STATE.floor - 1 && node.id === GAME_STATE.currentNodeId);
                 
                 if (isPathFromCurrent) {
                     line.setAttribute('stroke', '#66fcf1');
                     line.setAttribute('stroke-width', '4');
                     line.setAttribute('stroke-dasharray', '6,4');
                     line.setAttribute('class', 'map-line-active');
-                } else if (f + 1 < GAME_STATE.floor && node.id === GAME_STATE.currentNodeId) {
+                } else if (floorNum < GAME_STATE.floor && node.id === GAME_STATE.currentNodeId) {
                     line.setAttribute('stroke', '#feca57');
                     line.setAttribute('stroke-width', '3');
                 } else {
@@ -278,6 +307,26 @@ function drawLines() {
                 svg.appendChild(line);
             });
         });
+    }
+}
+
+function advanceToNextTower(nextTowerId) {
+    if (typeof TOWERS_CONFIG === 'undefined' || !TOWERS_CONFIG[nextTowerId]) return;
+    
+    GAME_STATE.currentTower = nextTowerId;
+    GAME_STATE.floor = TOWERS_CONFIG[nextTowerId].startFloor;
+    GAME_STATE.currentNodeId = null;
+    
+    // Generar nuevo mapa de la torre correspondiente
+    generateFullMap(nextTowerId);
+    
+    // Renderizar mapa, refrescar escuadrón y activar pantalla de navegación
+    renderMap();
+    if (typeof updateTeamUI === 'function') {
+        updateTeamUI();
+    }
+    if (typeof showScreen === 'function') {
+        showScreen('screen-map');
     }
 }
 

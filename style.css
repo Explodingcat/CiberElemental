@@ -26,6 +26,7 @@
 .member-emoji.elem-FUEGO,
 .combat-avatar-emoji.elem-FUEGO,
 .avatar-emoji.elem-FUEGO,
+.avatar-base-emoji.elem-FUEGO,
 .emoji-graphic.elem-FUEGO,
 .hud-weapon-icon.elem-FUEGO,
 span.elem-FUEGO,
@@ -39,6 +40,7 @@ span.elem-FUEGO,
 .member-emoji.elem-AGUA,
 .combat-avatar-emoji.elem-AGUA,
 .avatar-emoji.elem-AGUA,
+.avatar-base-emoji.elem-AGUA,
 .emoji-graphic.elem-AGUA,
 .hud-weapon-icon.elem-AGUA,
 span.elem-AGUA,
@@ -52,6 +54,7 @@ span.elem-AGUA,
 .member-emoji.elem-TIERRA,
 .combat-avatar-emoji.elem-TIERRA,
 .avatar-emoji.elem-TIERRA,
+.avatar-base-emoji.elem-TIERRA,
 .emoji-graphic.elem-TIERRA,
 .hud-weapon-icon.elem-TIERRA,
 span.elem-TIERRA,
@@ -65,6 +68,7 @@ span.elem-TIERRA,
 .member-emoji.elem-AIRE,
 .combat-avatar-emoji.elem-AIRE,
 .avatar-emoji.elem-AIRE,
+.avatar-base-emoji.elem-AIRE,
 .emoji-graphic.elem-AIRE,
 .hud-weapon-icon.elem-AIRE,
 span.elem-AIRE,
@@ -78,6 +82,7 @@ span.elem-AIRE,
 .member-emoji.elem-NEUTRO,
 .combat-avatar-emoji.elem-NEUTRO,
 .avatar-emoji.elem-NEUTRO,
+.avatar-base-emoji.elem-NEUTRO,
 .emoji-graphic.elem-NEUTRO,
 .hud-weapon-icon.elem-NEUTRO,
 span.elem-NEUTRO,
@@ -85,9 +90,24 @@ span.elem-NEUTRO,
     filter: grayscale(1) brightness(1.1);
 }
 
+.elem-LEGENDARIO, .elem-badge-LEGENDARIO, .member-elem-LEGENDARIO .member-elem-badge {
+    color: #ffd700;
+    text-shadow: 0 0 10px rgba(255, 215, 0, 0.7);
+}
+.member-emoji.elem-LEGENDARIO,
+.combat-avatar-emoji.elem-LEGENDARIO,
+.avatar-emoji.elem-LEGENDARIO,
+.avatar-base-emoji.elem-LEGENDARIO,
+.emoji-graphic.elem-LEGENDARIO,
+.hud-weapon-icon.elem-LEGENDARIO,
+span.elem-LEGENDARIO,
+.defeated-avatar span.elem-LEGENDARIO {
+    filter: drop-shadow(0 0 16px rgba(255, 215, 0, 0.9)) brightness(1.3);
+}
+
 /* Evitar que los contenedores de texto hereden el filtro sepia si solo tienen clase elem- */
-.team-weapon-pill.elem-FUEGO, .team-weapon-pill.elem-AGUA, .team-weapon-pill.elem-TIERRA, .team-weapon-pill.elem-AIRE,
-.weapon-info.elem-FUEGO, .weapon-info.elem-AGUA, .weapon-info.elem-TIERRA, .weapon-info.elem-AIRE,
+.team-weapon-pill.elem-FUEGO, .team-weapon-pill.elem-AGUA, .team-weapon-pill.elem-TIERRA, .team-weapon-pill.elem-AIRE, .team-weapon-pill.elem-LEGENDARIO,
+.weapon-info.elem-FUEGO, .weapon-info.elem-AGUA, .weapon-info.elem-TIERRA, .weapon-info.elem-AIRE, .weapon-info.elem-LEGENDARIO,
 .member-elem-badge, .element-badge, .hud-element-badge, .hud-weapon-icon::after {
     filter: none !important;
 }
@@ -385,6 +405,7 @@ button:disabled {
     box-shadow: 0 6px 20px rgba(0,0,0,0.5);
     border: 1px dashed rgba(255, 255, 255, 0.2);
     transition: all 0.3s ease;
+    font-size: 46px;
 }
 
 .platform-FUEGO { border-color: rgba(255, 107, 107, 0.6); box-shadow: 0 0 20px rgba(255, 107, 107, 0.3); }
@@ -398,6 +419,21 @@ button:disabled {
     line-height: 1;
     filter: drop-shadow(0 0 12px rgba(255,255,255,0.35));
     animation: heroFloat 3s ease-in-out infinite;
+}
+
+.holo-platform .avatar-skin-wrapper {
+    font-size: 46px;
+    width: 1.25em;
+    height: 1.25em;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    animation: heroFloat 3s ease-in-out infinite;
+}
+
+.holo-platform .avatar-base-emoji {
+    font-size: 46px;
+    line-height: 1;
 }
 
 @keyframes heroFloat {
@@ -2717,6 +2753,465 @@ button:disabled {
     position: relative;
     z-index: 4;
     transition: transform 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.35em;
+    height: 1.35em;
+    aspect-ratio: 1 / 1;
+}
+
+/* ==========================================================================
+   SISTEMA DE SKINS, CRIATURAS MITOLÓGICAS, ACCESORIOS Y AURAS ELEMENTALES
+   ========================================================================== */
+
+.avatar-skin-wrapper {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.25em;
+    height: 1.25em;
+    aspect-ratio: 1 / 1;
+    flex-shrink: 0;
+}
+
+.avatar-base-emoji {
+    position: relative;
+    z-index: 3;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    user-select: none;
+    width: 1em;
+    height: 1em;
+    text-align: center;
+}
+
+/* Accesorios superpuestos (Lentes, Visores, Coronas) */
+.avatar-accessory {
+    position: absolute;
+    z-index: 4;
+    pointer-events: none;
+    line-height: 1;
+    display: inline-block;
+    filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.95));
+}
+
+.avatar-accessory.acc-shades {
+    font-size: 0.52em;
+    top: 38%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+/* Calibración fina de lentes según chasis / emoji */
+.chasis-🗿 .avatar-accessory.acc-shades { top: 40%; font-size: 0.55em; }
+.chasis-💀 .avatar-accessory.acc-shades { top: 43%; font-size: 0.54em; }
+.chasis-🐙 .avatar-accessory.acc-shades { top: 38%; font-size: 0.52em; }
+.chasis-🦖 .avatar-accessory.acc-shades { top: 35%; left: 47%; font-size: 0.50em; }
+.chasis-🦅 .avatar-accessory.acc-shades { top: 38%; left: 48%; font-size: 0.52em; }
+.chasis-🐉 .avatar-accessory.acc-shades { top: 37%; left: 48%; font-size: 0.52em; }
+.chasis-👾 .avatar-accessory.acc-shades { top: 34%; font-size: 0.48em; }
+
+.avatar-accessory.acc-vr {
+    font-size: 0.50em;
+    top: 38%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.avatar-accessory.acc-crown {
+    font-size: 0.46em;
+    top: -5%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+/* ==========================================================================
+   AURAS ELEMENTALES Y CÓSMICAS (100% CIRCULARES Y REDONDAS)
+   ========================================================================== */
+
+.avatar-aura-effect {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 1.6em;
+    height: 1.6em;
+    aspect-ratio: 1 / 1;
+    border-radius: 50% !important;
+    pointer-events: none;
+    z-index: 1;
+    box-sizing: border-box;
+    transition: all 0.3s ease;
+}
+
+/* 1. FUEGO: TORBELLINO INFERNAL */
+.avatar-aura-effect.aura-fire {
+    background: radial-gradient(circle, rgba(255, 71, 87, 0.95) 10%, rgba(255, 107, 129, 0.6) 45%, rgba(255, 165, 2, 0.2) 70%, transparent 85%);
+    box-shadow: 0 0 28px #ff4757, 0 0 55px rgba(255, 107, 129, 0.8), inset 0 0 20px #ffa502;
+    border: 2px dashed rgba(255, 165, 2, 0.85);
+    border-radius: 50% !important;
+    animation: auraFirePulse 1.4s ease-in-out infinite alternate, auraFireSpin 5s linear infinite;
+}
+@keyframes auraFirePulse {
+    0% { transform: translate(-50%, -50%) scale(0.95); opacity: 0.85; filter: brightness(1) drop-shadow(0 0 12px #ff4757); }
+    100% { transform: translate(-50%, -50%) scale(1.15); opacity: 1; filter: brightness(1.35) drop-shadow(0 0 28px #ff6b6b); }
+}
+@keyframes auraFireSpin {
+    0% { filter: hue-rotate(-12deg); }
+    50% { filter: hue-rotate(18deg); }
+    100% { filter: hue-rotate(-12deg); }
+}
+
+/* 2. AGUA: VÓRTICE ABISAL */
+.avatar-aura-effect.aura-water {
+    background: radial-gradient(circle, rgba(0, 210, 211, 0.9) 15%, rgba(72, 219, 251, 0.55) 50%, rgba(10, 61, 98, 0.2) 75%, transparent 85%);
+    box-shadow: 0 0 28px #00d2d3, 0 0 55px rgba(72, 219, 251, 0.8), inset 0 0 20px #54a0ff;
+    border: 2px dashed rgba(72, 219, 251, 0.75);
+    border-radius: 50% !important;
+    animation: auraWaterVortex 3s linear infinite;
+}
+@keyframes auraWaterVortex {
+    0% { transform: translate(-50%, -50%) rotate(0deg) scale(0.95); opacity: 0.85; }
+    50% { transform: translate(-50%, -50%) rotate(180deg) scale(1.14); opacity: 1; }
+    100% { transform: translate(-50%, -50%) rotate(360deg) scale(0.95); opacity: 0.85; }
+}
+
+/* 3. TIERRA: CAMPO SÍSMICO */
+.avatar-aura-effect.aura-earth {
+    background: radial-gradient(circle, rgba(254, 202, 87, 0.95) 20%, rgba(225, 177, 44, 0.55) 50%, rgba(130, 88, 15, 0.25) 75%, transparent 85%);
+    box-shadow: 0 0 28px #feca57, 0 0 55px rgba(254, 202, 87, 0.75), inset 0 0 18px #ff9f43;
+    border: 3px double rgba(254, 202, 87, 0.85);
+    border-radius: 50% !important;
+    animation: auraEarthPulse 1.6s ease-in-out infinite alternate, auraEarthQuake 0.3s infinite linear;
+}
+@keyframes auraEarthPulse {
+    0% { transform: translate(-50%, -50%) scale(0.95); border-radius: 50% !important; }
+    100% { transform: translate(-50%, -50%) scale(1.15); border-radius: 50% !important; }
+}
+@keyframes auraEarthQuake {
+    0% { transform: translate(-50%, -50%) rotate(0deg); }
+    25% { transform: translate(-49.5%, -50.5%) rotate(0.8deg); }
+    75% { transform: translate(-50.5%, -49.5%) rotate(-0.8deg); }
+    100% { transform: translate(-50%, -50%) rotate(0deg); }
+}
+
+/* 4. AIRE: TEMPESTAD CICLÓNICA */
+.avatar-aura-effect.aura-air {
+    background: radial-gradient(circle, rgba(200, 214, 229, 0.95) 20%, rgba(102, 252, 241, 0.7) 45%, rgba(72, 219, 251, 0.25) 70%, transparent 85%);
+    box-shadow: 0 0 32px #66fcf1, 0 0 65px rgba(200, 214, 229, 0.8), inset 0 0 20px #48dbfb;
+    border: 2px dotted rgba(102, 252, 241, 0.9);
+    border-radius: 50% !important;
+    animation: auraAirCyclone 1.4s linear infinite;
+}
+@keyframes auraAirCyclone {
+    0% { transform: translate(-50%, -50%) rotate(0deg) scale(0.95); opacity: 0.85; }
+    50% { transform: translate(-50%, -50%) rotate(180deg) scale(1.15); opacity: 1; }
+    100% { transform: translate(-50%, -50%) rotate(360deg) scale(0.95); opacity: 0.85; }
+}
+
+/* 5. CÓSMICO / GLITCH */
+.avatar-aura-effect.aura-cosmic {
+    background: radial-gradient(circle, rgba(165, 94, 234, 0.9) 0%, rgba(69, 170, 242, 0.65) 50%, rgba(255, 0, 128, 0.25) 75%, transparent 85%);
+    box-shadow: 0 0 32px #a55eea, 0 0 60px #45aaf2, inset 0 0 22px #ff007f;
+    border-radius: 50% !important;
+    animation: auraCosmicGlow 2s infinite ease-in-out;
+}
+@keyframes auraCosmicGlow {
+    0% { transform: translate(-50%, -50%) scale(0.95); filter: hue-rotate(0deg) drop-shadow(0 0 15px #a55eea); }
+    50% { transform: translate(-50%, -50%) scale(1.15); filter: hue-rotate(180deg) drop-shadow(0 0 25px #00f0ff); }
+    100% { transform: translate(-50%, -50%) scale(0.95); filter: hue-rotate(360deg) drop-shadow(0 0 15px #a55eea); }
+}
+
+/* 6. DIVINA / CYBER-GOLD */
+.avatar-aura-effect.aura-gold {
+    background: radial-gradient(circle, rgba(255, 215, 0, 0.95) 0%, rgba(255, 165, 0, 0.6) 50%, rgba(218, 165, 32, 0.25) 75%, transparent 85%);
+    box-shadow: 0 0 35px #ffd700, 0 0 70px rgba(255, 215, 0, 0.8), inset 0 0 22px #ffffff;
+    border: 2px solid rgba(255, 255, 255, 0.85);
+    border-radius: 50% !important;
+    animation: auraGoldGlow 1.4s ease-in-out infinite alternate;
+}
+@keyframes auraGoldGlow {
+    0% { transform: translate(-50%, -50%) scale(0.95); filter: drop-shadow(0 0 10px #ffd700); }
+    100% { transform: translate(-50%, -50%) scale(1.18); filter: drop-shadow(0 0 28px #ffffff); }
+}
+
+/* ==========================================================================
+   PARTÍCULAS DINÁMICAS DE LAS AURAS ELEMENTALES (100% CIRCULARES)
+   ========================================================================== */
+
+.aura-particles-layer {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 1.6em;
+    height: 1.6em;
+    aspect-ratio: 1 / 1;
+    pointer-events: none;
+    overflow: visible;
+    z-index: 2;
+    box-sizing: border-box;
+}
+
+.aura-particle {
+    position: absolute;
+    pointer-events: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    opacity: 0;
+}
+
+/* 1. PARTÍCULAS DE FUEGO (Brasas y chispas flotantes) */
+.particles-fire .aura-particle {
+    background: radial-gradient(circle, #fff 10%, #ffa502 45%, #ff4757 85%);
+    box-shadow: 0 0 10px #ff4757, 0 0 18px #ffa502;
+    animation: emberRise 2s cubic-bezier(0.25, 0.46, 0.45, 0.94) infinite;
+}
+
+.particles-fire .p-1 { width: 8px; height: 8px; left: 18%; bottom: 15%; animation-delay: 0s; animation-duration: 2.1s; }
+.particles-fire .p-2 { width: 12px; height: 12px; left: 42%; bottom: 10%; animation-delay: 0.4s; animation-duration: 1.8s; }
+.particles-fire .p-3 { width: 14px; height: 14px; left: 70%; bottom: 20%; animation-delay: 0.8s; animation-duration: 2.3s; }
+.particles-fire .p-4 { width: 7px; height: 7px; left: 30%; bottom: 12%; animation-delay: 1.2s; animation-duration: 1.9s; }
+.particles-fire .p-5 { width: 10px; height: 10px; left: 82%; bottom: 18%; animation-delay: 1.6s; animation-duration: 2.2s; }
+.particles-fire .p-6 { width: 9px; height: 9px; left: 55%; bottom: 8%; animation-delay: 1.0s; animation-duration: 2.0s; }
+
+.particles-fire .p-3::before {
+    content: '✨';
+    font-size: 11px;
+    filter: drop-shadow(0 0 5px #ff4757);
+}
+
+@keyframes emberRise {
+    0% {
+        transform: translateY(0) translateX(0) scale(0.6);
+        opacity: 0;
+    }
+    25% {
+        opacity: 1;
+        transform: translateY(-25px) translateX(6px) scale(1.1);
+    }
+    65% {
+        opacity: 0.85;
+        transform: translateY(-55px) translateX(-8px) scale(0.9);
+    }
+    100% {
+        transform: translateY(-90px) translateX(12px) scale(0.3);
+        opacity: 0;
+    }
+}
+
+/* 2. PARTÍCULAS DE AGUA (Burbujas bioluminiscentes y gotas) */
+.particles-water .aura-particle {
+    background: radial-gradient(circle at 35% 35%, rgba(255, 255, 255, 0.95), rgba(72, 219, 251, 0.6) 40%, rgba(10, 61, 98, 0.3) 80%);
+    border: 1px solid rgba(255, 255, 255, 0.7);
+    box-shadow: 0 0 10px #00d2d3, inset 0 0 6px #54a0ff;
+    animation: bubbleRise 2.4s ease-in-out infinite;
+}
+
+.particles-water .p-1 { width: 10px; height: 10px; left: 22%; bottom: 12%; animation-delay: 0s; }
+.particles-water .p-2 { width: 16px; height: 16px; left: 48%; bottom: 8%; animation-delay: 0.5s; animation-duration: 2.8s; }
+.particles-water .p-3 { width: 12px; height: 12px; left: 75%; bottom: 16%; animation-delay: 1.1s; }
+.particles-water .p-4 { width: 8px; height: 8px; left: 35%; bottom: 14%; animation-delay: 1.5s; animation-duration: 2.1s; }
+.particles-water .p-5 { width: 14px; height: 14px; left: 84%; bottom: 10%; animation-delay: 1.9s; }
+.particles-water .p-6 { width: 11px; height: 11px; left: 60%; bottom: 6%; animation-delay: 0.8s; animation-duration: 2.5s; }
+
+.particles-water .p-2::before {
+    content: '🫧';
+    font-size: 13px;
+    filter: drop-shadow(0 0 6px #00d2d3);
+}
+
+@keyframes bubbleRise {
+    0% {
+        transform: translateY(0) translateX(0) scale(0.5);
+        opacity: 0;
+    }
+    20% {
+        opacity: 0.9;
+        transform: translateY(-20px) translateX(-5px) scale(1);
+    }
+    60% {
+        opacity: 0.9;
+        transform: translateY(-50px) translateX(6px) scale(1.1);
+    }
+    90% {
+        opacity: 0.8;
+        transform: translateY(-75px) translateX(-3px) scale(1.25);
+    }
+    100% {
+        transform: translateY(-85px) translateX(0) scale(1.4);
+        opacity: 0;
+    }
+}
+
+/* 3. PARTÍCULAS DE TIERRA (Fragmentos tectónicos y cristales telúricos) */
+.particles-earth .aura-particle {
+    background: radial-gradient(circle, #fff 15%, #feca57 50%, #ff9f43 90%);
+    box-shadow: 0 0 10px #feca57, 0 0 18px #e1b12c;
+    border-radius: 20%;
+    animation: rockOrbit 3s linear infinite;
+}
+
+.particles-earth .p-1 { width: 10px; height: 10px; top: 15%; left: 15%; animation-delay: 0s; }
+.particles-earth .p-2 { width: 14px; height: 14px; top: 60%; left: 80%; animation-delay: -0.5s; animation-duration: 3.5s; }
+.particles-earth .p-3 { width: 12px; height: 12px; top: 80%; left: 25%; animation-delay: -1.2s; }
+.particles-earth .p-4 { width: 9px; height: 9px; top: 25%; left: 75%; animation-delay: -1.8s; }
+.particles-earth .p-5 { width: 13px; height: 13px; top: 45%; left: 10%; animation-delay: -2.3s; animation-duration: 3.2s; }
+.particles-earth .p-6 { width: 11px; height: 11px; top: 10%; left: 50%; animation-delay: -2.8s; }
+
+.particles-earth .p-3::before {
+    content: '💎';
+    font-size: 12px;
+    filter: drop-shadow(0 0 5px #feca57);
+}
+
+@keyframes rockOrbit {
+    0% {
+        transform: rotate(0deg) translateX(45px) rotate(0deg) scale(0.85);
+        opacity: 0.8;
+    }
+    50% {
+        transform: rotate(180deg) translateX(55px) rotate(-180deg) scale(1.2);
+        opacity: 1;
+        box-shadow: 0 0 16px #feca57;
+    }
+    100% {
+        transform: rotate(360deg) translateX(45px) rotate(-360deg) scale(0.85);
+        opacity: 0.8;
+    }
+}
+
+/* 4. PARTÍCULAS DE AIRE (Ráfagas eólicas y centellas ciclónicas) */
+.particles-air .aura-particle {
+    background: radial-gradient(circle, #fff 30%, #66fcf1 70%, #48dbfb 100%);
+    box-shadow: 0 0 12px #66fcf1, 0 0 22px #48dbfb;
+    border-radius: 40% 60% 70% 30% / 40% 50% 60% 50%;
+    animation: cycloneParticle 1.2s linear infinite;
+}
+
+.particles-air .p-1 { width: 9px; height: 9px; animation-delay: 0s; }
+.particles-air .p-2 { width: 13px; height: 13px; animation-delay: -0.2s; }
+.particles-air .p-3 { width: 10px; height: 10px; animation-delay: -0.4s; }
+.particles-air .p-4 { width: 14px; height: 14px; animation-delay: -0.6s; }
+.particles-air .p-5 { width: 8px; height: 8px; animation-delay: -0.8s; }
+.particles-air .p-6 { width: 11px; height: 11px; animation-delay: -1.0s; }
+
+.particles-air .p-4::before {
+    content: '⚡';
+    font-size: 13px;
+    filter: drop-shadow(0 0 6px #66fcf1);
+}
+
+@keyframes cycloneParticle {
+    0% {
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%) rotate(0deg) translateX(35px) scale(0.7);
+        opacity: 0.5;
+    }
+    50% {
+        opacity: 1;
+        transform: translate(-50%, -50%) rotate(180deg) translateX(55px) scale(1.2);
+    }
+    100% {
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%) rotate(360deg) translateX(35px) scale(0.7);
+        opacity: 0.5;
+    }
+}
+
+/* 5. PARTÍCULAS CÓSMICAS / GLITCH (Fragmentos de datos y píxeles cuánticos) */
+.particles-cosmic .aura-particle {
+    border-radius: 0;
+    background: #00f0ff;
+    box-shadow: 0 0 10px #00f0ff, 0 0 18px #ff007f;
+    animation: cosmicGlitch 1.5s steps(4) infinite;
+}
+
+.particles-cosmic .p-1 { width: 7px; height: 7px; top: 20%; left: 25%; animation-delay: 0s; }
+.particles-cosmic .p-2 { width: 9px; height: 9px; top: 65%; left: 75%; background: #ff007f; animation-delay: 0.3s; }
+.particles-cosmic .p-3 { width: 6px; height: 12px; top: 75%; left: 30%; animation-delay: 0.6s; }
+.particles-cosmic .p-4 { width: 12px; height: 6px; top: 30%; left: 80%; background: #a55eea; animation-delay: 0.9s; }
+.particles-cosmic .p-5 { width: 8px; height: 8px; top: 15%; left: 60%; animation-delay: 1.2s; }
+.particles-cosmic .p-6 { width: 10px; height: 10px; top: 80%; left: 60%; background: #fff; animation-delay: 0.4s; }
+
+.particles-cosmic .p-2::before {
+    content: '01';
+    font-size: 8px;
+    font-weight: 800;
+    color: #fff;
+    font-family: monospace;
+}
+
+@keyframes cosmicGlitch {
+    0% {
+        transform: translate(0, 0) scale(1);
+        opacity: 0;
+    }
+    20% {
+        opacity: 1;
+        transform: translate(-10px, 8px) scale(1.3) skew(15deg);
+    }
+    50% {
+        opacity: 0.8;
+        transform: translate(12px, -15px) scale(0.8) skew(-10deg);
+        filter: hue-rotate(90deg);
+    }
+    80% {
+        opacity: 1;
+        transform: translate(-6px, -22px) scale(1.1);
+    }
+    100% {
+        opacity: 0;
+        transform: translate(8px, -35px) scale(0.2);
+    }
+}
+
+/* 6. PARTÍCULAS DORADAS / CYBER-GOLD (Estrellas radiantes y destellos divinos) */
+.particles-gold .aura-particle {
+    background: radial-gradient(circle, #ffffff 30%, #ffd700 70%, #ff9f43 100%);
+    box-shadow: 0 0 12px #ffd700, 0 0 25px #ffffff;
+    animation: goldShimmer 2s ease-in-out infinite;
+}
+
+.particles-gold .p-1 { width: 8px; height: 8px; top: 18%; left: 20%; animation-delay: 0s; }
+.particles-gold .p-2 { width: 14px; height: 14px; top: 70%; left: 75%; animation-delay: 0.4s; }
+.particles-gold .p-3 { width: 12px; height: 12px; top: 78%; left: 25%; animation-delay: 0.8s; }
+.particles-gold .p-4 { width: 15px; height: 15px; top: 25%; left: 78%; animation-delay: 1.2s; }
+.particles-gold .p-5 { width: 9px; height: 9px; top: 40%; left: 10%; animation-delay: 1.6s; }
+.particles-gold .p-6 { width: 11px; height: 11px; top: 12%; left: 55%; animation-delay: 0.6s; }
+
+.particles-gold .p-4::before {
+    content: '⭐';
+    font-size: 13px;
+    filter: drop-shadow(0 0 8px #ffd700);
+}
+
+@keyframes goldShimmer {
+    0% {
+        transform: scale(0.5) rotate(0deg);
+        opacity: 0;
+    }
+    30% {
+        opacity: 1;
+        transform: scale(1.2) rotate(45deg);
+        filter: brightness(1.5);
+    }
+    70% {
+        opacity: 0.9;
+        transform: scale(0.9) rotate(90deg);
+    }
+    100% {
+        transform: scale(0.2) rotate(135deg) translateY(-20px);
+        opacity: 0;
+    }
 }
 
 .team-count-1 .combat-avatar-emoji { font-size: 78px; }
@@ -2759,6 +3254,40 @@ button:disabled {
     background: radial-gradient(ellipse at center, rgba(255, 51, 102, 0.45) 0%, rgba(255, 51, 102, 0.12) 55%, transparent 80%);
     box-shadow: 0 0 22px rgba(255, 51, 102, 0.45), inset 0 0 10px rgba(255, 51, 102, 0.3);
     border: 1px dashed rgba(255, 51, 102, 0.4);
+}
+
+/* TITAN-X: Jefe Colosal (Doble de tamaño, plataforma masiva y aura) */
+.combat-enemy-unit.is-boss-titan .combat-avatar-emoji {
+    font-size: 155px !important;
+    filter: drop-shadow(0 0 25px rgba(255, 71, 87, 0.95)) drop-shadow(0 0 50px rgba(255, 211, 42, 0.75)) !important;
+    animation: titanBreathing 2.4s ease-in-out infinite alternate !important;
+    transform-origin: bottom center;
+}
+
+.combat-enemy-unit.is-boss-titan .enemy-platform {
+    width: 240px !important;
+    height: 52px !important;
+    background: radial-gradient(ellipse at center, rgba(255, 71, 87, 0.8) 0%, rgba(255, 211, 42, 0.45) 45%, transparent 80%) !important;
+    box-shadow: 0 0 35px rgba(255, 71, 87, 0.9), 0 0 65px rgba(255, 211, 42, 0.6), inset 0 0 20px rgba(255, 71, 87, 0.7) !important;
+    border: 2px solid #ff4757 !important;
+}
+
+.combat-enemy-unit.is-boss-titan .combat-hud-card {
+    border: 2px solid #ff4757 !important;
+    box-shadow: 0 0 25px rgba(255, 71, 87, 0.45), 0 8px 30px rgba(0, 0, 0, 0.95) !important;
+}
+
+.combat-enemy-unit.is-boss-titan .hud-robot-name {
+    color: #ff4757 !important;
+    font-size: 1.18em !important;
+    font-weight: 900 !important;
+    text-shadow: 0 0 12px rgba(255, 71, 87, 0.95);
+    letter-spacing: 1px;
+}
+
+@keyframes titanBreathing {
+    0% { transform: translateY(0px) scale(1.0); }
+    100% { transform: translateY(-10px) scale(1.07); }
 }
 
 /* Combat HUD Cards */
@@ -4689,6 +5218,18 @@ progress::-webkit-progress-value {
     text-shadow: 0 0 14px rgba(46, 213, 115, 1), 0 0 24px rgba(46, 213, 115, 0.9), 0 2px 4px rgba(0, 0, 0, 0.95);
 }
 
+/* Recarga de Cooldown / Sobrecarga Cian (Báculo +1, Núcleo Sobrecarga) */
+.damage-popup-banner.damage-popup-cyan {
+    border-color: #66fcf1;
+    box-shadow: 0 0 25px rgba(0, 0, 0, 0.95), 0 0 22px rgba(102, 252, 241, 0.9), inset 0 0 12px rgba(102, 252, 241, 0.35);
+}
+
+.damage-popup-banner.damage-popup-cyan .damage-popup-val {
+    font-size: 24px;
+    color: #66fcf1;
+    text-shadow: 0 0 14px rgba(102, 252, 241, 1), 0 0 24px rgba(69, 162, 158, 0.9), 0 2px 4px rgba(0, 0, 0, 0.95);
+}
+
 @keyframes damagePop {
     0% { opacity: 0; transform: translate(-50%, 15px) scale(0.6); }
     20% { opacity: 1; transform: translate(-50%, -8px) scale(1.22); }
@@ -5375,9 +5916,12 @@ progress::-webkit-progress-value {
         width: 60px;
         height: 60px;
         margin-bottom: 4px;
+        font-size: 38px;
     }
 
-    .avatar-emoji {
+    .avatar-emoji,
+    .holo-platform .avatar-skin-wrapper,
+    .holo-platform .avatar-base-emoji {
         font-size: 38px;
     }
 
@@ -6257,9 +6801,12 @@ progress::-webkit-progress-value {
         width: 48px;
         height: 48px;
         margin-bottom: 3px;
+        font-size: 30px;
     }
 
-    .avatar-emoji {
+    .avatar-emoji,
+    .holo-platform .avatar-skin-wrapper,
+    .holo-platform .avatar-base-emoji {
         font-size: 30px;
     }
 
@@ -8515,6 +9062,38 @@ progress::-webkit-progress-value {
     animation: quakeShake 0.65s cubic-bezier(0.36, 0.07, 0.19, 0.97) both !important;
 }
 
+/* Efecto de temblor sísmico colosal (Golpe Titánico) */
+.anim-titan-quake {
+    animation: quakeShake 0.9s cubic-bezier(0.36, 0.07, 0.19, 0.97) both !important;
+}
+
+/* Efecto de Tormenta de Rayos / Flash Electromagnético (Pulso PEM) */
+@keyframes empFlash {
+    0% { filter: brightness(1); }
+    15% { filter: brightness(3.5) hue-rotate(180deg) drop-shadow(0 0 50px #66fcf1); }
+    30% { filter: brightness(1.2); }
+    45% { filter: brightness(4.0) hue-rotate(190deg) drop-shadow(0 0 60px #48dbfb); }
+    70% { filter: brightness(2.0) drop-shadow(0 0 35px #66fcf1); }
+    100% { filter: brightness(1); }
+}
+
+.anim-emp-flash {
+    animation: empFlash 0.75s ease-in-out !important;
+}
+
+/* Efecto de Alerta de Peligro Carmesí (Protocolo Exterminio) */
+@keyframes exterminationAlert {
+    0% { box-shadow: inset 0 0 0px transparent; }
+    25% { box-shadow: inset 0 0 120px rgba(255, 71, 87, 0.95), 0 0 50px rgba(255, 71, 87, 0.8); }
+    50% { box-shadow: inset 0 0 70px rgba(255, 71, 87, 0.6); }
+    75% { box-shadow: inset 0 0 160px rgba(255, 71, 87, 1), 0 0 70px rgba(255, 71, 87, 0.9); }
+    100% { box-shadow: inset 0 0 0px transparent; }
+}
+
+.anim-extermination-screen {
+    animation: exterminationAlert 1.3s ease-in-out, quakeShake 0.9s cubic-bezier(0.36, 0.07, 0.19, 0.97) both !important;
+}
+
 /* 4. Estilos de Píldoras de Estado Especiales */
 .status-desfase-100 {
     background: rgba(102, 252, 241, 0.25) !important;
@@ -8527,3 +9106,963 @@ progress::-webkit-progress-value {
     border-color: rgba(72, 219, 251, 0.9) !important;
     box-shadow: 0 0 10px rgba(72, 219, 251, 0.6) !important;
 }
+
+/* ==========================================================================
+   TIENDA DE COSMÉTICOS (AURAS Y PARTÍCULAS) - UI Y HOLO-POD
+   ========================================================================== */
+
+/* Botón Destacado en Menú Principal */
+.btn-cosmetics-highlight {
+    border-color: #66fcf1 !important;
+    box-shadow: 0 0 15px rgba(102, 252, 241, 0.25), inset 0 0 10px rgba(102, 252, 241, 0.15) !important;
+    animation: cosmeticBtnPulse 3s infinite ease-in-out;
+}
+
+@keyframes cosmeticBtnPulse {
+    0%, 100% {
+        box-shadow: 0 0 15px rgba(102, 252, 241, 0.25);
+    }
+    50% {
+        box-shadow: 0 0 25px rgba(102, 252, 241, 0.5), 0 0 10px rgba(254, 202, 87, 0.3);
+    }
+}
+
+/* Barra de Cosméticos en Pantalla de Inicio / Despliegue */
+.start-cosmetics-bar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    margin-top: 10px;
+    margin-bottom: 8px;
+    flex-wrap: wrap;
+}
+
+.cosmetics-status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(15, 17, 24, 0.85);
+    border: 1px solid rgba(102, 252, 241, 0.3);
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.cosmetics-indicator-label {
+    color: #8395a7;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.cosmetics-tag {
+    color: #66fcf1;
+    font-weight: 700;
+}
+
+.btn-mini-shop {
+    background: linear-gradient(135deg, rgba(102, 252, 241, 0.15), rgba(69, 162, 158, 0.3));
+    border: 1px solid #66fcf1;
+    color: #fff;
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 700;
+    padding: 6px 16px;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-mini-shop:hover {
+    background: #66fcf1;
+    color: #0b0c10;
+    box-shadow: 0 0 15px rgba(102, 252, 241, 0.5);
+    transform: translateY(-1px);
+}
+
+/* Modal Box de Cosméticos */
+.cosmetics-modal-box {
+    width: 95vw;
+    max-width: 1100px;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    background: #0d0f17;
+    border: 1px solid rgba(102, 252, 241, 0.4);
+    box-shadow: 0 0 50px rgba(0, 0, 0, 0.9), 0 0 30px rgba(102, 252, 241, 0.2);
+    border-radius: 14px;
+    padding: 24px;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    position: relative;
+    box-sizing: border-box;
+}
+
+/* Custom Scrollbar */
+.cosmetics-modal-box::-webkit-scrollbar {
+    width: 8px;
+}
+.cosmetics-modal-box::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.4);
+    border-radius: 4px;
+}
+.cosmetics-modal-box::-webkit-scrollbar-thumb {
+    background: rgba(102, 252, 241, 0.35);
+    border-radius: 4px;
+}
+.cosmetics-modal-box::-webkit-scrollbar-thumb:hover {
+    background: rgba(102, 252, 241, 0.7);
+}
+
+.cosmetics-modal-header,
+.cosmetics-preview-pod,
+.cosmetics-tabs-bar,
+.cosmetics-modal-body {
+    flex-shrink: 0 !important;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.cosmetics-modal-header {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    padding-bottom: 14px;
+    margin-bottom: 16px;
+}
+
+.cosmetics-header-badge {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--accent-color);
+    letter-spacing: 2px;
+    margin-bottom: 4px;
+}
+
+.cosmetics-header-main-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.cosmetics-title-group {
+    flex: 1;
+    min-width: 260px;
+}
+
+.cosmetics-modal-title {
+    font-size: 1.8rem;
+    font-weight: 800;
+    color: #fff;
+    margin: 0 0 4px 0;
+    text-shadow: 0 0 15px rgba(102, 252, 241, 0.4);
+    letter-spacing: 1.5px;
+}
+
+.cosmetics-subtitle {
+    font-size: 0.9rem;
+    color: #8395a7;
+    margin: 0;
+}
+
+.cosmetics-global-scrap-card {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    background: rgba(0, 0, 0, 0.55);
+    border: 1px solid rgba(254, 202, 87, 0.5);
+    border-radius: 10px;
+    padding: 10px 18px;
+    gap: 4px;
+}
+
+.cosmetics-global-scrap-card .scrap-card-label {
+    font-size: 0.75rem;
+    color: #8395a7;
+    font-weight: 700;
+    letter-spacing: 1px;
+}
+
+.cosmetics-global-scrap-card .scrap-card-val {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: #feca57;
+    text-shadow: 0 0 10px rgba(254, 202, 87, 0.5);
+}
+
+
+/* ==========================================================================
+   HOLO-POD DE PREVISUALIZACIÓN EN VIVO (RESPONSIVO Y NO COLAPSABLE)
+   ========================================================================== */
+
+.cosmetics-preview-pod {
+    display: flex;
+    flex-direction: row;
+    flex-shrink: 0 !important;
+    min-height: 220px;
+    width: 100%;
+    box-sizing: border-box;
+    background: radial-gradient(ellipse at 25% 50%, rgba(31, 40, 51, 0.9), rgba(11, 12, 16, 0.98));
+    border: 1px solid rgba(102, 252, 241, 0.35);
+    border-radius: 14px;
+    padding: 22px 26px;
+    margin-bottom: 20px;
+    gap: 28px;
+    align-items: center;
+    position: relative;
+    box-shadow: 0 4px 25px rgba(0, 0, 0, 0.6), inset 0 0 30px rgba(102, 252, 241, 0.05);
+}
+
+.holo-pod-scanline {
+    position: absolute;
+    top: 0; left: 0; right: 0; height: 2px;
+    background: linear-gradient(90deg, transparent, #66fcf1, #ff9f43, transparent);
+    animation: beamScan 3.5s infinite linear;
+    pointer-events: none;
+    border-radius: 14px 14px 0 0;
+}
+
+@keyframes beamScan {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+}
+
+.holo-pod-stage {
+    position: relative;
+    width: 170px;
+    height: 170px;
+    min-width: 170px;
+    min-height: 170px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.holo-pod-pedestal {
+    width: 135px;
+    height: 135px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: radial-gradient(circle, rgba(102, 252, 241, 0.18) 0%, rgba(0, 0, 0, 0.75) 80%);
+    border: 2px solid rgba(102, 252, 241, 0.6);
+    box-shadow: 0 0 35px rgba(102, 252, 241, 0.35), inset 0 0 25px rgba(102, 252, 241, 0.25);
+    position: relative;
+    transition: all 0.3s ease;
+}
+
+.holo-avatar-container {
+    width: 105px;
+    height: 105px;
+    font-size: 4.5rem;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.holo-avatar-container .avatar-skin-wrapper {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transform: scale(1.05);
+}
+
+.holo-pod-details {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.holo-controls-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.holo-element-switchers {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.switcher-label {
+    font-size: 0.82rem;
+    color: #8395a7;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    min-width: 110px;
+}
+
+.switcher-buttons {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.btn-element-switch {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #fff;
+    padding: 5px 12px;
+    border-radius: 6px;
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-element-switch:hover {
+    background: rgba(255, 255, 255, 0.12);
+    border-color: #fff;
+}
+
+.btn-element-switch.active {
+    border-color: #66fcf1;
+    background: rgba(102, 252, 241, 0.25);
+    color: #66fcf1;
+    box-shadow: 0 0 10px rgba(102, 252, 241, 0.4);
+}
+
+.holo-equipped-status-card {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+    gap: 12px;
+    background: rgba(0, 0, 0, 0.45);
+    border: 1px solid rgba(102, 252, 241, 0.2);
+    border-radius: 10px;
+    padding: 12px 18px;
+}
+
+.status-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.status-row .status-icon {
+    font-size: 1.4rem;
+}
+
+.status-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.status-info .status-lbl {
+    font-size: 0.72rem;
+    color: #8395a7;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.status-info .status-val {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #66fcf1;
+}
+
+/* Barra de Pestañas (Auras vs Partículas) */
+.cosmetics-tabs-bar {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 18px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    padding-bottom: 12px;
+    flex-shrink: 0 !important;
+}
+
+.cosmetics-tab-btn {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: #8395a7;
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 1rem;
+    font-weight: 700;
+    padding: 10px 22px;
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.2s ease;
+    letter-spacing: 1px;
+}
+
+.cosmetics-tab-btn:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: #fff;
+}
+
+.cosmetics-tab-btn.active {
+    background: linear-gradient(135deg, rgba(102, 252, 241, 0.2), rgba(69, 162, 158, 0.4));
+    border-color: #66fcf1;
+    color: #66fcf1;
+    box-shadow: 0 0 15px rgba(102, 252, 241, 0.3);
+}
+
+/* Grid de Tarjetas de Cosméticos */
+.cosmetics-cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(285px, 1fr));
+    gap: 16px;
+    padding-bottom: 10px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.cosmetic-card {
+    display: flex;
+    background: rgba(15, 17, 24, 0.85);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    padding: 14px;
+    gap: 14px;
+    align-items: center;
+    transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+    position: relative;
+    box-sizing: border-box;
+}
+
+.cosmetic-card:hover {
+    transform: translateY(-2px);
+    border-color: rgba(102, 252, 241, 0.4);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+}
+
+.cosmetic-card.equipped-card {
+    border-color: #2ed573 !important;
+    background: rgba(46, 213, 115, 0.08);
+    box-shadow: 0 0 15px rgba(46, 213, 115, 0.25);
+}
+
+.cosmetic-card.inspected-card {
+    border-color: #66fcf1 !important;
+    box-shadow: 0 0 16px rgba(102, 252, 241, 0.45), inset 0 0 12px rgba(102, 252, 241, 0.15) !important;
+    background: rgba(102, 252, 241, 0.06);
+}
+
+.cosmetic-card.unlocked-card {
+    border-color: rgba(102, 252, 241, 0.35);
+}
+
+.card-mini-preview {
+    width: 75px;
+    height: 75px;
+    min-width: 75px;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.08) 0%, rgba(0, 0, 0, 0.5) 80%);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.mini-avatar-scale {
+    transform: scale(0.68);
+    font-size: 2.2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.card-info {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.card-title-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 8px;
+}
+
+.card-name {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #fff;
+    margin: 0;
+    line-height: 1.2;
+}
+
+.cosmetic-price-pill {
+    font-size: 0.75rem;
+    font-weight: 800;
+    padding: 3px 8px;
+    border-radius: 12px;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+}
+
+.cosmetic-price-pill.cost {
+    background: rgba(254, 202, 87, 0.2);
+    color: #feca57;
+    border: 1px solid #feca57;
+}
+
+.cosmetic-price-pill.free {
+    background: rgba(102, 252, 241, 0.15);
+    color: #66fcf1;
+    border: 1px solid #66fcf1;
+}
+
+.cosmetic-price-pill.purchased {
+    background: rgba(46, 213, 115, 0.15);
+    color: #2ed573;
+    border: 1px solid #2ed573;
+}
+
+.card-desc {
+    font-size: 0.8rem;
+    color: #8395a7;
+    margin: 0;
+    line-height: 1.3;
+}
+
+.card-action-bar {
+    margin-top: 4px;
+}
+
+.btn-cosmetic-action {
+    width: 100%;
+    padding: 7px 12px;
+    border-radius: 6px;
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 800;
+    cursor: pointer;
+    transition: all 0.2s;
+    letter-spacing: 0.5px;
+}
+
+.btn-cosmetic-action.btn-buy {
+    background: linear-gradient(135deg, #feca57, #ff9f43);
+    border: 1px solid #feca57;
+    color: #0b0c10;
+    box-shadow: 0 0 10px rgba(254, 202, 87, 0.3);
+}
+
+.btn-cosmetic-action.btn-buy:hover {
+    background: #fff;
+    box-shadow: 0 0 15px rgba(254, 202, 87, 0.6);
+    transform: translateY(-1px);
+}
+
+.btn-cosmetic-action.btn-equip {
+    background: linear-gradient(135deg, rgba(102, 252, 241, 0.2), rgba(69, 162, 158, 0.5));
+    border: 1px solid #66fcf1;
+    color: #66fcf1;
+}
+
+.btn-cosmetic-action.btn-equip:hover {
+    background: #66fcf1;
+    color: #0b0c10;
+    box-shadow: 0 0 15px rgba(102, 252, 241, 0.5);
+    transform: translateY(-1px);
+}
+
+.btn-cosmetic-action.btn-equipped {
+    background: rgba(46, 213, 115, 0.25);
+    border: 1px solid #2ed573;
+    color: #2ed573;
+    cursor: default;
+    box-shadow: 0 0 10px rgba(46, 213, 115, 0.3);
+}
+
+.btn-cosmetic-action.btn-locked {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: #576574;
+    cursor: not-allowed;
+}
+
+/* Toast de Notificación */
+.cosmetics-toast {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    background: #1f2833;
+    color: #fff;
+    padding: 12px 20px;
+    border-radius: 8px;
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 700;
+    font-size: 0.95rem;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
+    border: 1px solid #66fcf1;
+    opacity: 0;
+    transform: translateY(20px);
+    transition: all 0.3s ease;
+    z-index: 9999;
+    pointer-events: none;
+}
+
+.cosmetics-toast.show {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.cosmetics-toast.toast-success {
+    border-color: #2ed573;
+    box-shadow: 0 0 20px rgba(46, 213, 115, 0.4);
+}
+
+.cosmetics-toast.toast-warning {
+    border-color: #feca57;
+    box-shadow: 0 0 20px rgba(254, 202, 87, 0.4);
+}
+
+.cosmetics-toast.toast-error {
+    border-color: #ff4757;
+    box-shadow: 0 0 20px rgba(255, 71, 87, 0.4);
+}
+
+/* ==========================================================================
+   REGLAS DE RESPONSIVIDAD PARA LA TIENDA DE COSMÉTICOS
+   ========================================================================== */
+
+@media (max-width: 960px) {
+    .cosmetics-preview-pod {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        padding: 18px 20px;
+        gap: 18px;
+    }
+
+    .holo-pod-details {
+        align-items: center;
+        width: 100%;
+    }
+
+    .holo-element-switchers {
+        justify-content: center;
+    }
+
+    .switcher-label {
+        min-width: unset;
+        width: 100%;
+        text-align: center;
+    }
+
+    .switcher-buttons {
+        justify-content: center;
+    }
+
+    .holo-equipped-status-card {
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    .cosmetics-cards-grid {
+        grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
+    }
+}
+
+@media (max-width: 768px) {
+    .cosmetics-modal-box {
+        width: 96vw;
+        max-height: 94vh;
+        padding: 18px 14px;
+    }
+
+    .cosmetics-header-main-row {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        gap: 12px;
+    }
+
+    .cosmetics-title-group {
+        min-width: unset;
+        text-align: center;
+    }
+
+    .cosmetics-modal-title {
+        font-size: 1.5rem;
+    }
+
+    .cosmetics-global-scrap-card {
+        align-items: center;
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    .cosmetics-tabs-bar {
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .cosmetics-tab-btn {
+        width: 100%;
+        justify-content: center;
+        padding: 10px 14px;
+        font-size: 0.95rem;
+    }
+
+    .cosmetics-cards-grid {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+
+    .cosmetic-card {
+        padding: 12px;
+    }
+}
+
+@media (max-width: 480px) {
+    .cosmetics-modal-box {
+        width: 98vw;
+        padding: 12px 10px;
+    }
+
+    .holo-pod-stage {
+        width: 140px;
+        height: 140px;
+        min-width: 140px;
+        min-height: 140px;
+    }
+
+    .holo-pod-pedestal {
+        width: 110px;
+        height: 110px;
+    }
+
+    .holo-avatar-container {
+        width: 85px;
+        height: 85px;
+        font-size: 3.6rem;
+    }
+
+    .cosmetic-card {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+    }
+
+    .card-title-row {
+        flex-direction: column;
+        align-items: center;
+        gap: 4px;
+    }
+}
+
+/* ==========================================================================
+   Armas Legendarias Doradas y Progresión Multitorre
+   ========================================================================== */
+
+/* Badges de Armas Legendarias */
+.badge-legendary {
+    display: inline-flex;
+    align-items: center;
+    background: linear-gradient(135deg, #ffd700 0%, #ffaa00 100%);
+    color: #0b0c10;
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 0.05em;
+    padding: 2px 8px;
+    border-radius: 4px;
+    margin-left: 8px;
+    box-shadow: 0 0 10px rgba(255, 215, 0, 0.6);
+    text-transform: uppercase;
+}
+
+.badge-legendary-mini {
+    display: inline-block;
+    background: linear-gradient(135deg, #ffd700 0%, #ffaa00 100%);
+    color: #0b0c10;
+    font-size: 0.65rem;
+    font-weight: 800;
+    padding: 1px 6px;
+    border-radius: 3px;
+    margin-left: 6px;
+    box-shadow: 0 0 8px rgba(255, 215, 0, 0.5);
+    vertical-align: middle;
+}
+
+/* Tarjeta y Ranura Legendaria */
+.inv-item-card.is-legendary,
+.inv-slot-box.is-legendary {
+    border-color: #ffd700 !important;
+    background: linear-gradient(135deg, rgba(255, 215, 0, 0.08) 0%, rgba(25, 28, 36, 0.95) 100%) !important;
+    box-shadow: 0 0 18px rgba(255, 215, 0, 0.35), inset 0 0 12px rgba(255, 215, 0, 0.1) !important;
+    animation: pulse-gold-border 3s infinite ease-in-out;
+}
+
+@keyframes pulse-gold-border {
+    0%, 100% {
+        box-shadow: 0 0 14px rgba(255, 215, 0, 0.3), inset 0 0 10px rgba(255, 215, 0, 0.08);
+    }
+    50% {
+        box-shadow: 0 0 24px rgba(255, 215, 0, 0.6), inset 0 0 16px rgba(255, 215, 0, 0.18);
+    }
+}
+
+.btn-equip-legendary {
+    background: linear-gradient(135deg, #ffd700 0%, #d49a00 100%) !important;
+    color: #0b0c10 !important;
+    font-weight: 700 !important;
+    border-color: #ffe66d !important;
+}
+.btn-equip-legendary:hover {
+    box-shadow: 0 0 15px rgba(255, 215, 0, 0.75) !important;
+    transform: translateY(-2px);
+}
+
+.log-weapon-legendary {
+    border-left: 4px solid #ffd700 !important;
+    background: rgba(255, 215, 0, 0.1) !important;
+    color: #ffeaa7 !important;
+    box-shadow: 0 0 12px rgba(255, 215, 0, 0.3);
+}
+
+/* Banner de Llaves de Acceso a Nuevas Torres en Post-Batalla */
+.log-key-unlocked {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    background: linear-gradient(135deg, rgba(255, 215, 0, 0.2) 0%, rgba(20, 24, 32, 0.9) 100%);
+    border: 2px solid #ffd700;
+    border-radius: 8px;
+    padding: 14px 18px;
+    margin: 12px 0;
+    box-shadow: 0 0 25px rgba(255, 215, 0, 0.4);
+    animation: key-banner-glow 2.5s infinite alternate ease-in-out;
+}
+
+@keyframes key-banner-glow {
+    from {
+        border-color: #ffd700;
+        box-shadow: 0 0 15px rgba(255, 215, 0, 0.3);
+    }
+    to {
+        border-color: #fff275;
+        box-shadow: 0 0 30px rgba(255, 215, 0, 0.65);
+    }
+}
+
+.key-banner-icon {
+    font-size: 2.8rem;
+    filter: drop-shadow(0 0 10px rgba(255, 215, 0, 0.8));
+    animation: key-bounce 1.5s infinite alternate ease-in-out;
+}
+
+@keyframes key-bounce {
+    from { transform: translateY(0) scale(1); }
+    to { transform: translateY(-4px) scale(1.1); }
+}
+
+.key-banner-text {
+    display: flex;
+    flex-direction: column;
+    text-align: left;
+}
+
+.key-banner-text strong {
+    font-size: 1.25rem;
+    color: #ffd700;
+    letter-spacing: 0.06em;
+    text-shadow: 0 0 12px rgba(255, 215, 0, 0.6);
+}
+
+.key-banner-text span {
+    font-size: 0.85rem;
+    color: #c8d6e5;
+    letter-spacing: 0.04em;
+    margin-top: 3px;
+}
+
+/* Botones de Ascenso y Victoria Post-Batalla */
+.btn-post-ascend {
+    background: linear-gradient(135deg, #10ac84 0%, #1dd1a1 100%);
+    color: #0b0c10 !important;
+    font-size: 1.15rem;
+    font-weight: 800;
+    border: 2px solid #1dd1a1;
+    border-radius: 8px;
+    padding: 14px 22px;
+    cursor: pointer;
+    box-shadow: 0 0 20px rgba(29, 209, 161, 0.4);
+    transition: all 0.25s ease;
+}
+.btn-post-ascend:hover {
+    transform: translateY(-2px) scale(1.02);
+    box-shadow: 0 0 30px rgba(29, 209, 161, 0.7);
+}
+
+.btn-post-claim-victory {
+    background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+    color: #f1f2f6 !important;
+    font-size: 1rem;
+    font-weight: 700;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    padding: 12px 20px;
+    cursor: pointer;
+    transition: all 0.25s ease;
+}
+.btn-post-claim-victory:hover {
+    background: linear-gradient(135deg, #34495e 0%, #4b6584 100%);
+    border-color: #66fcf1;
+    color: #66fcf1 !important;
+    box-shadow: 0 0 15px rgba(102, 252, 241, 0.3);
+}
+
+.btn-pulse-gold {
+    background: linear-gradient(135deg, #ffd700 0%, #f39c12 100%) !important;
+    color: #0b0c10 !important;
+    font-size: 1.25rem !important;
+    font-weight: 800 !important;
+    border: 2px solid #fff275 !important;
+    box-shadow: 0 0 25px rgba(255, 215, 0, 0.6) !important;
+    animation: gold-pulse-btn 1.8s infinite alternate ease-in-out;
+}
+@keyframes gold-pulse-btn {
+    from { transform: scale(1); box-shadow: 0 0 20px rgba(255, 215, 0, 0.4); }
+    to { transform: scale(1.04); box-shadow: 0 0 35px rgba(255, 215, 0, 0.85); }
+}
+
+.btn-dismantled {
+    background: rgba(255, 255, 255, 0.05) !important;
+    color: #8395a7 !important;
+    border-color: rgba(255, 255, 255, 0.1) !important;
+    cursor: default !important;
+    box-shadow: none !important;
+}
+
+/* Botón Reanudar Incursión en el Menú Principal */
+.btn-resume-run {
+    background: linear-gradient(135deg, #0984e3 0%, #00cec9 100%) !important;
+    color: #ffffff !important;
+    border: 2px solid #00cec9 !important;
+    font-weight: 800 !important;
+    box-shadow: 0 0 22px rgba(0, 206, 201, 0.45) !important;
+    animation: resume-btn-pulse 2.2s infinite alternate ease-in-out;
+}
+.btn-resume-run:hover {
+    transform: translateY(-2px) scale(1.02);
+    box-shadow: 0 0 32px rgba(0, 206, 201, 0.75) !important;
+}
+
+@keyframes resume-btn-pulse {
+    from { box-shadow: 0 0 15px rgba(0, 206, 201, 0.3); }
+    to { box-shadow: 0 0 28px rgba(0, 206, 201, 0.65); }
+}
+
+
