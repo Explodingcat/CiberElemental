@@ -279,7 +279,7 @@ const ProfileManager = {
     },
 
     // =========================================================================
-    // VALIDACIÓN Y CAMBIO DE NOMBRE DE USUARIO
+    // VALIDACIÓN Y CAMBIO DE NOMBRE DE USUARIO (COSTO: 500 ⚙️ PARA CAMBIOS)
     // =========================================================================
     handleUsernameInput(value) {
         const badge = document.getElementById('profile-username-feedback');
@@ -288,12 +288,19 @@ const ProfileManager = {
 
         clearTimeout(this.validationTimer);
         const cleanVal = (value || '').trim();
+        const isRename = Boolean(this.profileData.username && this.profileData.username.trim() !== '');
+        const renameCost = 500;
 
         if (!cleanVal) {
             badge.className = 'username-feedback-badge badge-idle';
-            badge.innerHTML = 'ℹ️ Ingresa un nombre para tu perfil (3-16 caracteres).';
+            badge.innerHTML = isRename
+                ? `ℹ️ Ingresa tu nuevo nombre de comandante (3-16 caracteres). Costo: <strong>${renameCost} ⚙️</strong>.`
+                : 'ℹ️ Ingresa un nombre para tu perfil (3-16 caracteres). Primer registro gratis.';
             badge.style.display = 'block';
-            if (saveBtn) saveBtn.disabled = true;
+            if (saveBtn) {
+                saveBtn.disabled = true;
+                saveBtn.innerHTML = `<span>${isRename ? `⚙️ CAMBIAR NOMBRE (${renameCost} ⚙️)` : '💾 REGISTRAR NOMBRE (GRATIS)'}</span>`;
+            }
             this.isUsernameValid = false;
             return;
         }
@@ -314,7 +321,10 @@ const ProfileManager = {
             badge.className = 'username-feedback-badge badge-info';
             badge.innerHTML = 'ℹ️ Este es tu nombre actual.';
             badge.style.display = 'block';
-            if (saveBtn) saveBtn.disabled = true;
+            if (saveBtn) {
+                saveBtn.disabled = true;
+                saveBtn.innerHTML = `<span>${isRename ? `⚙️ CAMBIAR NOMBRE (${renameCost} ⚙️)` : '💾 REGISTRAR NOMBRE'}</span>`;
+            }
             this.isUsernameValid = false;
             return;
         }
@@ -341,6 +351,10 @@ const ProfileManager = {
             ? AuthManager.currentUser.id
             : null;
 
+        const isRename = Boolean(this.profileData.username && this.profileData.username.trim() !== '');
+        const currentScrap = (typeof SkillsManager !== 'undefined') ? SkillsManager.globalScrap : 0;
+        const renameCost = 500;
+
         if (typeof supabaseClient !== 'undefined' && supabaseClient && isSupabaseConfigured()) {
             try {
                 this.isCheckingUsername = true;
@@ -356,7 +370,10 @@ const ProfileManager = {
                     console.warn('[ProfileManager] Error comprobando unicidad de username:', error);
                     badge.className = 'username-feedback-badge badge-warning';
                     badge.innerHTML = '⚠️ No se pudo verificar en la nube (modo sin conexión). Formato válido.';
-                    if (saveBtn) saveBtn.disabled = false;
+                    if (saveBtn) {
+                        saveBtn.disabled = isRename && (currentScrap < renameCost);
+                        saveBtn.innerHTML = `<span>${isRename ? `⚙️ CAMBIAR NOMBRE (${renameCost} ⚙️)` : '💾 REGISTRAR NOMBRE (GRATIS)'}</span>`;
+                    }
                     this.isUsernameValid = true;
                     return;
                 }
@@ -367,12 +384,28 @@ const ProfileManager = {
                 if (isTakenByOther) {
                     badge.className = 'username-feedback-badge badge-error';
                     badge.innerHTML = `❌ El nombre <strong>${username}</strong> ya está ocupado por otro comandante.`;
-                    if (saveBtn) saveBtn.disabled = true;
+                    if (saveBtn) {
+                        saveBtn.disabled = true;
+                        saveBtn.innerHTML = `<span>${isRename ? `⚙️ CAMBIAR NOMBRE (${renameCost} ⚙️)` : '💾 REGISTRAR NOMBRE (GRATIS)'}</span>`;
+                    }
+                    this.isUsernameValid = false;
+                } else if (isRename && currentScrap < renameCost) {
+                    badge.className = 'username-feedback-badge badge-warning';
+                    badge.innerHTML = `⚠️ ¡Nombre <strong>${username}</strong> disponible! Pero necesitas <strong>${renameCost} ⚙️</strong> para cambiar de nombre (tienes ${currentScrap.toLocaleString()} ⚙️).`;
+                    if (saveBtn) {
+                        saveBtn.disabled = true;
+                        saveBtn.innerHTML = `<span>🔒 REQUIERE ${renameCost} ⚙️</span>`;
+                    }
                     this.isUsernameValid = false;
                 } else {
                     badge.className = 'username-feedback-badge badge-success';
-                    badge.innerHTML = `✅ ¡Nombre <strong>${username}</strong> disponible para registrar!`;
-                    if (saveBtn) saveBtn.disabled = false;
+                    badge.innerHTML = isRename
+                        ? `✅ ¡Nombre <strong>${username}</strong> disponible! Costo de cambio: <strong>${renameCost} ⚙️</strong> (Tienes: ${currentScrap.toLocaleString()} ⚙️).`
+                        : `✅ ¡Nombre <strong>${username}</strong> disponible para registrar! (Primer registro: Gratis)`;
+                    if (saveBtn) {
+                        saveBtn.disabled = false;
+                        saveBtn.innerHTML = `<span>${isRename ? `⚙️ CAMBIAR NOMBRE (${renameCost} ⚙️)` : '💾 REGISTRAR NOMBRE (GRATIS)'}</span>`;
+                    }
                     this.isUsernameValid = true;
                     this.lastCheckedUsername = username;
                 }
@@ -380,16 +413,34 @@ const ProfileManager = {
                 console.error('[ProfileManager] Excepción al comprobar nombre:', e);
                 badge.className = 'username-feedback-badge badge-success';
                 badge.innerHTML = '✅ Formato válido.';
-                if (saveBtn) saveBtn.disabled = false;
+                if (saveBtn) {
+                    saveBtn.disabled = isRename && (currentScrap < renameCost);
+                    saveBtn.innerHTML = `<span>${isRename ? `⚙️ CAMBIAR NOMBRE (${renameCost} ⚙️)` : '💾 REGISTRAR NOMBRE (GRATIS)'}</span>`;
+                }
                 this.isUsernameValid = true;
             }
         } else {
             // Modo local sin Supabase configurado
-            badge.className = 'username-feedback-badge badge-success';
-            badge.innerHTML = `✅ ¡Nombre <strong>${username}</strong> válido!`;
-            if (saveBtn) saveBtn.disabled = false;
-            this.isUsernameValid = true;
-            this.lastCheckedUsername = username;
+            if (isRename && currentScrap < renameCost) {
+                badge.className = 'username-feedback-badge badge-warning';
+                badge.innerHTML = `⚠️ ¡Nombre <strong>${username}</strong> válido! Pero necesitas <strong>${renameCost} ⚙️</strong> para cambiar de nombre (tienes ${currentScrap.toLocaleString()} ⚙️).`;
+                if (saveBtn) {
+                    saveBtn.disabled = true;
+                    saveBtn.innerHTML = `<span>🔒 REQUIERE ${renameCost} ⚙️</span>`;
+                }
+                this.isUsernameValid = false;
+            } else {
+                badge.className = 'username-feedback-badge badge-success';
+                badge.innerHTML = isRename
+                    ? `✅ ¡Nombre <strong>${username}</strong> válido! Costo: <strong>${renameCost} ⚙️</strong>.`
+                    : `✅ ¡Nombre <strong>${username}</strong> válido! (Primer registro: Gratis)`;
+                if (saveBtn) {
+                    saveBtn.disabled = false;
+                    saveBtn.innerHTML = `<span>${isRename ? `⚙️ CAMBIAR NOMBRE (${renameCost} ⚙️)` : '💾 REGISTRAR NOMBRE (GRATIS)'}</span>`;
+                }
+                this.isUsernameValid = true;
+                this.lastCheckedUsername = username;
+            }
         }
     },
 
@@ -405,6 +456,22 @@ const ProfileManager = {
             if (badge) {
                 badge.className = 'username-feedback-badge badge-error';
                 badge.innerHTML = '⚠️ Nombre inválido. Usa 3-16 caracteres alfanuméricos.';
+            }
+            return;
+        }
+
+        const isRename = Boolean(this.profileData.username && this.profileData.username.trim() !== '');
+        const renameCost = 500;
+        const currentScrap = (typeof SkillsManager !== 'undefined') ? SkillsManager.globalScrap : 0;
+
+        if (isRename && currentScrap < renameCost) {
+            if (badge) {
+                badge.className = 'username-feedback-badge badge-error';
+                badge.innerHTML = `❌ Chatarra insuficiente. Cambiar de nombre cuesta <strong>${renameCost} ⚙️</strong> (tienes ${currentScrap.toLocaleString()} ⚙️).`;
+            }
+            if (saveBtn) {
+                saveBtn.disabled = true;
+                saveBtn.innerHTML = `<span>🔒 REQUIERE ${renameCost} ⚙️</span>`;
             }
             return;
         }
@@ -435,11 +502,18 @@ const ProfileManager = {
                     }
                     if (saveBtn) {
                         saveBtn.disabled = false;
-                        saveBtn.innerHTML = '<span>💾 GUARDAR NOMBRE</span>';
+                        saveBtn.innerHTML = `<span>${isRename ? `⚙️ CAMBIAR NOMBRE (${renameCost} ⚙️)` : '💾 REGISTRAR NOMBRE (GRATIS)'}</span>`;
                     }
                     return;
                 }
             } catch (err) {}
+        }
+
+        // Descontar la chatarra global si es un cambio de nombre
+        if (isRename) {
+            if (typeof SkillsManager !== 'undefined' && typeof SkillsManager.deductGlobalScrap === 'function') {
+                await SkillsManager.deductGlobalScrap(renameCost);
+            }
         }
 
         this.profileData.username = newName;
@@ -458,7 +532,7 @@ const ProfileManager = {
 
         if (saveBtn) {
             saveBtn.disabled = false;
-            saveBtn.innerHTML = '<span>💾 GUARDAR NOMBRE</span>';
+            saveBtn.innerHTML = `<span>${this.profileData.username ? `⚙️ CAMBIAR NOMBRE (${renameCost} ⚙️)` : '💾 GUARDAR NOMBRE'}</span>`;
         }
 
         if (res && res.error) {
@@ -469,7 +543,9 @@ const ProfileManager = {
         } else {
             if (badge) {
                 badge.className = 'username-feedback-badge badge-success';
-                badge.innerHTML = `✨ ¡Nombre de usuario <strong>${newName}</strong> blindado y guardado con éxito!`;
+                badge.innerHTML = isRename
+                    ? `✨ ¡Nombre cambiado a <strong>${newName}</strong> con éxito! (-${renameCost} ⚙️ Chatarra Global)`
+                    : `✨ ¡Nombre de usuario <strong>${newName}</strong> registrado con éxito!`;
             }
             
             // Actualizar retroactivamente el nombre en partidas del Top 10 e historial
@@ -657,10 +733,10 @@ const ProfileManager = {
                             <span class="section-icon">🆔</span>
                             <h3 class="profile-section-title">IDENTIFICADOR TÁCTICO // NOMBRE DE COMANDANTE</h3>
                         </div>
-                        <span class="section-sub-badge">DATO ÚNICO Y BLINDADO</span>
+                        <span class="section-sub-badge">${currentName ? 'CAMBIO: 500 ⚙️ CHATARRA' : 'PRIMER REGISTRO: GRATIS'}</span>
                     </div>
                     <p class="profile-section-desc">
-                        Este nombre te identificará en el Salón de la Fama y en los registros de incursión. Debe ser único en el sistema neuronal.
+                        Este nombre te identificará en el Salón de la Fama y en los registros de incursión. ${currentName ? 'Cambiar tu nombre actual cuesta <strong>500 ⚙️ de Chatarra Global</strong>.' : 'El primer registro de nombre es gratuito (cambios posteriores costarán 500 ⚙️).'}
                     </p>
 
                     <div class="profile-username-form-row">
@@ -678,7 +754,7 @@ const ProfileManager = {
                             >
                         </div>
                         <button id="btn-save-username" class="btn-profile-save" onclick="ProfileManager.saveUsername()" disabled>
-                            <span>💾 GUARDAR NOMBRE</span>
+                            <span>${currentName ? '⚙️ CAMBIAR NOMBRE (500 ⚙️)' : '💾 REGISTRAR NOMBRE (GRATIS)'}</span>
                         </button>
                     </div>
                     <div id="profile-username-feedback" class="username-feedback-badge badge-idle" style="display: none;"></div>

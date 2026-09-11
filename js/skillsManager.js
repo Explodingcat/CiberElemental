@@ -81,6 +81,15 @@ const SkillsManager = {
         await this.saveProfile();
     },
 
+    async deductGlobalScrap(amount) {
+        if (!amount || amount <= 0) return true;
+        if (this.globalScrap < amount) return false;
+        this.globalScrap -= Math.floor(amount);
+        await this.saveProfile();
+        this.updateAllScrapDisplays();
+        return true;
+    },
+
     hasSkill(skillId) {
         return this.unlockedSkills.has(skillId);
     },
