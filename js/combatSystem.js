@@ -45,6 +45,15 @@ function startCombat(nodeType) {
         arenaBg.classList.add(Math.random() > 0.5 ? 'bg-normal' : 'bg-normal-alt');
     }
 
+    // Iniciar Música de Combate Dinámica
+    if (typeof SoundManager !== 'undefined') {
+        if (nodeType === NODE_TYPES.BOSS || nodeType === NODE_TYPES.ELITE) {
+            SoundManager.playMusic('COMBAT_BOSS');
+        } else {
+            SoundManager.playMusic('COMBAT_NORMAL');
+        }
+    }
+
     // Generar encuentro de combate (1 a 3 robots según piso y tipo de nodo)
     combatState.enemies = generateEncounter(GAME_STATE.floor, nodeType);
     
@@ -233,6 +242,16 @@ function renderCombatMiniHud(robot, isEnemy = false) {
         }
     }
     
+    // Icono del arma equipada al lado derecho de los números de vida
+    const weapon = robot.equippedWeapon;
+    let weaponIconHtml = '';
+    if (weapon) {
+        const wEmoji = (typeof WEAPON_EMOJIS !== 'undefined' && WEAPON_EMOJIS[weapon.type]) ? WEAPON_EMOJIS[weapon.type] : '⚔️';
+        const wElem = weapon.element || robot.element || 'NEUTRO';
+        const wUpgraded = weapon.isUpgraded ? ' (+1)' : '';
+        weaponIconHtml = `<span class="mini-weapon-icon elem-${wElem}" title="Arma: ${weapon.name}${wUpgraded}"> ${wEmoji}</span>`;
+    }
+
     return `
         <div class="combat-mini-hud">
             <div class="mini-hp-row-wrapper">
@@ -243,6 +262,7 @@ function renderCombatMiniHud(robot, isEnemy = false) {
                 <div class="mini-hp-text">
                     <span class="mini-hp-val">${Math.max(0, Math.ceil(robot.hp))}/${robot.maxHp}</span>
                     ${shieldAmt > 0 ? `<span class="mini-shield-val">+${shieldAmt}🛡️</span>` : ''}
+                    ${weaponIconHtml}
                 </div>
             </div>
             ${cdRowsHtml ? `<div class="mini-cd-container">${cdRowsHtml}</div>` : ''}
@@ -803,6 +823,7 @@ async function advanceTurnQueue() {
     
     // 6. Ejecutar turno según el bando
     if (currentActor.type === 'PLAYER') {
+        if (typeof SoundManager !== 'undefined') SoundManager.play('combat_turn_start');
         const effSpd = currentActor.robot.getEffectiveSpeed ? currentActor.robot.getEffectiveSpeed() : currentActor.robot.spd;
         logCombat(`👉 Turno de [${currentActor.robot.name}] (⚡Velocidad: ${effSpd})`);
         renderCombatActions(currentActor.robot, currentActor.allyIndex);
@@ -1384,6 +1405,7 @@ async function useCombatItem(idx, activeAllyIndex, targetEnemyIndex = 0) {
     logCombat(`🎒 ¡[${activeRobot.name}] usa ${item.name}!`);
     
     if (item.type === ITEM_TYPES.NANOBOTS) {
+        if (typeof SoundManager !== 'undefined') SoundManager.play('item_heal');
         let healed = activeRobot.heal(activeRobot.maxHp * 0.4);
         if (healed > 0) {
             showHealPopup(healed, false, activeAllyIndex);
@@ -1394,6 +1416,7 @@ async function useCombatItem(idx, activeAllyIndex, targetEnemyIndex = 0) {
         renderCombatActions(activeRobot, activeAllyIndex, 'ITEMS');
     } else if (item.type === ITEM_TYPES.PEM) {
         // Bomba PEM: Gasta acción de turno | Aturde al objetivo por 1 turno
+        if (typeof SoundManager !== 'undefined') SoundManager.play('item_emp');
         combatState.isProcessing = true;
         combatState.selectingTarget = null;
         enemy.addStatus({ type: 'STUN', duration: 1 });
@@ -1412,6 +1435,7 @@ async function useCombatItem(idx, activeAllyIndex, targetEnemyIndex = 0) {
         advanceTurnQueue();
     } else if (item.type === ITEM_TYPES.SOBRECARGA) {
         // Núcleo Sobrecarga: Reduce 1 turno de CD a 1 robot (el activo)
+        if (typeof SoundManager !== 'undefined') SoundManager.play('item_overcharge');
         let reduced = 0;
         let reducedSkillName = '';
         activeRobot.skills.forEach(s => {
@@ -1602,6 +1626,7 @@ async function executeDefend(allyIndex) {
     if (combatState.isGameOver || combatState.isProcessing) return;
     combatState.isProcessing = true;
     
+    if (typeof SoundManager !== 'undefined') SoundManager.play('shield_up');
     const ally = GAME_STATE.team[allyIndex];
     showWaitingCombatActions(`🛡️ [${ally.name.toUpperCase()}] ESTABLECIENDO POSTURA DEFENSIVA...`);
     logCombat(`[${ally.name}] toma posición defensiva (reduce 50% el daño recibido).`);
@@ -1737,6 +1762,7 @@ function showComboPopup(reaction, isTargetEnemy, targetIndex = 0) {
     const container = document.getElementById(containerId) || (isTargetEnemy ? document.getElementById('enemy-hit-container') : null);
     if (!container) return;
     
+    if (typeof SoundManager !== 'undefined') SoundManager.play('elemental_reaction');
     const popup = document.createElement('div');
     popup.className = 'combo-popup-banner';
     popup.style.borderColor = reaction.color;
@@ -1754,6 +1780,10 @@ function showDamagePopup(amount, isTargetEnemy, targetIndex = 0, isRed = false, 
     const container = document.getElementById(containerId) || (isTargetEnemy ? document.getElementById('enemy-hit-container') : null);
     if (!container) return;
     
+    if (isCrit && typeof SoundManager !== 'undefined') {
+        SoundManager.play('hit_crit');
+    }
+
     const popup = document.createElement('div');
     popup.className = 'damage-popup-banner' + (isRed ? ' damage-popup-red' : '');
     
@@ -2690,6 +2720,7 @@ function showDodgePopup(isTargetEnemy, targetIndex = 0) {
     const container = document.getElementById(containerId) || (isTargetEnemy ? document.getElementById('enemy-hit-container') : null);
     if (!container) return;
     
+    if (typeof SoundManager !== 'undefined') SoundManager.play('dodge');
     const popup = document.createElement('div');
     popup.className = 'dodge-popup-banner';
     popup.innerHTML = `
@@ -2707,17 +2738,42 @@ function showDodgePopup(isTargetEnemy, targetIndex = 0) {
 
 function showHitAnimation(effectType, isTargetEnemy, unitIndex = 0) {
     let emoji = '💥';
-    if (effectType === ELEMENTS.FUEGO || effectType === 'BURN') emoji = '🔥';
-    else if (effectType === ELEMENTS.AGUA) emoji = '💦';
-    else if (effectType === ELEMENTS.TIERRA) emoji = '🪨';
-    else if (effectType === ELEMENTS.AIRE) emoji = '💨';
-    else if (effectType === ELEMENTS.NEUTRO) emoji = '⚔️';
-    else if (effectType === ELEMENTS.LEGENDARIO) emoji = '👑';
-    else if (effectType === 'SHIELD') emoji = '🛡️';
-    else if (effectType === 'PEM') emoji = '⚡';
-    else if (effectType === 'HEAL') emoji = '💚';
-    else if (effectType === 'TITAN_STRIKE') emoji = '🔨';
-    else if (effectType === 'TITAN_BEAM') emoji = '☠️';
+    if (effectType === ELEMENTS.FUEGO || effectType === 'BURN') {
+        emoji = '🔥';
+        if (typeof SoundManager !== 'undefined') SoundManager.play('attack_fire');
+    } else if (effectType === ELEMENTS.AGUA) {
+        emoji = '💦';
+        if (typeof SoundManager !== 'undefined') SoundManager.play('attack_water');
+    } else if (effectType === ELEMENTS.TIERRA) {
+        emoji = '🪨';
+        if (typeof SoundManager !== 'undefined') SoundManager.play('attack_earth');
+    } else if (effectType === ELEMENTS.AIRE) {
+        emoji = '💨';
+        if (typeof SoundManager !== 'undefined') SoundManager.play('attack_air');
+    } else if (effectType === ELEMENTS.NEUTRO) {
+        emoji = '⚔️';
+        if (typeof SoundManager !== 'undefined') SoundManager.play('hit_normal');
+    } else if (effectType === ELEMENTS.LEGENDARIO) {
+        emoji = '👑';
+        if (typeof SoundManager !== 'undefined') SoundManager.play('hit_normal');
+    } else if (effectType === 'SHIELD') {
+        emoji = '🛡️';
+        if (typeof SoundManager !== 'undefined') SoundManager.play('shield_up');
+    } else if (effectType === 'PEM') {
+        emoji = '⚡';
+        if (typeof SoundManager !== 'undefined') SoundManager.play('item_emp');
+    } else if (effectType === 'HEAL') {
+        emoji = '💚';
+        if (typeof SoundManager !== 'undefined') SoundManager.play('item_heal');
+    } else if (effectType === 'TITAN_STRIKE') {
+        emoji = '🔨';
+        if (typeof SoundManager !== 'undefined') SoundManager.play('attack_earth');
+    } else if (effectType === 'TITAN_BEAM') {
+        emoji = '☠️';
+        if (typeof SoundManager !== 'undefined') SoundManager.play('titan_protocol');
+    } else {
+        if (typeof SoundManager !== 'undefined') SoundManager.play('hit_normal');
+    }
 
     let targetId = isTargetEnemy ? `enemy-hit-container-${unitIndex}` : `player-hit-container-${unitIndex}`;
     const container = document.getElementById(targetId) || (isTargetEnemy ? document.getElementById('enemy-hit-container') : null);

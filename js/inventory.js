@@ -3,11 +3,13 @@
 let selectedInventoryWeapon = null;
 
 function openInventory() {
+    if (typeof SoundManager !== 'undefined') SoundManager.play('ui_modal_open');
     document.getElementById('inventory-modal').style.display = 'flex';
     renderInventory();
 }
 
 function closeInventory() {
+    if (typeof SoundManager !== 'undefined') SoundManager.play('ui_modal_close');
     document.getElementById('inventory-modal').style.display = 'none';
     selectedInventoryWeapon = null;
     updateTeamUI(); // Refresh map team UI
@@ -413,6 +415,7 @@ function renderInventory() {
 function unequipWeaponFrom(robotIndex) {
     const robot = GAME_STATE.team[robotIndex];
     if (robot && robot.equippedWeapon) {
+        if (typeof SoundManager !== 'undefined') SoundManager.play('ui_cancel');
         GAME_STATE.inventory.weapons.push(robot.equippedWeapon);
         robot.equipWeapon(null);
         renderInventory();
@@ -424,6 +427,8 @@ function equipWeaponToItem(weaponIndex, robotIndex) {
     const robot = GAME_STATE.team[robotIndex];
     if (!weapon || !robot) return;
     
+    if (typeof SoundManager !== 'undefined') SoundManager.play('ui_equip');
+
     // Si el robot ya tenía un arma, va a la mochila
     if (robot.equippedWeapon) {
         GAME_STATE.inventory.weapons.push(robot.equippedWeapon);
@@ -437,6 +442,7 @@ function equipWeaponToItem(weaponIndex, robotIndex) {
 
 function scrapInventoryWeapon(weaponIndex) {
     const weapon = GAME_STATE.inventory.weapons[weaponIndex];
+    if (typeof SoundManager !== 'undefined') SoundManager.play('ui_scrap');
     const scrapAmount = (weapon && (weapon.isLegendary || weapon.element === (typeof ELEMENTS !== 'undefined' ? ELEMENTS.LEGENDARIO : 'LEGENDARIO'))) ? 100 : 20;
     addScrap(scrapAmount);
     GAME_STATE.inventory.weapons.splice(weaponIndex, 1);
@@ -449,6 +455,8 @@ function installChipTo(itemIndex, robotIndex) {
     const robot = GAME_STATE.team[robotIndex];
     if (!chip || !robot) return;
     
+    if (typeof SoundManager !== 'undefined') SoundManager.play('ui_equip');
+
     // Si el robot ya tiene un chip instalado, desinstalar el anterior y devolverlo a la mochila
     if (robot.skills.length > 2) {
         uninstallChip(robot);
@@ -462,6 +470,7 @@ function installChipTo(itemIndex, robotIndex) {
 function uninstallChipFrom(robotIndex) {
     const robot = GAME_STATE.team[robotIndex];
     if (robot && robot.skills.length > 2) {
+        if (typeof SoundManager !== 'undefined') SoundManager.play('ui_cancel');
         uninstallChip(robot);
         renderInventory();
     }
@@ -488,6 +497,7 @@ function uninstallChip(robot) {
 function useNanobotsOn(itemIndex, robotId) {
     const robot = GAME_STATE.team.find(r => r.id === robotId);
     if (robot) {
+        if (typeof SoundManager !== 'undefined') SoundManager.play('item_heal');
         robot.heal(robot.maxHp * 0.4);
         GAME_STATE.inventory.items.splice(itemIndex, 1);
         renderInventory();

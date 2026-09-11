@@ -6,6 +6,10 @@ let currentMysteryEvent = null;
 function startEvent(type) {
     showScreen('screen-event');
     
+    if (typeof SoundManager !== 'undefined') {
+        SoundManager.playMusic('REST_LOUNGE');
+    }
+
     const title = document.getElementById('event-title');
     const content = document.getElementById('event-content');
     const desc = document.getElementById('event-description');
@@ -32,6 +36,9 @@ function startEvent(type) {
 }
 
 function initChestEvent() {
+    if (typeof SoundManager !== 'undefined') {
+        SoundManager.play('chest_open');
+    }
     const actions = document.getElementById('event-actions');
     if (!actions) return;
     
@@ -232,6 +239,7 @@ function initCampEvent() {
 }
 
 function executeCampRepair(healPct, revivePct) {
+    if (typeof SoundManager !== 'undefined') SoundManager.play('camp_repair');
     GAME_STATE.team.forEach(r => {
         if (r.isOffline) {
             r.isOffline = false;
@@ -294,6 +302,7 @@ function showCampTrainingPicker() {
 function executeCampTraining(robotIndex) {
     const robot = GAME_STATE.team[robotIndex];
     if (!robot) return;
+    if (typeof SoundManager !== 'undefined') SoundManager.play('ui_equip');
     let leveledUp = robot.gainXp(300);
     let msg = `💪 [${robot.name}] absorbió los paquetes de datos y ganó <strong>+300 XP</strong>.${leveledUp ? ` ¡Subió al <strong>Nivel ${robot.level}</strong>!` : ''}`;
     renderEventResultUI("Calibración Completada", msg);
@@ -366,6 +375,7 @@ function executeCampForge(robotId) {
     const robot = GAME_STATE.team.find(r => r.id === robotId);
     if (!robot || !robot.equippedWeapon) return;
     
+    if (typeof SoundManager !== 'undefined') SoundManager.play('camp_repair');
     const w = robot.equippedWeapon;
     w.isUpgraded = true;
     w.name += ' +1';
@@ -812,9 +822,15 @@ function buyShopItem(idx) {
     if (!item || item.bought) return;
     
     if (GAME_STATE.scrap < item.cost) {
+        if (typeof SoundManager !== 'undefined') SoundManager.play('ui_cancel');
         return;
     }
     
+    if (typeof SoundManager !== 'undefined') {
+        SoundManager.play('shop_buy');
+        setTimeout(() => SoundManager.play('ui_scrap'), 120);
+    }
+
     // Descontar chatarra
     addScrap(-item.cost);
     item.bought = true;
@@ -848,6 +864,10 @@ function buyAllAvailableShopItems() {
     });
     
     if (purchasedNames.length > 0) {
+        if (typeof SoundManager !== 'undefined') {
+            SoundManager.play('shop_buy');
+            setTimeout(() => SoundManager.play('ui_scrap'), 120);
+        }
         let msg = `⚡ ¡Compraste con éxito: <strong>${purchasedNames.join(', ')}</strong>! Guardados en tu inventario.`;
         renderShopUI(msg);
     }

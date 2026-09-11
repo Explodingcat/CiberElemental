@@ -23,6 +23,8 @@
                 </div>
             </div>
             <div class="top-bar-right">
+                <button id="btn-audio-toggle" class="audio-top-btn" onclick="SoundManager.toggleMute()" title="Silenciar / Activar Sonido"><span class="audio-icon">🔊</span></button>
+                <button id="btn-audio-settings" class="audio-top-btn" onclick="openAudioSettingsModal()" title="Configuración de Audio">⚙️</button>
                 <button id="btn-inventory" class="inventory-btn" onclick="openInventory()" title="Abrir Mochila e Inventario"><span class="inventory-btn-icon">🎒</span><span class="inventory-btn-text"> Inventario</span></button>
                 <div id="scrap-display" title="Chatarra acumulada en la expedición"><span class="scrap-label">Chatarra: </span><span class="scrap-val">0</span> <span class="scrap-icon">⚙️</span></div>
             </div>
@@ -37,6 +39,9 @@
 
             <!-- Esquina superior derecha: Tienda y Chatarra Global -->
             <div class="main-menu-top-right">
+                <button id="btn-menu-audio" class="btn-main-menu-audio" onclick="openAudioSettingsModal()" title="Configuración de Audio">
+                    <span class="btn-icon">🔊</span> AUDIO
+                </button>
                 <button id="btn-menu-cosmetics-shop" class="btn-main-menu-shop" onclick="openCosmeticsShopModal()" title="Abrir Tienda de Cosméticos">
                     <span class="btn-icon">🛍️</span> TIENDA
                 </button>
@@ -84,44 +89,62 @@
                 </div>
             </div>
             
-            <div class="selector-container">
-                <!-- Selector de Robot -->
-                <div class="selector-box" id="box-robot">
-                    <div class="box-header">
-                        <span class="box-title">🤖 UNIDAD // CHASIS</span>
-                        <span id="robot-page-indicator" class="page-pill">1 / 4</span>
+            <!-- PASO 1: Selector de Robot (Tarjeta 3D Flip) -->
+            <div id="step-select-robot" class="selection-step-container active">
+                <div class="robot-carousel-wrapper">
+                    <button id="btn-prev-robot" class="carousel-nav-btn" onclick="prevRobot()" title="Anterior Chasis">◀</button>
+                    
+                    <!-- Tarjeta con Giro 3D -->
+                    <div class="robot-flip-card-container" id="robot-card-3d-wrapper" onclick="toggleRobotCardFlip()">
+                        <div class="robot-flip-card-inner" id="robot-card-inner">
+                            <!-- Cara Frontal (Avatar + Stats Bars) -->
+                            <div class="robot-card-face robot-card-front" id="robot-card-front">
+                                <!-- Renderizado dinámico -->
+                            </div>
+                            
+                            <!-- Cara Posterior (Ataque Básico + Habilidad Especial + Afinidad) -->
+                            <div class="robot-card-face robot-card-back" id="robot-card-back">
+                                <!-- Renderizado dinámico -->
+                            </div>
+                        </div>
                     </div>
-                    <div class="carousel">
-                        <button id="btn-prev-robot" class="carousel-nav-btn" title="Anterior Chasis">◀</button>
-                        <div id="robot-preview" class="preview-area"></div>
-                        <button id="btn-next-robot" class="carousel-nav-btn" title="Siguiente Chasis">▶</button>
-                    </div>
+                    
+                    <button id="btn-next-robot" class="carousel-nav-btn" onclick="nextRobot()" title="Siguiente Chasis">▶</button>
                 </div>
+                
+                <div class="robot-carousel-dots" id="robot-carousel-dots"></div>
 
-                <!-- Selector de Arma -->
-                <div class="selector-box" id="box-weapon">
-                    <div class="box-header">
-                        <span class="box-title">⚔️ MÓDULO // ARMAMENTO</span>
-                        <span id="weapon-page-indicator" class="page-pill">1 / 4</span>
-                    </div>
-                    <div class="carousel">
-                        <button id="btn-prev-weapon" class="carousel-nav-btn" title="Anterior Arma">◀</button>
-                        <div id="weapon-preview" class="preview-area"></div>
-                        <button id="btn-next-weapon" class="carousel-nav-btn" title="Siguiente Arma">▶</button>
-                    </div>
+                <div class="start-footer">
+                    <button id="btn-back-main" class="btn-account-cta" onclick="showScreen('screen-main-menu')">
+                        <span class="btn-icon">◀</span> VOLVER AL MENÚ
+                    </button>
+                    <button id="btn-confirm-robot" class="btn-start-game" onclick="goToWeaponStep()">
+                        CONFIRMAR CHASIS <span class="btn-arrow">➔</span>
+                    </button>
                 </div>
             </div>
 
-            <!-- Banner Unificado de Sinergia de Despliegue -->
-            <div id="elemental-synergy-banner" class="synergy-banner"></div>
+            <!-- PASO 2: Selector de Armamento (Fila de 4 Armas) -->
+            <div id="step-select-weapon" class="selection-step-container">
+                <div class="weapon-selection-section">
+                    <div class="weapon-section-header">
+                        <span class="weapon-section-title">⚔️ MÓDULO // ARMAMENTO DISPONIBLE</span>
+                        <span class="weapon-section-subtitle" id="weapon-section-subtitle">Selecciona 1 arma para imbuir con la afinidad de tu robot</span>
+                    </div>
+                    
+                    <div class="weapon-cards-row" id="weapon-cards-row">
+                        <!-- 4 tarjetas de armas generadas dinámicamente -->
+                    </div>
+                </div>
 
-            <div class="start-footer">
-                <button id="btn-back-main" class="btn-account-cta" onclick="showScreen('screen-main-menu')">
-                    <span class="btn-icon">◀</span> VOLVER AL MENÚ
-                </button>
-                <button id="btn-start" class="btn-start-game">
-                    <span class="btn-icon">⚡</span> COMENZAR INCURSIÓN <span class="btn-arrow">➔</span>
-                </button>
+                <div class="start-footer">
+                    <button id="btn-back-to-robot" class="btn-account-cta" onclick="goToRobotStep()">
+                        <span class="btn-icon">◀</span> CAMBIAR CHASIS
+                    </button>
+                    <button id="btn-start" class="btn-start-game">
+                        <span class="btn-icon">⚡</span> COMENZAR INCURSIÓN <span class="btn-arrow">➔</span>
+                    </button>
+                </div>
             </div>
         </div>
 
@@ -136,17 +159,6 @@
                         <span id="current-floor" class="pill-val">1</span>
                         <span class="pill-max">/ 10</span>
                     </div>
-                </div>
-                
-                <!-- Leyenda Táctica de Nodos -->
-                <div class="map-legend-bar">
-                    <span class="legend-item"><span class="legend-icon">👾</span> Combate</span>
-                    <span class="legend-item"><span class="legend-icon">💀</span> Élite</span>
-                    <span class="legend-item"><span class="legend-icon">🎁</span> Tesoro</span>
-                    <span class="legend-item"><span class="legend-icon">🛒</span> Mercado</span>
-                    <span class="legend-item"><span class="legend-icon">⛺</span> Taller</span>
-                    <span class="legend-item"><span class="legend-icon">❓</span> Misterio</span>
-                    <span class="legend-item"><span class="legend-icon">👑</span> Jefe Final</span>
                 </div>
             </div>
             
@@ -637,6 +649,73 @@
                 </div>
             </div>
         </div>
+
+        <!-- Modal de Configuración de Audio -->
+        <div id="modal-audio-settings" class="modal" style="display: none;" onclick="if(event.target === this) closeAudioSettingsModal()">
+            <div class="modal-content audio-modal-box">
+                <button class="close-btn" onclick="closeAudioSettingsModal()" title="Cerrar ventana">&times;</button>
+                
+                <div class="audio-modal-header">
+                    <div class="audio-header-badge">🎧 SISTEMA DE AUDIO // CONFIGURACIÓN ACÚSTICA</div>
+                    <div class="audio-header-main-row">
+                        <div class="audio-title-group">
+                            <h2 class="audio-modal-title">PANEL DE AUDIO & MÚSICA</h2>
+                            <div class="audio-subtitle">Ajusta los niveles de volumen maestro, sintetizador ambiental y efectos tácticos.</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="audio-modal-body">
+                    <div class="audio-control-row">
+                        <div class="audio-control-label">
+                            <span class="audio-control-icon">🔇</span>
+                            <div>
+                                <div style="font-weight: 700; color: #fff;">Silenciar Todo (Mute)</div>
+                                <div style="font-size: 11px; color: #8395a7;">Desactiva temporalmente todas las salidas sonoras</div>
+                            </div>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="audio-modal-mute-toggle" onchange="SoundManager.toggleMute()">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+
+                    <div class="audio-slider-group">
+                        <div class="slider-header">
+                            <span class="slider-label">🔊 Volumen Maestro</span>
+                            <span id="audio-val-master" class="slider-val">80%</span>
+                        </div>
+                        <input type="range" id="audio-slider-master" min="0" max="100" value="80" oninput="onAudioMasterSliderChange(this.value)">
+                    </div>
+
+                    <div class="audio-slider-group">
+                        <div class="slider-header">
+                            <span class="slider-label">🎵 Música Ambiental Sintetizada (BGM)</span>
+                            <span id="audio-val-music" class="slider-val">45%</span>
+                        </div>
+                        <input type="range" id="audio-slider-music" min="0" max="100" value="45" oninput="onAudioMusicSliderChange(this.value)">
+                    </div>
+
+                    <div class="audio-slider-group">
+                        <div class="slider-header">
+                            <span class="slider-label">💥 Efectos de Sonido Tácticos (SFX)</span>
+                            <span id="audio-val-sfx" class="slider-val">70%</span>
+                        </div>
+                        <input type="range" id="audio-slider-sfx" min="0" max="100" value="70" oninput="onAudioSfxSliderChange(this.value)">
+                    </div>
+
+                    <div class="audio-test-section">
+                        <div class="audio-test-title">PROBADOR DE EFECTOS EN VIVO:</div>
+                        <div class="audio-test-buttons">
+                            <button type="button" class="btn-audio-test" onclick="SoundManager.play('hit_crit')">⚡ Crítico</button>
+                            <button type="button" class="btn-audio-test" onclick="SoundManager.play('elemental_reaction')">✨ Reacción</button>
+                            <button type="button" class="btn-audio-test" onclick="SoundManager.play('attack_fire')">🔥 Fuego</button>
+                            <button type="button" class="btn-audio-test" onclick="SoundManager.play('ui_scrap')">⚙️ Chatarra</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- SDK Supabase vía CDN -->
@@ -648,6 +727,9 @@
     <!-- Meta-Progresión y Habilidades Pasivas -->
     <script src="js/skillsData.js"></script>
     <script src="js/skillsManager.js"></script>
+
+    <!-- Motor de Sonido y Música Web Audio API -->
+    <script src="js/SoundManager.js"></script>
 
     <!-- Scripts del Juego -->
     <script src="js/constants.js"></script>

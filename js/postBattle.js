@@ -307,6 +307,7 @@ function initPostBattle(enemies) {
             btnRecruit.className = 'btn-post-action btn-post-recruit';
             btnRecruit.innerHTML = `<span>🤖 Reclutar a ${enemy.name} (50% HP)</span>`;
             btnRecruit.onclick = () => {
+                if (typeof SoundManager !== 'undefined') SoundManager.play('ui_equip');
                 recruitRobot(enemy);
                 advanceFloor();
             };
@@ -325,6 +326,7 @@ function initPostBattle(enemies) {
     
     if (hasBoss) {
         btnScrap.onclick = () => {
+            if (typeof SoundManager !== 'undefined') SoundManager.play('camp_repair');
             addScrap(dismantleScrap);
             GAME_STATE.team.forEach(r => {
                 if (!r.isOffline) {
@@ -378,6 +380,7 @@ function initPostBattle(enemies) {
         }
     } else {
         btnScrap.onclick = () => {
+            if (typeof SoundManager !== 'undefined') SoundManager.play('camp_repair');
             addScrap(dismantleScrap);
             GAME_STATE.team.forEach(r => {
                 if (!r.isOffline) {
@@ -410,6 +413,7 @@ function handleRecruitElite(enemy, actionsContainer, desc) {
     let isSuccess = Math.random() < recruitChance;
     
     if (isSuccess) {
+        if (typeof SoundManager !== 'undefined') SoundManager.play('ui_equip');
         if (desc) {
             desc.innerHTML += `<div class="post-log-item log-lvl-up">🎉 ¡Reprogramación Exitosa! El robot <strong>${enemy.name}</strong> ha sido integrado a tu escuadrón operativo.</div>`;
             desc.scrollTop = desc.scrollHeight;
@@ -420,6 +424,7 @@ function handleRecruitElite(enemy, actionsContainer, desc) {
         }, 1300);
     } else {
         // Explosión del núcleo Élite
+        if (typeof SoundManager !== 'undefined') SoundManager.play('item_emp');
         if (postContainer) {
             postContainer.classList.remove('anim-explosion-shake');
             void postContainer.offsetWidth;

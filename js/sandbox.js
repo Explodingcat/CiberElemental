@@ -1778,8 +1778,8 @@ function drawSandboxMapLines(container, svg) {
                 line.setAttribute('y1', y1);
                 line.setAttribute('x2', x2);
                 line.setAttribute('y2', y2);
-                line.setAttribute('stroke', 'rgba(102, 252, 241, 0.35)');
-                line.setAttribute('stroke-width', '2');
+                line.setAttribute('stroke', 'rgba(102, 252, 241, 0.55)');
+                line.setAttribute('stroke-width', '3');
                 svg.appendChild(line);
             });
         });

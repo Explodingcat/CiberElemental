@@ -60,6 +60,20 @@ function showScreen(screenId) {
     if (target) {
         target.classList.add('active');
     }
+
+    // Gestión de Música Ambiental según la pantalla
+    if (typeof SoundManager !== 'undefined') {
+        if (screenId === 'screen-main-menu' || screenId === 'screen-start') {
+            SoundManager.playMusic('TITLE_THEME');
+        } else if (screenId === 'screen-map') {
+            SoundManager.playMusic('MAP_THEME');
+        } else if (screenId === 'screen-game-over') {
+            SoundManager.playMusic('GAMEOVER_THEME');
+            SoundManager.play('robot_death');
+        } else if (screenId === 'screen-victory') {
+            SoundManager.playMusic('VICTORY_FANFARE');
+        }
+    }
     
     // Mostrar u ocultar la barra superior completa
     const topBar = document.getElementById('top-bar');
@@ -77,6 +91,10 @@ function showScreen(screenId) {
 
     if (screenId === 'screen-main-menu') {
         checkSavedCheckpoint();
+    } else if (screenId === 'screen-start') {
+        if (typeof goToRobotStep === 'function') {
+            goToRobotStep();
+        }
     }
 
     // Actualizar datos de Game Over y guardar run
@@ -176,48 +194,108 @@ function initGame() {
     
     let currentRobotIndex = 0;
     let currentWeaponIndex = 0;
+    let currentSelectStep = 1;
+    let isRobotCardFlipped = false;
     
-    const robotPreview = document.getElementById('robot-preview');
-    const weaponPreview = document.getElementById('weapon-preview');
+    const robotCardInner = document.getElementById('robot-card-inner');
+    const robotCardFront = document.getElementById('robot-card-front');
+    const robotCardBack = document.getElementById('robot-card-back');
+    const stepRobotEl = document.getElementById('step-select-robot');
+    const stepWeaponEl = document.getElementById('step-select-weapon');
+    const stepInstructionEl = document.getElementById('start-step-instruction');
+    const dotsContainer = document.getElementById('robot-carousel-dots');
+    const weaponCardsRow = document.getElementById('weapon-cards-row');
+    const selectedRobotChip = document.getElementById('selected-robot-chip');
+
+    function toggleRobotCardFlip(e) {
+        if (e) e.stopPropagation();
+        isRobotCardFlipped = !isRobotCardFlipped;
+        if (robotCardInner) {
+            if (isRobotCardFlipped) {
+                robotCardInner.classList.add('flipped');
+            } else {
+                robotCardInner.classList.remove('flipped');
+            }
+        }
+        if (typeof SoundManager !== 'undefined') SoundManager.play('ui_hover');
+    }
+    window.toggleRobotCardFlip = toggleRobotCardFlip;
+
+    function goToWeaponStep() {
+        if (typeof SoundManager !== 'undefined') SoundManager.play('ui_click');
+        currentSelectStep = 2;
+        isRobotCardFlipped = false;
+        if (robotCardInner) robotCardInner.classList.remove('flipped');
+        
+        if (stepRobotEl) stepRobotEl.classList.remove('active');
+        if (stepWeaponEl) stepWeaponEl.classList.add('active');
+        if (stepInstructionEl) {
+            stepInstructionEl.innerText = 'Paso 2 de 2: Selecciona el módulo de armamento para tu incursión';
+        }
+        renderWeaponStep();
+    }
+    window.goToWeaponStep = goToWeaponStep;
+
+    function goToRobotStep() {
+        if (typeof SoundManager !== 'undefined') SoundManager.play('ui_hover');
+        currentSelectStep = 1;
+        isRobotCardFlipped = false;
+        if (robotCardInner) robotCardInner.classList.remove('flipped');
+        
+        if (stepWeaponEl) stepWeaponEl.classList.remove('active');
+        if (stepRobotEl) stepRobotEl.classList.add('active');
+        if (stepInstructionEl) {
+            stepInstructionEl.innerText = 'Paso 1 de 2: Selecciona tu chasis táctico y analiza sus estadísticas';
+        }
+        renderRobot();
+    }
+    window.goToRobotStep = goToRobotStep;
+
+    function selectWeapon(index) {
+        if (typeof SoundManager !== 'undefined') SoundManager.play('ui_click');
+        currentWeaponIndex = index;
+        renderWeaponStep();
+    }
+    window.selectWeapon = selectWeapon;
 
     function renderRobot() {
         let key = robotKeys[currentRobotIndex];
         let template = ROBOT_TEMPLATES[key];
         let elStats = ELEMENT_BASE_STATS[template.element];
-        
-        const robotPageIndicator = document.getElementById('robot-page-indicator');
-        if (robotPageIndicator) {
-            robotPageIndicator.innerText = `${currentRobotIndex + 1} / ${robotKeys.length}`;
-        }
-        
-        let specialSkill = template.skills && template.skills[1] ? template.skills[1] : null;
-        let specialSkillHtml = '';
-        if (specialSkill) {
-            specialSkillHtml = `
-                <div class="special-skill-box">
-                    <div class="skill-header">
-                        <span class="skill-tag">⚡ HABILIDAD ESPECIAL</span>
-                        <span class="skill-cd">⏱️ CD: ${specialSkill.cd} turnos</span>
-                    </div>
-                    <div class="skill-body">
-                        <strong class="skill-title">${specialSkill.name}:</strong>
-                        <span class="skill-desc-text">${specialSkill.desc}</span>
-                    </div>
-                </div>
-            `;
-        }
+        let element = template.element;
 
+        // Resetear volteo de tarjeta al cambiar de robot
+        isRobotCardFlipped = false;
+        if (robotCardInner) robotCardInner.classList.remove('flipped');
+
+        // Subtítulo de rol
         let roleSubtitle = '';
-        if (template.element === ELEMENTS.FUEGO) {
-            roleSubtitle = '⚔️ Guerrero Ofensivo • Daño Térmico Directo';
-        } else if (template.element === ELEMENTS.AGUA) {
-            roleSubtitle = '💧 Soporte Táctico • Escudos Temporales y Control';
-        } else if (template.element === ELEMENTS.TIERRA) {
-            roleSubtitle = '🛡️ Coloso Defensivo • Tanque y Provocación';
-        } else if (template.element === ELEMENTS.AIRE) {
-            roleSubtitle = '⚡ Pícaro Cibernético • Alta Velocidad y Evasión';
+        if (element === ELEMENTS.FUEGO) {
+            roleSubtitle = 'Guerrero Ofensivo // Daño Térmico Directo';
+        } else if (element === ELEMENTS.AGUA) {
+            roleSubtitle = 'Soporte Táctico // Escudos y Control';
+        } else if (element === ELEMENTS.TIERRA) {
+            roleSubtitle = 'Coloso Defensivo // Tanque y Provocación';
+        } else if (element === ELEMENTS.AIRE) {
+            roleSubtitle = 'Pícaro Cibernético // Alta Velocidad y Evasión';
         }
 
+        // Habilidad especial
+        let specialSkill = template.skills && template.skills[1] ? template.skills[1] : { name: 'Especial', cd: 3, desc: 'Habilidad activa' };
+
+        // Afinidad elemental descriptiva
+        let affinityDesc = '';
+        if (element === ELEMENTS.FUEGO) {
+            affinityDesc = 'Afinidad Térmica: <strong>+15% ATQ</strong> y <strong>+15% Daño adicional</strong> contra rivales con Marca o Quemadura activa.';
+        } else if (element === ELEMENTS.AGUA) {
+            affinityDesc = 'Afinidad Hidrostática: <strong>+15% HP Máx</strong> y <strong>+25% Potencia de Escudos</strong> temporales y barreras de plasma.';
+        } else if (element === ELEMENTS.TIERRA) {
+            affinityDesc = 'Afinidad Tectónica: <strong>+25% HP Máx</strong> y <strong>-10% Daño recibido</strong> permanente (Mitigación pasiva de blindaje).';
+        } else if (element === ELEMENTS.AIRE) {
+            affinityDesc = 'Afinidad Electrostática: <strong>+15% ATQ</strong>, <strong>+2 Velocidad base</strong> y <strong>+10% Probabilidad de Esquiva</strong>.';
+        }
+
+        // Avatar cosméticos
         const previewAura = (typeof CosmeticsManager !== 'undefined') ? CosmeticsManager.getEquippedAura() : 'NONE';
         const previewParticles = (typeof CosmeticsManager !== 'undefined') ? CosmeticsManager.getEquippedParticles() : 'NONE';
         const previewRobot = new Robot(Object.assign({}, template, {
@@ -226,177 +304,242 @@ function initGame() {
         }));
         const avatarGraphicHtml = previewRobot.getAvatarGraphicHtml();
 
-        robotPreview.innerHTML = `
-            <div class="preview-hero">
-                <div class="holo-platform platform-${template.element}">
-                    ${avatarGraphicHtml}
-                </div>
-                <div class="hero-name-row">
-                    <h2 class="hero-name">${template.name}</h2>
-                    <span class="element-badge elem-badge-${template.element}">
-                        ${ELEMENT_EMOJIS[template.element]} ${template.element}
-                    </span>
-                </div>
-                <div class="hero-role-badge">${roleSubtitle}</div>
-            </div>
-            
-            <div class="stats-grid">
-                <div class="stat-pill"><span class="stat-icon">❤️</span> <span class="stat-label">HP</span> <span class="stat-val">${elStats.maxHp}</span></div>
-                <div class="stat-pill"><span class="stat-icon">⚔️</span> <span class="stat-label">ATQ</span> <span class="stat-val">${elStats.atk}</span></div>
-                <div class="stat-pill"><span class="stat-icon">⚡</span> <span class="stat-label">VEL</span> <span class="stat-val">${elStats.spd}</span></div>
-                <div class="stat-pill"><span class="stat-icon">💨</span> <span class="stat-label">ESQ</span> <span class="stat-val">${elStats.dodge}%</span></div>
-                <div class="stat-pill"><span class="stat-icon">🎯</span> <span class="stat-label">PREC</span> <span class="stat-val">${elStats.acc}%</span></div>
-                <div class="stat-pill"><span class="stat-icon">💥</span> <span class="stat-label">CRÍT</span> <span class="stat-val">${elStats.critChance || 5}%</span></div>
-            </div>
+        // Porcentajes para las barras de progreso
+        const hpPct = Math.min(100, Math.max(10, Math.round((elStats.maxHp / 200) * 100)));
+        const atkPct = Math.min(100, Math.max(10, Math.round((elStats.atk / 25) * 100)));
+        const spdPct = Math.min(100, Math.max(10, Math.round((elStats.spd / 20) * 100)));
+        const critPct = Math.min(100, Math.max(10, Math.round(((elStats.critChance || 5) / 25) * 100)));
 
-            ${specialSkillHtml}
-        `;
-        renderWeapon(); // Sincronizar elemento y sinergia del arma
-        renderSynergyBanner();
+        // Actualizar clases temáticas en las caras de la tarjeta
+        if (robotCardFront) {
+            robotCardFront.className = `robot-card-face robot-card-front theme-${element}`;
+            robotCardFront.innerHTML = `
+                <div class="robot-card-front-content">
+                    <!-- Columna Izquierda: Avatar y Nombre -->
+                    <div class="robot-card-hero-col">
+                        <div class="robot-card-avatar-ring ring-${element}">
+                            ${avatarGraphicHtml}
+                        </div>
+                        <h2 class="robot-card-name">${template.name}</h2>
+                        <span class="element-badge elem-badge-${element}" style="margin-bottom: 4px;">
+                            ${ELEMENT_EMOJIS[element]} ${element}
+                        </span>
+                        <div class="robot-card-role">${roleSubtitle}</div>
+                    </div>
+                    
+                    <!-- Columna Derecha: Barras de Estadísticas -->
+                    <div class="robot-card-stats-col">
+                        <div class="robot-stat-row">
+                            <span class="robot-stat-label">SALUD INTEGRAL (HP)</span>
+                            <div class="robot-stat-track">
+                                <div class="robot-stat-fill fill-${element}" style="width: ${hpPct}%;"></div>
+                            </div>
+                            <span class="robot-stat-val">${elStats.maxHp}</span>
+                        </div>
+
+                        <div class="robot-stat-row">
+                            <span class="robot-stat-label">POTENCIA DE ${element} (ATQ)</span>
+                            <div class="robot-stat-track">
+                                <div class="robot-stat-fill fill-${element}" style="width: ${atkPct}%;"></div>
+                            </div>
+                            <span class="robot-stat-val">${elStats.atk}</span>
+                        </div>
+
+                        <div class="robot-stat-row">
+                            <span class="robot-stat-label">VELOCIDAD DE CICLO</span>
+                            <div class="robot-stat-track">
+                                <div class="robot-stat-fill fill-${element}" style="width: ${spdPct}%;"></div>
+                            </div>
+                            <span class="robot-stat-val">${elStats.spd}</span>
+                        </div>
+
+                        <div class="robot-stat-row">
+                            <span class="robot-stat-label">ÍNDICE CRÍTICO</span>
+                            <div class="robot-stat-track">
+                                <div class="robot-stat-fill fill-${element}" style="width: ${critPct}%;"></div>
+                            </div>
+                            <span class="robot-stat-val">${elStats.critChance || 5}%</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="robot-card-flip-prompt">
+                    <span>🔄 Tocar tarjeta para ver habilidades y afinidad</span>
+                </div>
+            `;
+        }
+
+        if (robotCardBack) {
+            robotCardBack.className = `robot-card-face robot-card-back theme-${element}`;
+            robotCardBack.innerHTML = `
+                <div class="card-back-header">
+                    <div class="card-back-title-group">
+                        <span class="card-back-title">${template.name.toUpperCase()} // DATOS TÁCTICOS</span>
+                        <span class="element-badge elem-badge-${element}">${ELEMENT_EMOJIS[element]} ${element}</span>
+                    </div>
+                    <button class="card-back-flip-btn" onclick="toggleRobotCardFlip(event)">
+                        🔄 Volver a Stats
+                    </button>
+                </div>
+
+                <div class="card-back-sections">
+                    <div class="card-detail-box">
+                        <div class="card-detail-header">
+                            <span class="card-detail-tag-basic">⚔️ ATAQUE BÁSICO</span>
+                            <span class="card-detail-cd">0 CD</span>
+                        </div>
+                        <div class="card-detail-body">
+                            1.0x Potencia • Si porta un arma, adquiere su elemento con <strong>20% prob. de aplicar Marca de ${element}</strong> (3 turnos).
+                        </div>
+                    </div>
+
+                    <div class="card-detail-box">
+                        <div class="card-detail-header">
+                            <span class="card-detail-tag-skill">⚡ ${specialSkill.name.toUpperCase()}</span>
+                            <span class="card-detail-cd">⏱️ CD: ${specialSkill.cd} turnos</span>
+                        </div>
+                        <div class="card-detail-body">
+                            ${specialSkill.desc}
+                        </div>
+                    </div>
+
+                    <div class="card-detail-box">
+                        <div class="card-detail-header">
+                            <span class="card-detail-tag-affinity">✨ AFINIDAD ELEMENTAL</span>
+                            <span class="element-badge elem-badge-${element}" style="font-size: 9.5px; padding: 1px 6px;">100% SINERGIA</span>
+                        </div>
+                        <div class="card-detail-body">
+                            ${affinityDesc}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Renderizar dots del carrusel
+        if (dotsContainer) {
+            dotsContainer.innerHTML = robotKeys.map((k, idx) => `
+                <div class="carousel-dot ${idx === currentRobotIndex ? 'active' : ''}" onclick="selectRobotByIndex(${idx})" title="${ROBOT_TEMPLATES[k].name}"></div>
+            `).join('');
+        }
     }
-    
-    function renderWeapon() {
-        let wKey = weaponKeys[currentWeaponIndex];
-        let wType = WEAPON_TYPES[wKey];
-        let template = ROBOT_TEMPLATES[robotKeys[currentRobotIndex]];
-        
-        const weaponPageIndicator = document.getElementById('weapon-page-indicator');
-        if (weaponPageIndicator) {
-            weaponPageIndicator.innerText = `${currentWeaponIndex + 1} / ${weaponKeys.length}`;
-        }
-        
-        let desc = '';
-        let wName = '';
-        let weaponRoleSubtitle = '';
-        if (wKey === 'DAGA') { 
-            wName = 'Daga'; 
-            desc = '<strong>25% prob. de doble ataque</strong> consecutivo (40% con +1). Cada golpe puede aplicar marca elemental al rival.';
-            weaponRoleSubtitle = '🗡️ Filo Rápido • Ataque Doble Consecutivo';
-        }
-        if (wKey === 'HACHA') { 
-            wName = 'Hacha'; 
-            desc = '<strong>+10% ATQ base</strong>. <strong>20% prob. de Rompearmaduras</strong> (-25% DEF). Perfora 50% barreras/defensa (75% con +1). <strong>+35% Daño a ≤40% HP (+45% con +1)</strong>.';
-            weaponRoleSubtitle = '🪓 Arma Pesada • Quiebre de Armadura y Verdugo';
-        }
-        if (wKey === 'BACULO') { 
-            wName = 'Báculo'; 
-            desc = '<strong>Al finalizar su turno, genera un Escudo de plasma</strong> (10% HP Máx, 15% con +1). En +1 otorga <strong>micro-escudo (8%) a aliado</strong> y <strong>20% prob. de reducir 1 CD</strong>.';
-            weaponRoleSubtitle = '🪄 Canalizador • Escudos de Plasma y Soporte Grupal';
-        }
-        if (wKey === 'ESPADA') { 
-            wName = 'Espada'; 
-            desc = '<strong>+15% Daño base</strong> y <strong>+10% Crítico</strong> (+30%/+20% con +1). Críticos activan <strong>Racha</strong> (+10% ATQ temporal).';
-            weaponRoleSubtitle = '⚔️ Hoja Balanceada • Crítico y Racha';
-        }
 
-        weaponPreview.innerHTML = `
-            <div class="preview-hero">
-                <div class="holo-platform platform-${template.element}">
-                    <div class="avatar-emoji elem-${template.element}">${WEAPON_EMOJIS[wType]}</div>
-                </div>
-                <div class="hero-name-row">
-                    <h2 class="hero-name">${wName} de ${template.element}</h2>
-                    <span class="element-badge elem-badge-${template.element}">
-                        ${ELEMENT_EMOJIS[template.element]} ${template.element}
-                    </span>
-                </div>
-                <div class="hero-role-badge">${weaponRoleSubtitle}</div>
-            </div>
-            
-            <div class="weapon-passive-card">
-                <div class="passive-header">
-                    <span class="passive-tag">🛡️ EFECTO PASIVO PRINCIPAL</span>
-                    <span class="passive-type">PERMANENTE</span>
-                </div>
-                <div class="passive-body">
-                    ${desc}
-                </div>
-            </div>
-
-            <div class="weapon-basic-row">
-                <span class="weapon-basic-badge">⚔️ ATAQUE BÁSICO</span>
-                <span class="weapon-basic-desc">1.0x Potencia • 20% prob. de aplicar <strong>Marca de ${template.element}</strong> (3 turnos)</span>
-            </div>
-        `;
-        renderSynergyBanner();
+    function selectRobotByIndex(idx) {
+        if (typeof SoundManager !== 'undefined') SoundManager.play('ui_hover');
+        currentRobotIndex = idx;
+        renderRobot();
     }
+    window.selectRobotByIndex = selectRobotByIndex;
 
-    function renderSynergyBanner() {
-        const banner = document.getElementById('elemental-synergy-banner');
-        if (!banner) return;
+    function prevRobot() {
+        if (typeof SoundManager !== 'undefined') SoundManager.play('ui_hover');
+        currentRobotIndex = (currentRobotIndex - 1 + robotKeys.length) % robotKeys.length;
+        renderRobot();
+    }
+    window.prevRobot = prevRobot;
 
+    function nextRobot() {
+        if (typeof SoundManager !== 'undefined') SoundManager.play('ui_hover');
+        currentRobotIndex = (currentRobotIndex + 1) % robotKeys.length;
+        renderRobot();
+    }
+    window.nextRobot = nextRobot;
+
+    const btnPrev = document.getElementById('btn-prev-robot');
+    const btnNext = document.getElementById('btn-next-robot');
+    if (btnPrev) btnPrev.onclick = prevRobot;
+    if (btnNext) btnNext.onclick = nextRobot;
+
+    function renderWeaponStep() {
         let template = ROBOT_TEMPLATES[robotKeys[currentRobotIndex]];
         let element = template.element;
 
-        let synergyDesc = '';
-        if (element === ELEMENTS.FUEGO) {
-            synergyDesc = 'Afinidad compartida: <strong>+15% ATQ</strong> y <strong>+15% Daño adicional</strong> contra rivales con Marca o Quemadura activa.';
-        } else if (element === ELEMENTS.AGUA) {
-            synergyDesc = 'Afinidad compartida: <strong>+15% HP Máximo</strong> y <strong>+25% Potencia de Escudos</strong> temporales y barreras de plasma.';
-        } else if (element === ELEMENTS.TIERRA) {
-            synergyDesc = 'Afinidad compartida: <strong>+25% HP Máximo</strong> y <strong>-10% Daño recibido permanente</strong> (Mitigación pasiva de blindaje).';
-        } else if (element === ELEMENTS.AIRE) {
-            synergyDesc = 'Afinidad compartida: <strong>+15% ATQ</strong>, <strong>+2 Velocidad base</strong> y <strong>+10% Probabilidad de Esquiva</strong>.';
+        const weaponSubtitle = document.getElementById('weapon-section-subtitle');
+        if (weaponSubtitle) {
+            weaponSubtitle.innerHTML = `Chasis seleccionado: <strong style="color: #66fcf1;">${template.name}</strong> (${element}) • Selecciona 1 arma para tu incursión`;
         }
 
-        banner.className = `synergy-banner synergy-theme-${element}`;
-        banner.innerHTML = `
-            <div class="synergy-header-row">
-                <div class="synergy-title-group">
-                    <span class="synergy-icon">✨</span>
-                    <span class="synergy-label">ENLACE ELEMENTAL ACTIVO</span>
-                    <span class="element-badge elem-badge-${element}">${ELEMENT_EMOJIS[element]} ${element}</span>
-                </div>
-                <span class="synergy-status-pill">SINERGIA COMBINADA 100%</span>
-            </div>
-            <div class="synergy-body-text">
-                ${synergyDesc}
-            </div>
-        `;
+        // Renderizar 4 tarjetas de armas en fila
+        if (weaponCardsRow) {
+            const weaponsData = [
+                {
+                    key: 'DAGA',
+                    name: 'Daga',
+                    role: '🗡️ Filo Rápido',
+                    desc: '<strong>25% prob. de doble ataque</strong> consecutivo (40% con +1). Cada impacto aplica Marca Elemental al rival.'
+                },
+                {
+                    key: 'HACHA',
+                    name: 'Hacha',
+                    role: '🪓 Arma Pesada',
+                    desc: '<strong>+10% ATQ base</strong>. <strong>20% prob. de Rompearmaduras</strong> (-25% DEF). +35% Daño contra rivales con ≤40% HP.'
+                },
+                {
+                    key: 'BACULO',
+                    name: 'Báculo',
+                    role: '🪄 Canalizador',
+                    desc: 'Al finalizar cada turno, genera un <strong>Escudo de plasma automático</strong> (10% HP Máx). En +1 protege a aliados.'
+                },
+                {
+                    key: 'ESPADA',
+                    name: 'Espada',
+                    role: '⚔️ Hoja Balanceada',
+                    desc: '<strong>+15% Daño base</strong> y <strong>+10% Crítico</strong> (+30%/+20% con +1). Críticos activan <strong>Racha de ATQ</strong>.'
+                }
+            ];
+
+            weaponCardsRow.innerHTML = weaponsData.map((w, idx) => {
+                const isSelected = (idx === currentWeaponIndex);
+                const selectedBadge = isSelected ? '<span class="weapon-card-selected-badge">✔ SELECCIONADA</span>' : '';
+                return `
+                    <div class="weapon-card-item ${isSelected ? 'selected' : ''}" onclick="selectWeapon(${idx})">
+                        ${selectedBadge}
+                        <div class="weapon-card-icon-wrapper platform-${element}">
+                            <div class="avatar-emoji elem-${element}">${WEAPON_EMOJIS[w.key]}</div>
+                        </div>
+                        <h3 class="weapon-card-title">${w.name} de ${element}</h3>
+                        <div class="weapon-card-role">${w.role}</div>
+                        <div class="weapon-card-desc">${w.desc}</div>
+                    </div>
+                `;
+            }).join('');
+        }
     }
 
-    document.getElementById('btn-prev-robot').onclick = () => {
-        currentRobotIndex = (currentRobotIndex - 1 + robotKeys.length) % robotKeys.length;
-        renderRobot();
-    };
-    document.getElementById('btn-next-robot').onclick = () => {
-        currentRobotIndex = (currentRobotIndex + 1) % robotKeys.length;
-        renderRobot();
-    };
-    
-    document.getElementById('btn-prev-weapon').onclick = () => {
-        currentWeaponIndex = (currentWeaponIndex - 1 + weaponKeys.length) % weaponKeys.length;
-        renderWeapon();
-    };
-    document.getElementById('btn-next-weapon').onclick = () => {
-        currentWeaponIndex = (currentWeaponIndex + 1) % weaponKeys.length;
-        renderWeapon();
-    };
-
-    // Navegación por teclado (Flechas / Enter)
+    // Navegación por teclado (Flechas / Enter / Espacio)
     document.addEventListener('keydown', (e) => {
         const startScreen = document.getElementById('screen-start');
         if (!startScreen || !startScreen.classList.contains('active')) return;
         
-        if (e.key === 'ArrowLeft') {
-            currentRobotIndex = (currentRobotIndex - 1 + robotKeys.length) % robotKeys.length;
-            renderRobot();
-        } else if (e.key === 'ArrowRight') {
-            currentRobotIndex = (currentRobotIndex + 1) % robotKeys.length;
-            renderRobot();
-        } else if (e.key === 'ArrowUp') {
-            currentWeaponIndex = (currentWeaponIndex - 1 + weaponKeys.length) % weaponKeys.length;
-            renderWeapon();
-        } else if (e.key === 'ArrowDown') {
-            currentWeaponIndex = (currentWeaponIndex + 1) % weaponKeys.length;
-            renderWeapon();
-        } else if (e.key === 'Enter' || e.key === ' ') {
-            e.preventDefault();
-            document.getElementById('btn-start').click();
+        if (currentSelectStep === 1) {
+            if (e.key === 'ArrowLeft') {
+                prevRobot();
+            } else if (e.key === 'ArrowRight') {
+                nextRobot();
+            } else if (e.key === 'ArrowUp' || e.key === 'ArrowDown' || e.key === ' ') {
+                e.preventDefault();
+                toggleRobotCardFlip();
+            } else if (e.key === 'Enter') {
+                e.preventDefault();
+                goToWeaponStep();
+            }
+        } else if (currentSelectStep === 2) {
+            if (e.key === 'ArrowLeft') {
+                selectWeapon((currentWeaponIndex - 1 + 4) % 4);
+            } else if (e.key === 'ArrowRight') {
+                selectWeapon((currentWeaponIndex + 1) % 4);
+            } else if (e.key === 'Escape' || e.key === 'Backspace') {
+                e.preventDefault();
+                goToRobotStep();
+            } else if (e.key === 'Enter') {
+                e.preventDefault();
+                document.getElementById('btn-start').click();
+            }
         }
     });
 
     document.getElementById('btn-start').onclick = () => {
+        if (typeof SoundManager !== 'undefined') SoundManager.play('ui_click');
         let selectedTemplate = robotKeys[currentRobotIndex];
         let selectedWeaponType = weaponKeys[currentWeaponIndex];
         

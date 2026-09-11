@@ -281,11 +281,25 @@ function drawLines() {
     svg.innerHTML = '';
     
     const containerRect = container.getBoundingClientRect();
+    const totalHeight = Math.max(container.scrollHeight, container.clientHeight, 1500);
+    const totalWidth = Math.max(container.scrollWidth, container.clientWidth, 600);
+    svg.setAttribute('width', totalWidth);
+    svg.setAttribute('height', totalHeight);
+    svg.style.width = totalWidth + 'px';
+    svg.style.height = totalHeight + 'px';
+    
+    const towerId = (typeof GAME_STATE !== 'undefined' && GAME_STATE.currentTower) 
+        ? GAME_STATE.currentTower 
+        : ((GAME_STATE.floor <= 10) ? 1 : ((GAME_STATE.floor <= 20) ? 2 : 3));
+    
+    const activeStroke = (towerId === 3) ? '#f39c12' : ((towerId === 2) ? '#b026ff' : '#66fcf1');
+    const futureStroke = (towerId === 3) ? 'rgba(243, 156, 18, 0.55)' : ((towerId === 2) ? 'rgba(176, 38, 255, 0.55)' : 'rgba(102, 252, 241, 0.5)');
     
     for (let f = 0; f < fullMap.length - 1; f++) {
         const floorNodes = fullMap[f];
         if (!floorNodes || floorNodes.length === 0) continue;
         const floorNum = floorNodes[0].floor;
+        
         floorNodes.forEach(node => {
             const el1 = document.getElementById(`node-ui-${node.id}`);
             if (!el1) return;
@@ -310,23 +324,37 @@ function drawLines() {
                 line.setAttribute('x2', x2);
                 line.setAttribute('y2', y2);
                 
-                const towerId = (typeof GAME_STATE !== 'undefined' && GAME_STATE.currentTower) 
-                    ? GAME_STATE.currentTower 
-                    : ((GAME_STATE.floor <= 10) ? 1 : ((GAME_STATE.floor <= 20) ? 2 : 3));
-                const activeStroke = (towerId === 3) ? '#f39c12' : ((towerId === 2) ? '#b026ff' : '#66fcf1');
-                const isPathFromCurrent = (floorNum === GAME_STATE.floor - 1 && node.id === GAME_STATE.currentNodeId);
-
-                if (isPathFromCurrent) {
-                    line.setAttribute('stroke', activeStroke);
-                    line.setAttribute('stroke-width', '4');
-                    line.setAttribute('stroke-dasharray', '6,4');
-                    line.setAttribute('class', `map-line-active map-line-active-tower-${towerId}`);
-                } else if (floorNum < GAME_STATE.floor && node.id === GAME_STATE.currentNodeId) {
-                    line.setAttribute('stroke', '#feca57');
-                    line.setAttribute('stroke-width', '3');
+                if (floorNum < GAME_STATE.floor) {
+                    // Pisos pasados
+                    if (node.id === GAME_STATE.currentNodeId) {
+                        // Camino que el jugador tomó
+                        line.setAttribute('stroke', '#feca57');
+                        line.setAttribute('stroke-width', '3.5');
+                        line.setAttribute('class', 'map-line-visited');
+                    } else {
+                        // Rutas pasadas no seleccionadas
+                        line.setAttribute('stroke', 'rgba(255, 255, 255, 0.12)');
+                        line.setAttribute('stroke-width', '1.5');
+                    }
+                } else if (floorNum === GAME_STATE.floor) {
+                    // Piso actual
+                    if (GAME_STATE.currentNodeId && node.id === GAME_STATE.currentNodeId) {
+                        // Camino activo desde el nodo seleccionado actualmente
+                        line.setAttribute('stroke', activeStroke);
+                        line.setAttribute('stroke-width', '4');
+                        line.setAttribute('stroke-dasharray', '6,4');
+                        line.setAttribute('class', `map-line-active map-line-active-tower-${towerId}`);
+                    } else {
+                        // Caminos accesibles o disponibles desde este piso
+                        line.setAttribute('stroke', futureStroke);
+                        line.setAttribute('stroke-width', '3');
+                        line.setAttribute('class', 'map-line-future');
+                    }
                 } else {
-                    line.setAttribute('stroke', 'rgba(255, 255, 255, 0.12)');
-                    line.setAttribute('stroke-width', '2');
+                    // Pisos futuros: red de caminos visible y clara para planificación táctica
+                    line.setAttribute('stroke', futureStroke);
+                    line.setAttribute('stroke-width', '3');
+                    line.setAttribute('class', 'map-line-future');
                 }
                 
                 svg.appendChild(line);
@@ -383,6 +411,7 @@ function advanceToNextTower(nextTowerId) {
 }
 
 function handleNodeSelection(node) {
+    if (typeof SoundManager !== 'undefined') SoundManager.play('map_node_select');
     GAME_STATE.currentNodeId = node.id;
     
     switch(node.type) {

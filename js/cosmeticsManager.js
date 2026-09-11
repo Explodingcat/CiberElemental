@@ -171,6 +171,7 @@ const CosmeticsManager = {
         const cosmeticName = cosmeticDef ? cosmeticDef.name : id;
 
         this.showToast(`✨ Equipado: ${cosmeticName}`, 'info');
+        if (typeof SoundManager !== 'undefined') SoundManager.play('ui_equip');
         this.renderShop();
         this.updateEquippedDisplay();
 
@@ -293,6 +294,7 @@ const CosmeticsManager = {
     },
 
     inspectCosmetic(type, id) {
+        if (typeof SoundManager !== 'undefined') SoundManager.play('ui_hover');
         if (type === 'AURA') {
             this.inspectedAura = id;
         } else if (type === 'PARTICLES') {
@@ -303,6 +305,7 @@ const CosmeticsManager = {
     },
 
     switchTab(tab) {
+        if (typeof SoundManager !== 'undefined') SoundManager.play('ui_tab');
         this.activeTab = tab;
         const btnAuras = document.getElementById('cosmetics-tab-btn-auras');
         const btnParticles = document.getElementById('cosmetics-tab-btn-particles');
@@ -477,6 +480,7 @@ function openCosmeticsShopModal() {
     const modal = document.getElementById('cosmetics-modal');
     if (modal) {
         modal.style.display = 'flex';
+        if (typeof SoundManager !== 'undefined') SoundManager.play('ui_modal_open');
         CosmeticsManager.renderShop();
         if (typeof SkillsManager !== 'undefined') {
             SkillsManager.updateAllScrapDisplays();
@@ -488,6 +492,7 @@ function closeCosmeticsShopModal() {
     const modal = document.getElementById('cosmetics-modal');
     if (modal) {
         modal.style.display = 'none';
+        if (typeof SoundManager !== 'undefined') SoundManager.play('ui_modal_close');
     }
 }
 

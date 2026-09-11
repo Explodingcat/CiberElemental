@@ -125,6 +125,7 @@ const SkillsManager = {
     async unlockSkill(skillId) {
         const check = this.canUnlockSkill(skillId);
         if (!check.can) {
+            if (typeof SoundManager !== 'undefined') SoundManager.play('ui_cancel');
             this.showFeedbackMessage(`⚠️ ${check.reason}`, 'warning');
             return { success: false, error: check.reason };
         }
@@ -132,6 +133,11 @@ const SkillsManager = {
         const skill = this.getSkill(skillId);
         this.globalScrap -= skill.cost;
         this.unlockedSkills.add(skillId);
+
+        if (typeof SoundManager !== 'undefined') {
+            SoundManager.play('ui_equip');
+            setTimeout(() => SoundManager.play('ui_scrap'), 100);
+        }
 
         await this.saveProfile();
 
@@ -407,6 +413,7 @@ const SkillsManager = {
 function openSkillTreeModal() {
     const modal = document.getElementById('skills-modal');
     if (modal) {
+        if (typeof SoundManager !== 'undefined') SoundManager.play('ui_modal_open');
         modal.style.display = 'flex';
         SkillsManager.renderSkillTree();
         SkillsManager.updateAllScrapDisplays();
@@ -416,6 +423,7 @@ function openSkillTreeModal() {
 function closeSkillTreeModal() {
     const modal = document.getElementById('skills-modal');
     if (modal) {
+        if (typeof SoundManager !== 'undefined') SoundManager.play('ui_modal_close');
         modal.style.display = 'none';
     }
 }
