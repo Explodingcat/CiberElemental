@@ -1048,14 +1048,15 @@ function renderCombatActions(playerRobot, allyIndex, view = 'MAIN', activeSkillI
                 displayName = basicInfo.name;
                 elemTag = basicInfo.element;
                 displayDesc = basicInfo.desc;
+                cardClass = `skill-card-basic elem-skill-${elemTag}`;
             } else if (isSpecial) {
                 typeTag = 'ESPECIAL';
-                cardClass = 'skill-card-special';
                 elemTag = skill.elementOverride || playerRobot.element;
+                cardClass = `skill-card-special elem-skill-${elemTag}`;
             } else if (isChip) {
                 typeTag = 'CHIP';
-                cardClass = 'skill-card-chip';
                 elemTag = skill.elementOverride || playerRobot.element;
+                cardClass = `skill-card-chip elem-skill-${elemTag}`;
             }
 
             return `

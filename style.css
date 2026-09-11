@@ -4408,13 +4408,52 @@ button:disabled {
     border-radius: 4px;
 }
 
+/* Keyframes para Ondas Elementales y Resplandor de Habilidades */
+@keyframes elementalWaveSweep {
+    0% {
+        transform: translateX(-160%) skewX(-25deg);
+        opacity: 0;
+    }
+    20% {
+        opacity: 0.65;
+    }
+    60% {
+        opacity: 0.65;
+    }
+    100% {
+        transform: translateX(260%) skewX(-25deg);
+        opacity: 0;
+    }
+}
+
+@keyframes elementalPulseGlow {
+    0% {
+        box-shadow: 0 0 6px rgba(var(--elem-rgb, 102, 252, 241), 0.3), inset 0 0 8px rgba(var(--elem-rgb, 102, 252, 241), 0.12);
+        border-color: rgba(var(--elem-rgb, 102, 252, 241), 0.5);
+    }
+    50% {
+        box-shadow: 0 0 16px rgba(var(--elem-rgb, 102, 252, 241), 0.65), inset 0 0 14px rgba(var(--elem-rgb, 102, 252, 241), 0.25);
+        border-color: rgba(var(--elem-rgb, 102, 252, 241), 0.9);
+    }
+    100% {
+        box-shadow: 0 0 6px rgba(var(--elem-rgb, 102, 252, 241), 0.3), inset 0 0 8px rgba(var(--elem-rgb, 102, 252, 241), 0.12);
+        border-color: rgba(var(--elem-rgb, 102, 252, 241), 0.5);
+    }
+}
+
+@keyframes elementalWaveMove {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
 .tactical-skill-card {
-    background: rgba(14, 20, 32, 0.85);
+    background: rgba(14, 20, 32, 0.88);
     border: 1px solid rgba(255, 255, 255, 0.15);
     border-radius: 8px;
     padding: 6px 10px;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
     display: flex;
     flex-direction: column;
     justify-content: space-between;
@@ -4423,18 +4462,117 @@ button:disabled {
     box-sizing: border-box;
     height: 100%;
     min-height: 52px;
+    position: relative;
+    overflow: hidden;
 }
 
-.tactical-skill-card:hover:not(.is-disabled) {
+/* Tarjeta Básica */
+.tactical-skill-card.skill-card-basic {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.04) 0%, rgba(14, 20, 32, 0.92) 100%);
+    border-color: rgba(255, 255, 255, 0.15);
+}
+.tactical-skill-card.skill-card-basic:hover:not(.is-disabled) {
     border-color: var(--accent-color);
     box-shadow: 0 0 12px rgba(102, 252, 241, 0.35);
     transform: translateY(-1px);
 }
 
+/* Habilidades Especiales y Chips: Fondo con Gradiente Elemental Animado */
+.tactical-skill-card.skill-card-special,
+.tactical-skill-card.skill-card-chip {
+    background-size: 200% 200%;
+}
+
+/* Variables de Color e Identidad por Elemento */
+.tactical-skill-card.elem-skill-FUEGO {
+    --elem-rgb: 255, 71, 87;
+    background-image: linear-gradient(135deg, rgba(255, 71, 87, 0.22) 0%, rgba(255, 107, 129, 0.1) 45%, rgba(14, 20, 32, 0.94) 100%);
+    border-color: rgba(255, 71, 87, 0.55);
+}
+.tactical-skill-card.elem-skill-AGUA {
+    --elem-rgb: 0, 210, 211;
+    background-image: linear-gradient(135deg, rgba(0, 210, 211, 0.22) 0%, rgba(72, 219, 251, 0.1) 45%, rgba(14, 20, 32, 0.94) 100%);
+    border-color: rgba(0, 210, 211, 0.55);
+}
+.tactical-skill-card.elem-skill-TIERRA {
+    --elem-rgb: 254, 202, 87;
+    background-image: linear-gradient(135deg, rgba(254, 202, 87, 0.22) 0%, rgba(255, 159, 67, 0.1) 45%, rgba(14, 20, 32, 0.94) 100%);
+    border-color: rgba(254, 202, 87, 0.55);
+}
+.tactical-skill-card.elem-skill-AIRE {
+    --elem-rgb: 72, 219, 251;
+    background-image: linear-gradient(135deg, rgba(72, 219, 251, 0.22) 0%, rgba(10, 189, 227, 0.1) 45%, rgba(14, 20, 32, 0.94) 100%);
+    border-color: rgba(72, 219, 251, 0.55);
+}
+.tactical-skill-card.elem-skill-NEUTRO {
+    --elem-rgb: 162, 155, 254;
+    background-image: linear-gradient(135deg, rgba(162, 155, 254, 0.22) 0%, rgba(223, 230, 233, 0.1) 45%, rgba(14, 20, 32, 0.94) 100%);
+    border-color: rgba(162, 155, 254, 0.55);
+}
+
+/* Animación de Ondas continuas cuando está LISTA */
+.tactical-skill-card.skill-card-special:not(.is-disabled),
+.tactical-skill-card.skill-card-chip:not(.is-disabled) {
+    animation: elementalWaveMove 4s ease infinite, elementalPulseGlow 2.2s infinite alternate ease-in-out;
+}
+
+/* Onda de energía dinámica que cruza la tarjeta */
+.tactical-skill-card.skill-card-special:not(.is-disabled)::before,
+.tactical-skill-card.skill-card-chip:not(.is-disabled)::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 65%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent 0%, rgba(var(--elem-rgb), 0.28) 50%, transparent 100%);
+    transform: translateX(-160%) skewX(-25deg);
+    animation: elementalWaveSweep 3.2s infinite cubic-bezier(0.4, 0, 0.2, 1);
+    pointer-events: none;
+    z-index: 1;
+}
+
+/* Resplandor en el borde superior */
+.tactical-skill-card.skill-card-special:not(.is-disabled)::after,
+.tactical-skill-card.skill-card-chip:not(.is-disabled)::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    background: linear-gradient(90deg, transparent 0%, rgba(var(--elem-rgb), 0.95) 50%, transparent 100%);
+    box-shadow: 0 0 8px rgba(var(--elem-rgb), 0.85);
+    pointer-events: none;
+    z-index: 1;
+}
+
+.tactical-skill-card.skill-card-special:hover:not(.is-disabled),
+.tactical-skill-card.skill-card-chip:hover:not(.is-disabled) {
+    border-color: rgb(var(--elem-rgb));
+    box-shadow: 0 0 18px rgba(var(--elem-rgb), 0.7), inset 0 0 14px rgba(var(--elem-rgb), 0.35);
+    transform: translateY(-2px);
+}
+
 .tactical-skill-card.is-disabled {
-    opacity: 0.4;
+    opacity: 0.42;
     cursor: not-allowed;
-    filter: grayscale(0.6);
+    filter: grayscale(0.55);
+    animation: none !important;
+    border-color: rgba(255, 255, 255, 0.1) !important;
+    box-shadow: none !important;
+}
+
+.tactical-skill-card.is-disabled::before,
+.tactical-skill-card.is-disabled::after {
+    display: none !important;
+}
+
+/* Asegurar máxima legibilidad de todos los textos sobre la animación */
+.tactical-skill-card .skill-card-top,
+.tactical-skill-card .skill-card-center {
+    position: relative;
+    z-index: 2;
 }
 
 .skill-card-top {
@@ -4471,6 +4609,7 @@ button:disabled {
     font-weight: 800;
     color: #2ed573;
     letter-spacing: 0.4px;
+    text-shadow: 0 0 8px rgba(46, 213, 115, 0.4);
 }
 
 .skill-card-center {
@@ -4484,13 +4623,14 @@ button:disabled {
 
 .skill-name-text {
     font-size: 15px;
-    font-weight: 800;
+    font-weight: 900;
     color: #fff;
     letter-spacing: 0.4px;
     text-align: center;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.95), 0 0 8px rgba(0, 0, 0, 0.85);
 }
 
 .skill-card-desc {
