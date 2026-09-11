@@ -945,7 +945,10 @@ function renderCombatActions(playerRobot, allyIndex, view = 'MAIN', activeSkillI
     
     actionsContainer.className = 'combat-tactical-box dock-mode-player';
     
-    const consumableCount = (GAME_STATE && GAME_STATE.inventory && GAME_STATE.inventory.items) ? GAME_STATE.inventory.items.length : 0;
+    const consumableItems = (GAME_STATE && GAME_STATE.inventory && GAME_STATE.inventory.items)
+        ? GAME_STATE.inventory.items.filter(it => !it.type.startsWith('CHIP_'))
+        : [];
+    const consumableCount = consumableItems.length;
     const effSpd = playerRobot.getEffectiveSpeed ? playerRobot.getEffectiveSpeed() : playerRobot.spd;
     const extraChips = Math.max(0, playerRobot.skills.length - 2);
     const chipIcons = extraChips > 0 ? ' 💾'.repeat(extraChips) : '';
@@ -1176,10 +1179,14 @@ function renderCombatActions(playerRobot, allyIndex, view = 'MAIN', activeSkillI
         `;
     }
     else if (view === 'ITEMS') {
-        const items = (GAME_STATE && GAME_STATE.inventory && GAME_STATE.inventory.items) ? GAME_STATE.inventory.items : [];
+        const consumableEntries = (GAME_STATE && GAME_STATE.inventory && GAME_STATE.inventory.items)
+            ? GAME_STATE.inventory.items
+                .map((item, idx) => ({ item, idx }))
+                .filter(entry => !entry.item.type.startsWith('CHIP_'))
+            : [];
         let itemsHtml = '';
         
-        if (items.length === 0) {
+        if (consumableEntries.length === 0) {
             itemsHtml = `
                 <div class="tactical-items-empty">
                     <div class="empty-icon">🎒</div>
@@ -1187,13 +1194,30 @@ function renderCombatActions(playerRobot, allyIndex, view = 'MAIN', activeSkillI
                 </div>
             `;
         } else {
+            const stackedCombatItems = [];
+            consumableEntries.forEach(({ item, idx }) => {
+                const existing = stackedCombatItems.find(sc => sc.item.type === item.type);
+                if (existing) {
+                    existing.count++;
+                    existing.indices.push(idx);
+                } else {
+                    stackedCombatItems.push({
+                        item,
+                        count: 1,
+                        indices: [idx],
+                        firstIdx: idx
+                    });
+                }
+            });
+
             itemsHtml = `
                 <div class="tactical-items-grid">
-                    ${items.map((item, idx) => `
-                        <div class="tactical-item-card" title="${item.desc}" onclick="useCombatItem(${idx}, ${allyIndex})">
+                    ${stackedCombatItems.map(s => `
+                        <div class="tactical-item-card" title="${s.item.desc} (Cantidad: ${s.count})" onclick="useCombatItem(${s.firstIdx}, ${allyIndex})">
                             <div class="tactical-item-center">
-                                <span class="tactical-item-emoji">${item.emoji}</span>
-                                <span class="tactical-item-name">${item.name}</span>
+                                <span class="tactical-item-emoji">${s.item.emoji}</span>
+                                <span class="tactical-item-name">${s.item.name}</span>
+                                ${s.count > 1 ? `<span class="tactical-item-stack-badge">x${s.count}</span>` : ''}
                             </div>
                         </div>
                     `).join('')}

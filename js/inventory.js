@@ -135,7 +135,7 @@ function renderInventory() {
         }).join('');
     }
 
-    // 2. Renderizar Armas del Almacén
+    // 2. Renderizar Armas del Almacén (Agrupadas/Stackeadas)
     const weaponsList = document.getElementById('inventory-weapons-list');
     if (weaponsList) {
         if (!GAME_STATE.inventory.weapons || GAME_STATE.inventory.weapons.length === 0) {
@@ -147,13 +147,41 @@ function renderInventory() {
             `;
         } else {
             weaponsList.innerHTML = '';
+            
+            const stackedWeapons = [];
             GAME_STATE.inventory.weapons.forEach((w, idx) => {
-                const isLegendary = w.isLegendary || w.element === (typeof ELEMENTS !== 'undefined' ? ELEMENTS.LEGENDARIO : 'LEGENDARIO');
+                const isLegendary = Boolean(w.isLegendary || w.element === (typeof ELEMENTS !== 'undefined' ? ELEMENTS.LEGENDARIO : 'LEGENDARIO'));
+                const existing = stackedWeapons.find(sw => 
+                    sw.weapon.name === w.name &&
+                    sw.weapon.type === w.type &&
+                    sw.weapon.element === w.element &&
+                    sw.isLegendary === isLegendary
+                );
+                if (existing) {
+                    existing.count++;
+                    existing.indices.push(idx);
+                } else {
+                    stackedWeapons.push({
+                        weapon: w,
+                        count: 1,
+                        indices: [idx],
+                        firstIdx: idx,
+                        isLegendary
+                    });
+                }
+            });
+
+            stackedWeapons.forEach((s) => {
+                const w = s.weapon;
+                const isLegendary = s.isLegendary;
+                const isSelected = (selectedInventoryWeapon !== null && s.indices.includes(selectedInventoryWeapon));
+                const actionIdx = isSelected ? selectedInventoryWeapon : s.firstIdx;
+                
                 const card = document.createElement('div');
-                card.className = `inv-item-card ${isLegendary ? 'is-legendary' : ''} ${selectedInventoryWeapon === idx ? 'is-selected' : ''}`;
+                card.className = `inv-item-card ${isLegendary ? 'is-legendary' : ''} ${isSelected ? 'is-selected' : ''}`;
                 
                 let equipButtonsHtml = '';
-                if (selectedInventoryWeapon === idx) {
+                if (isSelected) {
                     equipButtonsHtml = `
                         <div class="inv-card-actions">
                             ${GAME_STATE.team.map((r, rIdx) => {
@@ -161,12 +189,12 @@ function renderInventory() {
                                 const isAffinity = isLegendary || (r.element === w.element);
                                 const affinityIcon = isLegendary ? '👑' : '🌟';
                                 return `
-                                    <button class="btn-inv-action btn-equip-ally ${isLegendary ? 'btn-equip-legendary' : ''}" onclick="event.stopPropagation(); equipWeaponToItem(${idx}, ${rIdx})">
+                                    <button class="btn-inv-action btn-equip-ally ${isLegendary ? 'btn-equip-legendary' : ''}" onclick="event.stopPropagation(); equipWeaponToItem(${actionIdx}, ${rIdx})">
                                         Equipar a ${r.name} ${isAffinity ? affinityIcon : ''}
                                     </button>
                                 `;
                             }).join('')}
-                            <button class="btn-inv-action btn-scrap-item" onclick="event.stopPropagation(); scrapInventoryWeapon(${idx})">
+                            <button class="btn-inv-action btn-scrap-item" onclick="event.stopPropagation(); scrapInventoryWeapon(${actionIdx})">
                                 ⚙️ Desmantelar (+${isLegendary ? '100' : '20'} Chatarra)
                             </button>
                         </div>
@@ -174,22 +202,23 @@ function renderInventory() {
                 }
 
                 const legendBadge = isLegendary ? '<span class="badge-legendary">👑 LEGENDARIA</span>' : '';
+                const stackBadge = s.count > 1 ? `<span class="inv-stack-badge">x${s.count}</span>` : '';
 
                 card.innerHTML = `
                     <div class="inv-item-top">
                         <span class="inv-item-emoji elem-${w.element}">${WEAPON_EMOJIS[w.type]}</span>
                         <div class="inv-item-info">
-                            <div class="inv-item-title elem-${w.element}">${w.name} ${legendBadge}</div>
+                            <div class="inv-item-title elem-${w.element}">${w.name} ${legendBadge} ${stackBadge}</div>
                             <div class="inv-item-desc">${w.desc}</div>
                         </div>
                     </div>
                     ${equipButtonsHtml}
-                    ${selectedInventoryWeapon !== idx ? '<div class="inv-item-hint">Clic para equipar o desmantelar</div>' : ''}
+                    ${!isSelected ? '<div class="inv-item-hint">Clic para equipar o desmantelar</div>' : ''}
                 `;
                 
-                if (selectedInventoryWeapon !== idx) {
+                if (!isSelected) {
                     card.onclick = () => {
-                        selectedInventoryWeapon = idx;
+                        selectedInventoryWeapon = s.firstIdx;
                         renderInventory();
                     };
                 }
@@ -199,12 +228,14 @@ function renderInventory() {
         }
     }
 
-    // 3. Renderizar Chips de Habilidad
+    // 3. Renderizar Chips de Habilidad (Agrupados/Stackeados)
     const chipsList = document.getElementById('inventory-chips-list');
     if (chipsList) {
-        const chipItems = (GAME_STATE.inventory.items || []).map((item, idx) => ({ item, idx })).filter(entry => entry.item.type.startsWith('CHIP_'));
+        const chipEntries = (GAME_STATE.inventory.items || [])
+            .map((item, idx) => ({ item, idx }))
+            .filter(entry => entry.item.type.startsWith('CHIP_'));
         
-        if (chipItems.length === 0) {
+        if (chipEntries.length === 0) {
             chipsList.innerHTML = `
                 <div class="inv-empty-state">
                     <span class="empty-state-icon">💾</span>
@@ -213,7 +244,25 @@ function renderInventory() {
             `;
         } else {
             chipsList.innerHTML = '';
-            chipItems.forEach(({ item, idx }) => {
+            
+            const stackedChips = [];
+            chipEntries.forEach(({ item, idx }) => {
+                const existing = stackedChips.find(sc => sc.item.type === item.type);
+                if (existing) {
+                    existing.count++;
+                    existing.indices.push(idx);
+                } else {
+                    stackedChips.push({
+                        item,
+                        count: 1,
+                        indices: [idx],
+                        firstIdx: idx
+                    });
+                }
+            });
+
+            stackedChips.forEach((s) => {
+                const item = s.item;
                 const card = document.createElement('div');
                 card.className = 'inv-item-card';
                 
@@ -222,17 +271,19 @@ function renderInventory() {
                     const hasChip = r.skills.length > 2;
                     const btnLabel = hasChip ? `💾 Reemplazar en ${r.name}` : `💾 Instalar en ${r.name}`;
                     return `
-                        <button class="btn-inv-action btn-install-chip" onclick="installChipTo(${idx}, ${rIdx})">
+                        <button class="btn-inv-action btn-install-chip" onclick="installChipTo(${s.firstIdx}, ${rIdx})">
                             ${btnLabel}
                         </button>
                     `;
                 }).join('');
                 
+                const stackBadge = s.count > 1 ? `<span class="inv-stack-badge">x${s.count}</span>` : '';
+
                 card.innerHTML = `
                     <div class="inv-item-top">
                         <span class="inv-item-emoji">${item.emoji}</span>
                         <div class="inv-item-info">
-                            <div class="inv-item-title">${item.name}</div>
+                            <div class="inv-item-title">${item.name} ${stackBadge}</div>
                             <div class="inv-item-desc">${item.desc}</div>
                         </div>
                     </div>
@@ -245,12 +296,14 @@ function renderInventory() {
         }
     }
 
-    // 4. Renderizar Consumibles
+    // 4. Renderizar Consumibles (Agrupados/Stackeados)
     const consumablesList = document.getElementById('inventory-consumables-list');
     if (consumablesList) {
-        const consumables = (GAME_STATE.inventory.items || []).map((item, idx) => ({ item, idx })).filter(entry => !entry.item.type.startsWith('CHIP_'));
+        const consumableEntries = (GAME_STATE.inventory.items || [])
+            .map((item, idx) => ({ item, idx }))
+            .filter(entry => !entry.item.type.startsWith('CHIP_'));
         
-        if (consumables.length === 0) {
+        if (consumableEntries.length === 0) {
             consumablesList.innerHTML = `
                 <div class="inv-empty-state">
                     <span class="empty-state-icon">🧪</span>
@@ -259,7 +312,25 @@ function renderInventory() {
             `;
         } else {
             consumablesList.innerHTML = '';
-            consumables.forEach(({ item, idx }) => {
+            
+            const stackedConsumables = [];
+            consumableEntries.forEach(({ item, idx }) => {
+                const existing = stackedConsumables.find(sc => sc.item.type === item.type);
+                if (existing) {
+                    existing.count++;
+                    existing.indices.push(idx);
+                } else {
+                    stackedConsumables.push({
+                        item,
+                        count: 1,
+                        indices: [idx],
+                        firstIdx: idx
+                    });
+                }
+            });
+
+            stackedConsumables.forEach((s) => {
+                const item = s.item;
                 const card = document.createElement('div');
                 card.className = 'inv-item-card';
                 
@@ -268,7 +339,7 @@ function renderInventory() {
                     const healButtons = GAME_STATE.team.map((r) => {
                         if (r.isOffline || r.hp >= r.maxHp) return '';
                         return `
-                            <button class="btn-inv-action btn-heal-ally" onclick="useNanobotsOn(${idx}, '${r.id}')">
+                            <button class="btn-inv-action btn-heal-ally" onclick="useNanobotsOn(${s.firstIdx}, '${r.id}')">
                                 💊 Curar a ${r.name} (+40% HP)
                             </button>
                         `;
@@ -279,11 +350,13 @@ function renderInventory() {
                     itemActionsHtml = `<div class="inv-combat-only-tag">⚡ Usable durante el combate</div>`;
                 }
 
+                const stackBadge = s.count > 1 ? `<span class="inv-stack-badge">x${s.count}</span>` : '';
+
                 card.innerHTML = `
                     <div class="inv-item-top">
                         <span class="inv-item-emoji">${item.emoji}</span>
                         <div class="inv-item-info">
-                            <div class="inv-item-title">${item.name}</div>
+                            <div class="inv-item-title">${item.name} ${stackBadge}</div>
                             <div class="inv-item-desc">${item.desc}</div>
                         </div>
                     </div>
