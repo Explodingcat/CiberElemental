@@ -70,6 +70,7 @@ ALTER TABLE public.player_profiles ADD COLUMN IF NOT EXISTS username TEXT;
 ALTER TABLE public.player_profiles ADD COLUMN IF NOT EXISTS avatar_icon TEXT DEFAULT 'DEFAULT';
 ALTER TABLE public.player_profiles ADD COLUMN IF NOT EXISTS tower_completions JSONB DEFAULT '{"1": 0, "2": 0, "3": 0}'::jsonb;
 ALTER TABLE public.player_profiles ADD COLUMN IF NOT EXISTS achievements JSONB DEFAULT '[]'::jsonb;
+ALTER TABLE public.player_profiles ADD COLUMN IF NOT EXISTS saved_run JSONB;
 ALTER TABLE public.player_profiles ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW();
 
 -- Índice único e insensible a mayúsculas para username

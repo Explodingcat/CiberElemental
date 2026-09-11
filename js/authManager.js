@@ -22,22 +22,37 @@ const AuthManager = {
             || (this.currentUser.email ? this.currentUser.email.split('@')[0] : 'Comandante');
     },
 
+    async getOrFetchCurrentUser() {
+        if (this.currentUser) return this.currentUser;
+        if (typeof isSupabaseConfigured !== 'function' || !isSupabaseConfigured() || typeof supabaseClient === 'undefined' || !supabaseClient) {
+            return null;
+        }
+        try {
+            const { data: { session } } = await supabaseClient.auth.getSession();
+            if (session && session.user) {
+                this.currentUser = session.user;
+                return this.currentUser;
+            }
+            // Si no hay sesión previa, iniciar sesión anónima automáticamente
+            console.info('[AuthManager] Asegurando sesión anónima para operaciones en Supabase...');
+            const { data, error } = await supabaseClient.auth.signInAnonymously();
+            if (!error && data && data.user) {
+                this.currentUser = data.user;
+                console.info('[AuthManager] Sesión anónima asegurada con user_id:', this.currentUser.id);
+                return this.currentUser;
+            }
+        } catch (err) {
+            console.warn('[AuthManager] Error al recuperar o iniciar sesión de usuario:', err);
+        }
+        return null;
+    },
+
     async init() {
-        if (typeof supabaseClient !== 'undefined' && supabaseClient) {
+        if (typeof isSupabaseConfigured === 'function' && isSupabaseConfigured() && typeof supabaseClient !== 'undefined' && supabaseClient) {
             try {
-                const { data: { session } } = await supabaseClient.auth.getSession();
-                if (session && session.user) {
-                    this.currentUser = session.user;
-                } else if (isSupabaseConfigured()) {
-                    // Si no hay sesión previa, iniciar sesión anónima automáticamente
-                    console.info('[AuthManager] No hay sesión activa. Iniciando sesión anónima...');
-                    const { data, error } = await supabaseClient.auth.signInAnonymously();
-                    if (error) {
-                        console.warn('[AuthManager] Falló inicio de sesión anónimo automático:', error);
-                    } else if (data && data.user) {
-                        this.currentUser = data.user;
-                        console.info('[AuthManager] Sesión anónima creada con user_id:', this.currentUser.id);
-                    }
+                const user = await this.getOrFetchCurrentUser();
+                if (user) {
+                    console.info('[AuthManager] Sesión activa inicializada para user_id:', user.id);
                 }
 
                 supabaseClient.auth.onAuthStateChange(async (_event, session) => {
@@ -54,7 +69,7 @@ const AuthManager = {
                         await ProfileManager.loadProfile();
                     }
                     if (typeof checkSavedCheckpoint === 'function') {
-                        checkSavedCheckpoint();
+                        await checkSavedCheckpoint();
                     }
                 });
             } catch (err) {
@@ -73,7 +88,7 @@ const AuthManager = {
             await ProfileManager.loadProfile();
         }
         if (typeof checkSavedCheckpoint === 'function') {
-            checkSavedCheckpoint();
+            await checkSavedCheckpoint();
         }
     },
 
@@ -241,30 +256,16 @@ const AuthManager = {
         }
 
         // Recuperar o asegurar sesión de usuario en Supabase si aún no está asignada
-        if (!this.currentUser && isSupabaseConfigured() && supabaseClient) {
-            try {
-                const { data: { session } } = await supabaseClient.auth.getSession();
-                if (session && session.user) {
-                    this.currentUser = session.user;
-                } else {
-                    const { data: anonData } = await supabaseClient.auth.signInAnonymously();
-                    if (anonData && anonData.user) {
-                        this.currentUser = anonData.user;
-                    }
-                }
-            } catch (sessionErr) {
-                console.warn('[AuthManager] No se pudo asegurar sesión activa para guardar run:', sessionErr);
-            }
-        }
+        const user = await this.getOrFetchCurrentUser();
 
         // 2. Si hay usuario y Supabase configurado, guardar en la base de datos
-        if (this.currentUser && isSupabaseConfigured() && supabaseClient) {
+        if (user && isSupabaseConfigured() && supabaseClient) {
             try {
                 const playerName = this.getPlayerDisplayName();
                 const towerId = runData.tower_id || (runData.floor_reached > 20 ? 3 : (runData.floor_reached > 10 ? 2 : 1));
 
                 const insertPayload = {
-                    user_id: this.currentUser.id,
+                    user_id: user.id,
                     player_name: playerName,
                     won: runData.won,
                     tower_id: towerId,
@@ -292,7 +293,7 @@ const AuthManager = {
                     console.error('[Supabase] Error al insertar match_run:', error);
                     return { success: false, error };
                 } else {
-                    console.info(`[Supabase] Partida guardada exitosamente en la nube (Torre ${towerId}) para user_id:`, this.currentUser.id);
+                    console.info(`[Supabase] Partida guardada exitosamente en la nube (Torre ${towerId}) para user_id:`, user.id);
                     return { success: true, data };
                 }
             } catch (err) {
@@ -316,32 +317,61 @@ const AuthManager = {
             }
         } catch (e) {}
 
-        // Guardar EXCLUSIVAMENTE en la base de datos Supabase
-        if (this.currentUser && isSupabaseConfigured() && supabaseClient) {
+        const user = await this.getOrFetchCurrentUser();
+        if (user && isSupabaseConfigured() && supabaseClient) {
+            const payload = {
+                user_id: user.id,
+                tower_completed: checkpointData.tower_completed,
+                current_tower: checkpointData.current_tower,
+                floor: checkpointData.floor,
+                scrap: checkpointData.scrap || 0,
+                squad: checkpointData.squad,
+                inventory: checkpointData.inventory,
+                updated_at: new Date().toISOString()
+            };
+
+            let savedSuccessfully = false;
+
+            // 1. Intentar guardar en la tabla especializada saved_tower_runs
             try {
-                const payload = {
-                    user_id: this.currentUser.id,
-                    tower_completed: checkpointData.tower_completed,
-                    current_tower: checkpointData.current_tower,
-                    floor: checkpointData.floor,
-                    scrap: checkpointData.scrap || 0,
-                    squad: checkpointData.squad,
-                    inventory: checkpointData.inventory,
-                    updated_at: new Date().toISOString()
-                };
-                const { data, error } = await supabaseClient
+                const { error: runError } = await supabaseClient
                     .from('saved_tower_runs')
                     .upsert(payload, { onConflict: 'user_id' });
-                if (error) {
-                    console.warn('[AuthManager] Error al guardar checkpoint en Supabase:', error.message);
+                if (!runError) {
+                    savedSuccessfully = true;
+                    console.info('[AuthManager] Checkpoint guardado en saved_tower_runs en Supabase:', payload);
                 } else {
-                    console.info('[AuthManager] Checkpoint de torre guardado con éxito y de forma 100% segura en Supabase:', payload);
+                    console.warn('[AuthManager] saved_tower_runs upsert falló o tabla no existe aún:', runError.message);
                 }
-                return checkpointData;
-            } catch (err) {
-                console.warn('[AuthManager] Excepción al guardar checkpoint en Supabase:', err);
-                return checkpointData;
+            } catch (tableErr) {
+                console.warn('[AuthManager] saved_tower_runs no disponible:', tableErr);
             }
+
+            // 2. Guardar también en player_profiles.saved_run (garantía de persistencia en la BD)
+            try {
+                const { error: profileError } = await supabaseClient
+                    .from('player_profiles')
+                    .upsert({
+                        user_id: user.id,
+                        saved_run: payload,
+                        updated_at: new Date().toISOString()
+                    }, { onConflict: 'user_id' });
+                if (!profileError) {
+                    savedSuccessfully = true;
+                    console.info('[AuthManager] Checkpoint respaldado en player_profiles.saved_run en Supabase');
+                } else {
+                    console.warn('[AuthManager] player_profiles saved_run error:', profileError.message);
+                }
+            } catch (profErr) {
+                console.warn('[AuthManager] Falló guardado de checkpoint en player_profiles:', profErr);
+            }
+
+            if (savedSuccessfully) {
+                console.info('[AuthManager] ✅ Checkpoint de torre asegurado 100% en la base de datos Supabase.');
+            } else {
+                console.error('[AuthManager] ❌ No se pudo persistir el checkpoint en Supabase.');
+            }
+            return checkpointData;
         } else {
             console.warn('[AuthManager] No se guardó el checkpoint: se requiere conexión a Supabase (sin localStorage).');
         }
@@ -357,19 +387,36 @@ const AuthManager = {
             }
         } catch (e) {}
 
-        // Consultar EXCLUSIVAMENTE en la base de datos Supabase
-        if (this.currentUser && isSupabaseConfigured() && supabaseClient) {
+        const user = await this.getOrFetchCurrentUser();
+        if (user && isSupabaseConfigured() && supabaseClient) {
+            // 1. Intentar consultar en saved_tower_runs
             try {
                 const { data, error } = await supabaseClient
                     .from('saved_tower_runs')
                     .select('*')
-                    .eq('user_id', this.currentUser.id)
+                    .eq('user_id', user.id)
                     .maybeSingle();
                 if (!error && data && data.squad && Array.isArray(data.squad) && data.squad.length > 0) {
+                    console.info('[AuthManager] Checkpoint recuperado desde saved_tower_runs:', data);
                     return data;
                 }
             } catch (err) {
-                console.warn('[AuthManager] Error consultando checkpoint en Supabase:', err);
+                console.warn('[AuthManager] Error consultando saved_tower_runs:', err);
+            }
+
+            // 2. Fallback: Consultar en player_profiles.saved_run
+            try {
+                const { data: profile, error: profError } = await supabaseClient
+                    .from('player_profiles')
+                    .select('saved_run')
+                    .eq('user_id', user.id)
+                    .maybeSingle();
+                if (!profError && profile && profile.saved_run && profile.saved_run.squad && Array.isArray(profile.saved_run.squad) && profile.saved_run.squad.length > 0) {
+                    console.info('[AuthManager] Checkpoint recuperado desde player_profiles.saved_run:', profile.saved_run);
+                    return profile.saved_run;
+                }
+            } catch (profErr) {
+                console.warn('[AuthManager] Error consultando player_profiles.saved_run:', profErr);
             }
         }
         return null;
@@ -384,31 +431,36 @@ const AuthManager = {
             localStorage.removeItem('ciber_tower_checkpoint');
         } catch (e) {}
 
-        // 2. Eliminar EXCLUSIVAMENTE de Supabase
-        if (this.currentUser && isSupabaseConfigured() && supabaseClient) {
+        const user = await this.getOrFetchCurrentUser();
+        if (user && isSupabaseConfigured() && supabaseClient) {
+            // 1. Eliminar de saved_tower_runs
             try {
-                const { error } = await supabaseClient
+                await supabaseClient
                     .from('saved_tower_runs')
                     .delete()
-                    .eq('user_id', this.currentUser.id);
-                if (error) {
-                    console.warn('[AuthManager] Error al eliminar checkpoint de torre en Supabase:', error);
-                } else {
-                    console.info('[AuthManager] Punto de control de torre eliminado de Supabase.');
-                }
-            } catch (err) {
-                console.warn('[AuthManager] Excepción al eliminar punto de control de torre:', err);
-            }
+                    .eq('user_id', user.id);
+            } catch (e) {}
+
+            // 2. Limpiar en player_profiles
+            try {
+                await supabaseClient
+                    .from('player_profiles')
+                    .update({ saved_run: null, updated_at: new Date().toISOString() })
+                    .eq('user_id', user.id);
+            } catch (e) {}
+
+            console.info('[AuthManager] Punto de control de torre eliminado de Supabase.');
         }
     },
 
     async getHistory() {
-        if (this.currentUser && isSupabaseConfigured() && supabaseClient) {
+        const user = await this.getOrFetchCurrentUser();
+        if (user && isSupabaseConfigured() && supabaseClient) {
             try {
                 const { data, error } = await supabaseClient
                     .from('match_runs')
                     .select('*')
-                    .eq('user_id', this.currentUser.id)
+                    .eq('user_id', user.id)
                     .order('created_at', { ascending: false })
                     .limit(20);
 

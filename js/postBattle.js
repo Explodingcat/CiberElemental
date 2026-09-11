@@ -525,7 +525,7 @@ function renderPostBattleSpeedrunBanner(towerConfig, timeFormatted, isSaved) {
     banner.style.display = 'block';
 }
 
-function saveCurrentTowerCheckpoint(towerCompletedId = null) {
+async function saveCurrentTowerCheckpoint(towerCompletedId = null) {
     if (typeof AuthManager === 'undefined' || typeof AuthManager.saveTowerCheckpoint !== 'function') return;
     if (!GAME_STATE || !GAME_STATE.team || GAME_STATE.team.length === 0) return;
     
@@ -533,7 +533,7 @@ function saveCurrentTowerCheckpoint(towerCompletedId = null) {
     const allDead = GAME_STATE.team.every(r => r.isOffline || r.hp <= 0);
     if (allDead) {
         if (typeof AuthManager.clearTowerCheckpoint === 'function') {
-            AuthManager.clearTowerCheckpoint();
+            await AuthManager.clearTowerCheckpoint();
         }
         return;
     }
@@ -599,7 +599,7 @@ function saveCurrentTowerCheckpoint(towerCompletedId = null) {
         saved_at: new Date().toISOString()
     };
 
-    AuthManager.saveTowerCheckpoint(checkpointData);
+    await AuthManager.saveTowerCheckpoint(checkpointData);
 }
 
 

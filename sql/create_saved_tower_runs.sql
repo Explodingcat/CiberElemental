@@ -17,6 +17,9 @@ CREATE TABLE IF NOT EXISTS public.saved_tower_runs (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
+-- Columna de respaldo en player_profiles
+ALTER TABLE public.player_profiles ADD COLUMN IF NOT EXISTS saved_run JSONB;
+
 -- Habilitar Seguridad por Fila (RLS)
 ALTER TABLE public.saved_tower_runs ENABLE ROW LEVEL SECURITY;
 
