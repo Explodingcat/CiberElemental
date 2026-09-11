@@ -821,7 +821,35 @@ function renderEnemyCombatDock(enemy, actionTitle = 'CALCULANDO TELEMETRÍA...',
     const desfaseClass = (enemy.hasStatus && enemy.hasStatus('DESFASE_100')) ? 'is-desfase' : '';
 
     actionsContainer.innerHTML = `
-        <!-- Panel Izquierdo: Anuncio de la acción enemiga -->
+        <!-- Telemetría del enemigo que ataca (Arriba en móvil / Izquierda en escritorio) -->
+        <div class="dock-actor-panel dock-actor-enemy">
+            <div class="dock-actor-avatar-box elem-border-${enemy.element}">
+                <div class="combat-avatar-emoji ${berserkClass} ${desfaseClass}">
+                    ${enemy.getAvatarGraphicHtml ? enemy.getAvatarGraphicHtml(`dock-enemy-avatar`) : `<span class="avatar-base-emoji elem-${enemy.element}">${enemy.emoji}</span>`}
+                </div>
+            </div>
+            <div class="dock-actor-info">
+                <div class="dock-actor-top-row">
+                    <span class="dock-actor-name">${enemy.name}</span>
+                    <span class="dock-actor-lvl">NV. ${enemy.level || 1}</span>
+                    <span class="dock-actor-elem elem-${enemy.element}">(${enemy.element})</span>
+                    <span class="dock-actor-spd">⚡ ${effSpd} VEL</span>
+                    ${weaponHtml}
+                </div>
+                <div class="dock-actor-statuses">
+                    ${renderDockStatusesHtml(enemy.statuses, enemy)}
+                </div>
+                <div class="dock-hp-section">
+                    <div class="dock-hp-row">
+                        <span class="dock-hp-label">HP ENEMIGO</span>
+                        <span class="dock-hp-numbers">${renderCombatHpText(enemy)}</span>
+                    </div>
+                    ${renderCombatHpBar(enemy, true)}
+                </div>
+            </div>
+        </div>
+
+        <!-- Anuncio de la acción enemiga (Abajo en móvil / Derecha en escritorio) -->
         <div class="dock-action-announcement-panel">
             <div class="announcement-header">
                 <span class="announcement-pulse-dot"></span>
@@ -830,34 +858,6 @@ function renderEnemyCombatDock(enemy, actionTitle = 'CALCULANDO TELEMETRÍA...',
             <div class="announcement-skill-title elem-${enemy.element}">⚡ ${actionTitle.toUpperCase()}</div>
             <div class="announcement-skill-desc">${actionDesc || 'Calculando impacto táctico sobre el escuadrón...'}</div>
             <div class="announcement-cyber-bar"></div>
-        </div>
-
-        <!-- Panel Derecho: Telemetría del enemigo que ataca (Invertido) -->
-        <div class="dock-actor-panel dock-actor-enemy">
-            <div class="dock-actor-info">
-                <div class="dock-actor-top-row">
-                    <span class="dock-actor-spd">⚡ ${effSpd} VEL</span>
-                    <span class="dock-actor-elem elem-${enemy.element}">(${enemy.element})</span>
-                    <span class="dock-actor-lvl">NV. ${enemy.level || 1}</span>
-                    <span class="dock-actor-name">${enemy.name}</span>
-                    ${weaponHtml}
-                </div>
-                <div class="dock-actor-statuses">
-                    ${renderDockStatusesHtml(enemy.statuses, enemy)}
-                </div>
-                <div class="dock-hp-section">
-                    <div class="dock-hp-row">
-                        <span class="dock-hp-numbers">${renderCombatHpText(enemy)}</span>
-                        <span class="dock-hp-label">HP ENEMIGO</span>
-                    </div>
-                    ${renderCombatHpBar(enemy, true)}
-                </div>
-            </div>
-            <div class="dock-actor-avatar-box elem-border-${enemy.element}">
-                <div class="combat-avatar-emoji ${berserkClass} ${desfaseClass}">
-                    ${enemy.getAvatarGraphicHtml ? enemy.getAvatarGraphicHtml(`dock-enemy-avatar`) : `<span class="avatar-base-emoji elem-${enemy.element}">${enemy.emoji}</span>`}
-                </div>
-            </div>
         </div>
     `;
 }

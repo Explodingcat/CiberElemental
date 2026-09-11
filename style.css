@@ -4695,34 +4695,21 @@ button:disabled {
     margin-top: 2px;
 }
 
-/* Telemetría Enemiga (Invertida a la derecha) */
+/* Telemetría Enemiga */
 .dock-actor-panel.dock-actor-enemy {
     border-color: rgba(255, 71, 87, 0.3);
-    background: linear-gradient(225deg, rgba(255, 71, 87, 0.06) 0%, rgba(10, 14, 24, 0.6) 100%);
+    background: linear-gradient(135deg, rgba(255, 71, 87, 0.08) 0%, rgba(10, 14, 24, 0.6) 100%);
 }
 
 .dock-actor-panel.dock-actor-enemy::before {
     content: '';
     position: absolute;
     top: 0;
-    right: 0;
-    left: auto;
+    left: 0;
     width: 3.5px;
     height: 100%;
     background: #ff4757;
     box-shadow: 0 0 10px #ff4757;
-}
-
-.dock-actor-panel.dock-actor-enemy .dock-actor-info {
-    text-align: right;
-}
-
-.dock-actor-panel.dock-actor-enemy .dock-actor-top-row {
-    justify-content: flex-end;
-}
-
-.dock-actor-panel.dock-actor-enemy .dock-actor-statuses {
-    justify-content: flex-end;
 }
 
 .dock-actor-panel.dock-actor-enemy .dock-actor-avatar-box .combat-avatar-emoji {
@@ -7227,6 +7214,29 @@ progress::-webkit-progress-value {
         display: none !important;
     }
 
+    .dock-action-announcement-panel {
+        flex: 1 1 auto;
+        width: 100%;
+        max-width: 100%;
+        padding: 6px 10px;
+        height: auto;
+        min-height: 98px;
+        box-sizing: border-box;
+        justify-content: center;
+    }
+
+    .announcement-badge {
+        font-size: 8.5px;
+    }
+
+    .announcement-skill-title {
+        font-size: 14px;
+    }
+
+    .announcement-skill-desc {
+        font-size: 10px;
+    }
+
     /* Pantalla de Tienda / Mercado Negro */
     .shop-container {
         width: 100%;
@@ -7795,6 +7805,29 @@ progress::-webkit-progress-value {
 
     .tactical-item-desc {
         display: none !important;
+    }
+
+    .dock-action-announcement-panel {
+        flex: 1 1 auto;
+        width: 100%;
+        max-width: 100%;
+        padding: 5px 8px;
+        height: auto;
+        min-height: 90px;
+        box-sizing: border-box;
+        justify-content: center;
+    }
+
+    .announcement-badge {
+        font-size: 8px;
+    }
+
+    .announcement-skill-title {
+        font-size: 13px;
+    }
+
+    .announcement-skill-desc {
+        font-size: 9.5px;
     }
 
     .team-count-3 .combat-avatar-emoji,
