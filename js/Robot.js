@@ -403,9 +403,15 @@ class Robot {
         }
     }
 
-    resetCooldowns() {
+    resetCooldowns(atCombatStart = false) {
         if (this.skills) {
-            this.skills.forEach(s => s.currentCd = 0);
+            this.skills.forEach(s => {
+                if (atCombatStart && s.cd > 0) {
+                    s.currentCd = Math.max(1, Math.floor(s.cd / 2));
+                } else {
+                    s.currentCd = 0;
+                }
+            });
         }
     }
 

@@ -696,10 +696,14 @@ function launchSandboxCombat() {
     document.getElementById('combat-editor-container').style.display = 'none';
     document.getElementById('combat-live-container').style.display = 'flex';
     
-    // Limpiar estados de inicio
+    // Limpiar estados de inicio y aplicar cooldowns avanzados
     GAME_STATE.team.forEach(r => {
         r.statuses = r.statuses.filter(s => s.isPermanent);
-        if (r.skills) r.skills.forEach(s => s.currentCd = 0);
+        if (r.resetCooldowns) r.resetCooldowns(true);
+        else if (r.skills) r.skills.forEach(s => {
+            if (s.cd > 0) s.currentCd = Math.max(1, Math.floor(s.cd / 2));
+            else s.currentCd = 0;
+        });
     });
     
     buildInitiativeQueue();

@@ -3013,10 +3013,10 @@ button:disabled {
 .combat-mini-hud {
     display: flex;
     flex-direction: column;
-    align-items: center;
-    gap: 3px;
+    align-items: flex-start;
+    gap: 2.5px;
     margin-top: 3px;
-    width: 80px;
+    width: 86px;
     z-index: 5;
     pointer-events: none;
 }
@@ -3025,7 +3025,7 @@ button:disabled {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 5px;
+    gap: 4px;
     width: 100%;
 }
 
@@ -3065,8 +3065,8 @@ button:disabled {
 .mini-hp-text {
     display: inline-flex;
     align-items: center;
-    gap: 2px;
-    font-size: 9.5px;
+    gap: 1.5px;
+    font-size: 9px;
     font-family: 'Rajdhani', monospace;
     font-weight: 800;
     color: #ffffff;
@@ -3085,7 +3085,7 @@ button:disabled {
 .mini-cd-container {
     display: flex;
     flex-direction: column;
-    align-items: center;
+    align-items: flex-start;
     gap: 2px;
     width: 100%;
 }
@@ -3093,7 +3093,7 @@ button:disabled {
 .mini-cd-pips-row {
     display: flex;
     align-items: center;
-    justify-content: center;
+    justify-content: flex-start;
     gap: 3.5px;
     width: 100%;
 }
@@ -7344,11 +7344,11 @@ progress::-webkit-progress-value {
     .enemy-count-3 .combat-floor-shadow { width: 48px; height: 14px; }
 
     .combat-mini-hud {
-        width: 70px;
+        width: 76px;
         gap: 2px;
     }
     .mini-hp-text {
-        font-size: 9px;
+        font-size: 8.5px;
     }
     .cd-pip {
         width: 5px;
@@ -7356,11 +7356,11 @@ progress::-webkit-progress-value {
     }
     .team-count-3 .combat-mini-hud,
     .enemy-count-3 .combat-mini-hud {
-        width: 58px;
+        width: 65px;
     }
     .team-count-3 .mini-hp-text,
     .enemy-count-3 .mini-hp-text {
-        font-size: 8px;
+        font-size: 7.5px;
     }
     .team-count-3 .cd-pip,
     .enemy-count-3 .cd-pip {
@@ -8238,14 +8238,14 @@ progress::-webkit-progress-value {
     }
 
     .combat-mini-hud {
-        width: 62px;
+        width: 68px;
         gap: 1.5px;
     }
     .mini-hp-bar-track {
         height: 4.5px;
     }
     .mini-hp-text {
-        font-size: 8px;
+        font-size: 7.5px;
     }
     .cd-pip {
         width: 4.5px;
@@ -8257,11 +8257,11 @@ progress::-webkit-progress-value {
     }
     .team-count-3 .combat-mini-hud,
     .enemy-count-3 .combat-mini-hud {
-        width: 52px;
+        width: 58px;
     }
     .team-count-3 .mini-hp-text,
     .enemy-count-3 .mini-hp-text {
-        font-size: 7.5px;
+        font-size: 7px;
     }
     .team-count-3 .cd-pip,
     .enemy-count-3 .cd-pip {

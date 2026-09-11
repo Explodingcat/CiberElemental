@@ -48,13 +48,30 @@ function startCombat(nodeType) {
     // Generar encuentro de combate (1 a 3 robots según piso y tipo de nodo)
     combatState.enemies = generateEncounter(GAME_STATE.floor, nodeType);
     
-    // Limpiar estados previos, marcas, debuffs y cooldowns de todo el escuadrón
+    // Limpiar estados previos, marcas, debuffs y configurar cooldowns iniciales (avanzados) de todo el escuadrón
     if (GAME_STATE && GAME_STATE.team) {
         GAME_STATE.team.forEach(robot => {
             if (robot.clearStatuses) robot.clearStatuses();
             else robot.statuses = [];
-            if (robot.resetCooldowns) robot.resetCooldowns();
-            else if (robot.skills) robot.skills.forEach(s => s.currentCd = 0);
+            if (robot.resetCooldowns) robot.resetCooldowns(true);
+            else if (robot.skills) robot.skills.forEach(s => {
+                if (s.cd > 0) s.currentCd = Math.max(1, Math.floor(s.cd / 2));
+                else s.currentCd = 0;
+            });
+        });
+    }
+
+    // Configurar cooldowns iniciales para los enemigos generados (salvo si ya traen cooldown específico preconfigurado)
+    if (combatState.enemies) {
+        combatState.enemies.forEach(enemy => {
+            if (enemy.clearStatuses) enemy.clearStatuses();
+            if (enemy.skills) {
+                enemy.skills.forEach(s => {
+                    if (s.cd > 0 && (typeof s.currentCd === 'undefined' || s.currentCd === 0)) {
+                        s.currentCd = Math.max(1, Math.floor(s.cd / 2));
+                    }
+                });
+            }
         });
     }
 
@@ -227,7 +244,7 @@ function renderCombatMiniHud(robot, isEnemy = false) {
                     ${shieldAmt > 0 ? `<div class="mini-shield-bar-fill" style="left: ${shieldStart}%; width: ${shieldPercent}%;"></div>` : ''}
                 </div>
                 <div class="mini-hp-text">
-                    <span class="mini-hp-val">${Math.max(0, Math.ceil(robot.hp))}</span>
+                    <span class="mini-hp-val">${Math.max(0, Math.ceil(robot.hp))}/${robot.maxHp}</span>
                     ${shieldAmt > 0 ? `<span class="mini-shield-val">+${shieldAmt}🛡️</span>` : ''}
                 </div>
             </div>
