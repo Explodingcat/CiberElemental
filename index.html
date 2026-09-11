@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Cyber-Elemental Roguelike</title>
     <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style.css?v=3.9">
 </head>
 <body>
     <div id="game-container">
@@ -35,32 +35,17 @@
                 <span class="status-indicator offline"></span> OFFLINE
             </div>
 
-            <!-- Esquina superior derecha: Chatarra de la cuenta -->
+            <!-- Esquina superior derecha: Tienda y Chatarra Global -->
             <div class="main-menu-top-right">
-                <span id="main-menu-scrap">0</span> ⚙️
+                <button id="btn-menu-cosmetics-shop" class="btn-main-menu-shop" onclick="openCosmeticsShopModal()" title="Abrir Tienda de Cosméticos">
+                    <span class="btn-icon">🛍️</span> TIENDA
+                </button>
+                <div class="main-menu-scrap-badge" title="Chatarra Global de la Cuenta">
+                    <span id="main-menu-scrap">0</span> ⚙️
+                </div>
             </div>
 
             <div class="main-menu-center">
-                <div class="main-menu-hero-robots">
-                    <div class="hero-robot hero-back hero-wind">
-                        <span class="avatar-emoji elem-AIRE">🤖</span>
-                    </div>
-                    <div class="hero-robot hero-back hero-earth">
-                        <span class="avatar-emoji elem-TIERRA">🤖</span>
-                    </div>
-                    
-                    <div class="hero-robot hero-mid hero-fire">
-                        <span class="avatar-emoji elem-FUEGO">🤖</span>
-                    </div>
-                    <div class="hero-robot hero-mid hero-water">
-                        <span class="avatar-emoji elem-AGUA">🤖</span>
-                    </div>
-                    
-                    <div class="hero-robot hero-front hero-mystery">
-                        <span class="avatar-emoji elem-NEUTRO" style="filter: grayscale(1) brightness(2.5) drop-shadow(0 0 15px rgba(255, 255, 255, 0.6));">🤖</span>
-                    </div>
-                </div>
-
                 <div class="sub-header-badge">SISTEMA DE DESPLIEGUE // ROGUELIKE v2.0</div>
                 <h1 class="game-title">CYBER-ELEMENTAL</h1>
 
@@ -70,9 +55,6 @@
                     </button>
                     <button id="btn-menu-new-run" class="btn-main-menu" onclick="showScreen('screen-start')">
                         <span class="btn-icon">⚡</span> NUEVA INCURSIÓN
-                    </button>
-                    <button id="btn-menu-cosmetics-shop" class="btn-main-menu btn-cosmetics-highlight" onclick="openCosmeticsShopModal()">
-                        <span class="btn-icon">🛍️</span> TIENDA DE COSMÉTICOS
                     </button>
                     <button id="btn-menu-skill-tree" class="btn-main-menu" onclick="openSkillTreeModal()">
                         <span class="btn-icon">🌳</span> ÁRBOL DE HABILIDADES
@@ -193,20 +175,20 @@
                 <!-- Barra de Iniciativa / Cola de Turnos -->
                 <div id="combat-turn-queue" class="combat-turn-queue"></div>
 
-                <!-- Escuadrón Aliado (1 a 3 robots simultáneos) -->
+                <!-- Escuadrón Aliado (1 a 3 robots simultáneos - Esquina inferior izquierda) -->
                 <div id="combat-player-team" class="combat-player-team">
                     <!-- Unidades aliadas generadas dinámicamente -->
                 </div>
                 
-                <!-- Escuadrón Enemigo (1 a 3 robots simultáneos) -->
+                <!-- Escuadrón Enemigo (1 a 3 robots simultáneos - Esquina superior derecha) -->
                 <div id="combat-enemy-team" class="combat-enemy-team">
                     <!-- Unidades enemigas generadas dinámicamente -->
                 </div>
-            </div>
 
-            <!-- Consola Táctica de Acciones de Combate -->
-            <div id="combat-actions" class="combat-tactical-box">
-                <!-- Generado dinámicamente por renderCombatActions() -->
+                <!-- Consola Táctica de Acciones de Combate (Esquina inferior derecha, bajo los enemigos) -->
+                <div id="combat-actions" class="combat-tactical-box">
+                    <!-- Generado dinámicamente por renderCombatActions() -->
+                </div>
             </div>
         </div>
 
@@ -230,6 +212,9 @@
                 <div class="post-header-badge">SISTEMA DE SEGURIDAD // SECTOR ASEGURADO</div>
                 <h1 class="post-battle-title">¡VICTORIA TÁCTICA!</h1>
                 
+                <!-- Banner de Speedrun al neutralizar al Jefe de la Torre -->
+                <div id="post-speedrun-banner" class="post-speedrun-container" style="display: none;"></div>
+
                 <div class="post-summary-card">
                     <div class="defeated-hero-box">
                         <div class="defeated-holo-platform"></div>
@@ -246,6 +231,9 @@
                 <div id="post-battle-actions" class="post-actions-row">
                     <!-- Botones generados dinámicamente -->
                 </div>
+
+                <!-- Tarjeta / Formulario de Registro o Confirmación de Récord para el Top 10 -->
+                <div id="postbattle-auth-card" class="postgame-auth-container" style="display: none; margin-top: 15px;"></div>
 
                 <div class="team-section-container">
                     <div class="team-section-header">
@@ -409,10 +397,12 @@
                     <button id="btn-tab-account" class="account-tab-btn active" onclick="AuthManager.switchTab('tab-account')">
                         <span>👤</span> CUENTA Y ACCESO
                     </button>
+                    <button id="btn-tab-profile" class="account-tab-btn" onclick="AuthManager.switchTab('tab-profile')">
+                        <span>🎖️</span> PERFIL
+                    </button>
                     <button id="btn-tab-history" class="account-tab-btn" onclick="AuthManager.switchTab('tab-history')">
                         <span>📜</span> HISTORIAL
                     </button>
-
                 </div>
 
                 <!-- Banner de Mensajes / Notificaciones -->
@@ -455,20 +445,31 @@
                     <div id="auth-logged-in-view" style="display: none;">
                         <div class="profile-card">
                             <div class="profile-avatar-box">
-                                <div class="profile-avatar" style="filter: grayscale(1) brightness(0.2) drop-shadow(0 0 5px rgba(255,255,255,0.5));">🤖</div>
+                                <div id="account-user-avatar-display" class="profile-avatar">
+                                    <span class="profile-avatar-graphic" style="filter: grayscale(1) brightness(0.2) drop-shadow(0 0 5px rgba(255,255,255,0.5));">🤖</span>
+                                </div>
                             </div>
                             <div class="profile-details">
                                 <div class="profile-badge">COMANDANTE AUTORIZADO</div>
-                                <div id="account-user-email" class="profile-email">usuario@correo.com</div>
+                                <div id="account-user-name" class="profile-name" style="font-size: 16px; font-weight: 800; color: var(--accent-color); margin-top: 2px;">Comandante</div>
+                                <div id="account-user-email" class="profile-email" style="font-size: 13px; color: #a4b0be; margin-bottom: 2px;">usuario@correo.com</div>
                                 <div class="profile-sync-note">🟢 Sincronizado</div>
                             </div>
-                            <div style="margin-left: auto;">
+                            <div style="margin-left: auto; display: flex; gap: 8px; align-items: center;">
+                                <button class="btn-edit-profile-quick" onclick="AuthManager.switchTab('tab-profile')" title="Ver y editar perfil táctico">
+                                    <span>⚙️ PERFIL</span>
+                                </button>
                                 <button class="btn-logout" onclick="AuthManager.signOut()">
                                     <span>🚪 CERRAR SESIÓN</span>
                                 </button>
                             </div>
                         </div>
                     </div>
+                </div>
+
+                <!-- Contenedor Pestaña: Perfil de Usuario -->
+                <div id="tab-profile" class="account-tab-panel">
+                    <!-- Renderizado dinámicamente por ProfileManager.renderProfileTab() -->
                 </div>
 
                 <!-- Contenedor Pestaña 2: Historial de Partidas -->
@@ -497,13 +498,38 @@
                     <h2 class="account-modal-title">TOP 10 SPEEDRUN</h2>
                 </div>
 
-                <div class="account-tab-panel active" style="margin-top: 20px;">
+                <!-- Selector de Torres del Speedrun -->
+                <div class="leaderboard-tower-tabs">
+                    <button class="leaderboard-tower-tab active" data-tower="1" onclick="AuthManager.switchLeaderboardTower(1)" title="Ver clasificación de Torre 1 (Cibernética)">
+                        <span class="tower-tab-icon">🗼</span>
+                        <div class="tower-tab-info">
+                            <span class="tower-tab-title">TORRE 1</span>
+                            <span class="tower-tab-sub">PISOS 1 - 10</span>
+                        </div>
+                    </button>
+                    <button class="leaderboard-tower-tab" data-tower="2" onclick="AuthManager.switchLeaderboardTower(2)" title="Ver clasificación de Torre 2 (Cuántica)">
+                        <span class="tower-tab-icon">🌌</span>
+                        <div class="tower-tab-info">
+                            <span class="tower-tab-title">TORRE 2</span>
+                            <span class="tower-tab-sub">PISOS 11 - 20</span>
+                        </div>
+                    </button>
+                    <button class="leaderboard-tower-tab" data-tower="3" onclick="AuthManager.switchLeaderboardTower(3)" title="Ver clasificación de Torre 3 (Singularidad)">
+                        <span class="tower-tab-icon">👑</span>
+                        <div class="tower-tab-info">
+                            <span class="tower-tab-title">TORRE 3</span>
+                            <span class="tower-tab-sub">PISOS 21 - 30</span>
+                        </div>
+                    </button>
+                </div>
+
+                <div class="account-tab-panel active" style="margin-top: 14px;">
                     <div class="history-controls-row">
                         <div class="leaderboard-title-group">
                             <span class="history-section-title">⚡ CUADRO DE HONOR</span>
-                            <span class="leaderboard-subtitle">Partidas ganadas en menor tiempo por pilotos con cuenta</span>
+                            <span id="leaderboard-current-tower-subtitle" class="leaderboard-subtitle"><strong>TORRE CIBERNÉTICA</strong> (Pisos 1 al 10) // Jefe: <strong>TITAN-X</strong></span>
                         </div>
-                        <button class="btn-refresh-history" onclick="AuthManager.loadAndRenderLeaderboard()" title="Actualizar clasificación">
+                        <button class="btn-refresh-history" onclick="AuthManager.loadAndRenderLeaderboard()" title="Actualizar clasificación de la torre activa">
                             🔄 Actualizar
                         </button>
                     </div>
@@ -617,6 +643,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="js/supabaseClient.js"></script>
     <script src="js/authManager.js"></script>
+    <script src="js/profileManager.js"></script>
 
     <!-- Meta-Progresión y Habilidades Pasivas -->
     <script src="js/skillsData.js"></script>

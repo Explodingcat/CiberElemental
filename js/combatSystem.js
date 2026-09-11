@@ -32,7 +32,11 @@ function startCombat(nodeType) {
     
     // Asignar fondo de arena
     const arenaBg = document.getElementById('combat-arena-bg');
-    arenaBg.className = 'combat-arena';
+    const currentTowerId = (typeof GAME_STATE !== 'undefined' && GAME_STATE.currentTower)
+        ? GAME_STATE.currentTower
+        : ((GAME_STATE.floor <= 10) ? 1 : ((GAME_STATE.floor <= 20) ? 2 : 3));
+
+    arenaBg.className = `combat-arena combat-tower-${currentTowerId}`;
     if (nodeType === NODE_TYPES.BOSS) {
         arenaBg.classList.add('bg-boss');
     } else if (nodeType === NODE_TYPES.ELITE) {
@@ -134,6 +138,51 @@ function updateCombatUI() {
     renderPartyCombatUI();
 }
 
+function renderCombatHpBar(robot, isEnemy = false) {
+    if (!robot) return '';
+    const shieldAmt = (typeof robot.getShieldAmount === 'function') ? robot.getShieldAmount() : 0;
+    const effectiveMax = Math.max(robot.maxHp || 100, (robot.hp || 0) + shieldAmt);
+    const hpPercent = Math.max(0, Math.min(100, ((robot.hp || 0) / effectiveMax) * 100));
+    const shieldPercent = Math.max(0, Math.min(100, (shieldAmt / effectiveMax) * 100));
+    const shieldStart = hpPercent;
+
+    return `
+        <div class="hud-hp-bar-wrapper">
+            <div class="hud-hp-bar-fill ${isEnemy ? 'is-enemy' : ''}" style="width: ${hpPercent}%;"></div>
+            ${shieldAmt > 0 ? `<div class="hud-shield-bar-fill" style="left: ${shieldStart}%; width: ${shieldPercent}%;" title="Escudo plomo: ${shieldAmt} HP"></div>` : ''}
+        </div>
+    `;
+}
+
+function renderCombatHpText(robot) {
+    if (!robot) return '0/0';
+    const shieldAmt = (typeof robot.getShieldAmount === 'function') ? robot.getShieldAmount() : 0;
+    const shieldBadge = shieldAmt > 0 ? `<span class="hud-shield-badge">(+${shieldAmt} 🛡️)</span>` : '';
+    return `${robot.hp}${shieldBadge}/${robot.maxHp}`;
+}
+
+function renderCombatMiniHud(robot, isEnemy = false) {
+    if (!robot) return '';
+    const shieldAmt = (typeof robot.getShieldAmount === 'function') ? robot.getShieldAmount() : 0;
+    const effectiveMax = Math.max(robot.maxHp || 100, (robot.hp || 0) + shieldAmt);
+    const hpPercent = Math.max(0, Math.min(100, ((robot.hp || 0) / effectiveMax) * 100));
+    const shieldPercent = Math.max(0, Math.min(100, (shieldAmt / effectiveMax) * 100));
+    const shieldStart = hpPercent;
+    
+    return `
+        <div class="combat-mini-hud">
+            <div class="mini-hp-bar-track">
+                <div class="mini-hp-bar-fill ${isEnemy ? 'is-enemy' : ''} elem-fill-${robot.element}" style="width: ${hpPercent}%;"></div>
+                ${shieldAmt > 0 ? `<div class="mini-shield-bar-fill" style="left: ${shieldStart}%; width: ${shieldPercent}%;"></div>` : ''}
+            </div>
+            <div class="mini-hp-text">
+                <span class="mini-hp-val">${Math.max(0, Math.ceil(robot.hp))}/${robot.maxHp}</span>
+                ${shieldAmt > 0 ? `<span class="mini-shield-val">+${shieldAmt}🛡️</span>` : ''}
+            </div>
+        </div>
+    `;
+}
+
 function renderPartyCombatUI() {
     if (!GAME_STATE || !GAME_STATE.team) return;
     
@@ -142,7 +191,7 @@ function renderPartyCombatUI() {
     // 1. Renderizar Barra de Iniciativa / Timeline
     renderTurnQueue(currentActor);
     
-    // 2. Renderizar Escuadrón Aliado (Party Combat)
+    // 2. Renderizar Escuadrón Aliado (Party Combat - Mitad Izquierda, vertical)
     const teamContainer = document.getElementById('combat-player-team');
     if (teamContainer) {
         const aliveAlliesCount = GAME_STATE.team.filter(r => !r.isOffline && r.hp > 0).length;
@@ -151,27 +200,15 @@ function renderPartyCombatUI() {
         teamContainer.innerHTML = GAME_STATE.team.map((robot, idx) => {
             const isOffline = robot.isOffline || robot.hp <= 0;
             const isActingNow = (currentActor && currentActor.type === 'PLAYER' && currentActor.allyIndex === idx);
-            const extraChips = Math.max(0, robot.skills.length - 2);
-            const chipIcons = extraChips > 0 ? ' 💾'.repeat(extraChips) : '';
-            
-            let weaponHtml = '';
-            if (robot.equippedWeapon) {
-                weaponHtml = `
-                    <span class="hud-weapon-icon elem-${robot.equippedWeapon.element}" 
-                          data-tooltip="${robot.equippedWeapon.name}: ${robot.equippedWeapon.desc}">
-                        ${WEAPON_EMOJIS[robot.equippedWeapon.type]}
-                    </span>
-                `;
-            }
-            
-            const hpPercent = Math.max(0, Math.min(100, (robot.hp / robot.maxHp) * 100));
+            // Orden táctico: 0=Centro (Row 2), 1=Arriba (Row 1), 2=Abajo (Row 3)
+            const slotClass = idx === 0 ? 'slot-center' : (idx === 1 ? 'slot-top' : 'slot-bottom');
             const actingClass = isActingNow ? 'acting-now' : '';
             const offlineClass = isOffline ? 'is-offline' : '';
             const berserkClass = robot.getBerserkGlowClass ? robot.getBerserkGlowClass() : '';
             const desfaseClass = (robot.hasStatus && robot.hasStatus('DESFASE_100')) ? 'is-desfase' : '';
             
             return `
-                <div class="combat-ally-unit ${actingClass} ${offlineClass}" id="ally-unit-${idx}">
+                <div class="combat-ally-unit ${slotClass} ${actingClass} ${offlineClass}" id="ally-unit-${idx}">
                     <!-- Barras de estado individuales -->
                     <div class="status-bars">
                         <div class="buff-bar" id="player-buffs-${idx}"></div>
@@ -179,26 +216,14 @@ function renderPartyCombatUI() {
                     </div>
                     
                     <div class="hit-effect-container" id="player-hit-container-${idx}">
+                        <div class="combat-floor-shadow"></div>
                         <div class="combat-holo-platform player-platform"></div>
                         <div class="combat-avatar-emoji ${berserkClass} ${desfaseClass}" id="player-emoji-${idx}">
                             ${robot.getAvatarGraphicHtml ? robot.getAvatarGraphicHtml(`player-emoji-${idx}`) : `<span class="avatar-base-emoji elem-${robot.element}">${robot.emoji}</span>`}
                         </div>
                     </div>
                     
-                    <div class="stats combat-hud-card player-hud">
-                        <div class="hud-name-row">
-                            <div class="hud-name-container">
-                                <span class="hud-robot-name">${robot.name}${chipIcons}</span>
-                                ${weaponHtml}
-                            </div>
-                            <span class="hud-element-badge elem-badge-${robot.element}">(${robot.element})</span>
-                        </div>
-                        <div class="hud-hp-row">
-                            <span class="hud-hp-label">HP</span>
-                            <span class="hud-hp-val">${robot.hp}/${robot.maxHp}</span>
-                        </div>
-                        <progress value="${hpPercent}" max="100"></progress>
-                    </div>
+                    ${renderCombatMiniHud(robot, false)}
                 </div>
             `;
         }).join('');
@@ -209,7 +234,7 @@ function renderPartyCombatUI() {
         });
     }
     
-    // 3. Renderizar Escuadrón Enemigo (1 a 3 robots)
+    // 3. Renderizar Escuadrón Enemigo (1 a 3 robots - Mitad Derecha, vertical)
     const enemyTeamContainer = document.getElementById('combat-enemy-team');
     if (enemyTeamContainer && combatState.enemies) {
         const aliveEnemiesCount = combatState.enemies.filter(e => !e.isOffline && e.hp > 0).length;
@@ -218,7 +243,8 @@ function renderPartyCombatUI() {
         enemyTeamContainer.innerHTML = combatState.enemies.map((enemy, idx) => {
             const isOffline = enemy.isOffline || enemy.hp <= 0;
             const isActingNow = (currentActor && currentActor.type === 'ENEMY' && currentActor.enemyIndex === idx);
-            const hpPercent = Math.max(0, Math.min(100, (enemy.hp / enemy.maxHp) * 100));
+            // Orden táctico: 0=Centro (Row 2), 1=Arriba (Row 1), 2=Abajo (Row 3)
+            const slotClass = idx === 0 ? 'slot-center' : (idx === 1 ? 'slot-top' : 'slot-bottom');
             const actingClass = isActingNow ? 'acting-now' : '';
             const offlineClass = isOffline ? 'is-offline' : '';
             const isSelectable = (combatState.selectingTarget && !isOffline);
@@ -227,21 +253,10 @@ function renderPartyCombatUI() {
             const desfaseClass = (enemy.hasStatus && enemy.hasStatus('DESFASE_100')) ? 'is-desfase' : '';
             const isBoss = enemy.isBoss || enemy.name.includes('TITAN-X') || enemy.name.includes('Jefe');
             const bossClass = isBoss ? 'is-boss-titan' : '';
-            
-            let weaponHtml = '';
-            if (enemy.equippedWeapon) {
-                weaponHtml = `
-                    <span class="hud-weapon-icon elem-${enemy.equippedWeapon.element}" 
-                          data-tooltip="${enemy.equippedWeapon.name}: ${enemy.equippedWeapon.desc}">
-                        ${WEAPON_EMOJIS[enemy.equippedWeapon.type]}
-                    </span>
-                `;
-            }
-            
             const onclickAttr = isSelectable ? `onclick="onSelectEnemyTarget(${idx})"` : '';
             
             return `
-                <div class="combat-enemy-unit ${actingClass} ${offlineClass} ${selectableClass} ${bossClass}" id="enemy-unit-${idx}" ${onclickAttr}>
+                <div class="combat-enemy-unit ${slotClass} ${actingClass} ${offlineClass} ${selectableClass} ${bossClass}" id="enemy-unit-${idx}" ${onclickAttr}>
                     <!-- Barras de estado individuales -->
                     <div class="status-bars">
                         <div class="buff-bar" id="enemy-buffs-${idx}"></div>
@@ -249,26 +264,14 @@ function renderPartyCombatUI() {
                     </div>
                     
                     <div class="hit-effect-container" id="enemy-hit-container-${idx}">
+                        <div class="combat-floor-shadow"></div>
                         <div class="combat-holo-platform enemy-platform"></div>
                         <div class="combat-avatar-emoji ${berserkClass} ${desfaseClass}" id="enemy-emoji-${idx}">
                             ${enemy.getAvatarGraphicHtml ? enemy.getAvatarGraphicHtml(`enemy-emoji-${idx}`) : `<span class="avatar-base-emoji elem-${enemy.element}">${enemy.emoji}</span>`}
                         </div>
                     </div>
                     
-                    <div class="stats combat-hud-card enemy-hud">
-                        <div class="hud-name-row">
-                            <div class="hud-name-container">
-                                <span class="hud-robot-name">${enemy.name}</span>
-                                ${weaponHtml}
-                            </div>
-                            <span class="hud-element-badge elem-badge-${enemy.element}">(${enemy.element})</span>
-                        </div>
-                        <div class="hud-hp-row">
-                            <span class="hud-hp-label">HP</span>
-                            <span class="hud-hp-val">${enemy.hp}/${enemy.maxHp}</span>
-                        </div>
-                        <progress value="${hpPercent}" max="100"></progress>
-                    </div>
+                    ${renderCombatMiniHud(enemy, true)}
                 </div>
             `;
         }).join('');
@@ -290,7 +293,7 @@ function renderTurnQueue(currentActor) {
     }
     
     queueContainer.style.display = 'flex';
-    let html = `<span class="turn-queue-label">⚡ INICIATIVA:</span>`;
+    let html = '';
     
     html += combatState.initiativeQueue.map((item, idx) => {
         const isCurrent = (idx === combatState.queueIndex);
@@ -323,9 +326,9 @@ function formatStatusLabel(type) {
         case 'STUN': return 'Aturdimiento';
         case 'PASIVA_FURIA': return 'Furia Sobrecalentada';
         case 'BUFF_ESPADA_RACHA': return 'Racha de Espada (+10% ATQ)';
-        case 'REGENERACION': return 'Rocío Reparador (+10% HP)';
+        case 'REGENERACION': return 'Rocío Protector';
         case 'BARRIER': return 'Barrera Plasma';
-        case 'SHIELD': return 'Escudo';
+        case 'SHIELD': return 'Escudo Plomo';
         case 'DEFENDIENDO': return 'Defendiendo';
         case 'CORAZA_ESPINAS': return 'Coraza de Espinas';
         case 'SLOW': return 'Ralentización (-50% VEL)';
@@ -401,7 +404,8 @@ function renderStatusesSplitted(buffId, debuffId, statuses, owner = null) {
                 tooltipText = `[Pasiva] Furia Sobrecalentada: Mientras menos vida tenga, más daño y crítico inflige (Permanente)`;
             }
         } else if (s.type === 'SHIELD' && s.amount !== undefined) {
-            tooltipText = `${labelText} (${s.amount} HP): ${s.duration} turnos`;
+            let shieldName = s.name || labelText;
+            tooltipText = `${shieldName} (${s.amount} HP plomo): Absorbe daño antes de tocar la vida (1 turno)`;
         } else if (s.type === 'DEFENDIENDO') {
             tooltipText = `${labelText}: Activo hasta tu próximo turno (-50% Daño recibido)`;
         } else if (s.type === 'CORAZA_ESPINAS') {
@@ -428,7 +432,9 @@ function renderStatusesSplitted(buffId, debuffId, statuses, owner = null) {
         const isPermanent = s.isPermanent || s.duration === Infinity || (s.type && s.type.startsWith('MUTACION_'));
         const turnsHtml = (s.type === 'DEFENDIENDO' || s.type === 'CORAZA_ESPINAS' || s.type === 'BARRIER' || s.type === 'DESFASE_100')
             ? ''
-            : (isPermanent ? '<span class="status-pill-turns pill-perm">∞</span>' : `<span class="status-pill-turns">${s.duration}</span>`);
+            : (s.type === 'SHIELD' && s.amount !== undefined)
+                ? `<span class="status-pill-turns" style="color: #c8d6e5; font-weight: bold;">${s.amount}</span>`
+                : (isPermanent ? '<span class="status-pill-turns pill-perm">∞</span>' : `<span class="status-pill-turns">${s.duration}</span>`);
 
         const mutationClass = isPermanent ? ' pill-mutation' : '';
 
@@ -653,46 +659,24 @@ async function advanceTurnQueue() {
         logCombat(`👻 [${currentActor.robot.name}] sincroniza su firma cuántica (finaliza el Desfase).`);
     }
 
-    // Activar segundo tick de Rocío Reparador en los robots impregnados por este invocador al iniciar su turno
-    let healedByRocio = [];
-    const processRocioReparador = (combatantList, isEnemyList) => {
-        combatantList.forEach((robot, idx) => {
-            if (robot.isOffline || robot.hp <= 0) return;
-            for (let i = robot.statuses.length - 1; i >= 0; i--) {
-                let s = robot.statuses[i];
-                if (s.type === 'REGENERACION' && (s.casterId === currentActor.robot.id || (!s.casterId && robot === currentActor.robot))) {
-                    let healRate = (s && s.healPct) ? s.healPct : 0.10;
-                    if (currentActor.robot.hasAffinity && currentActor.robot.hasAffinity() && currentActor.robot.element === ELEMENTS.AGUA) {
-                        healRate *= 1.25; // +25% potencia de curación por Afinidad de Agua
-                    }
-                    let healAmt = Math.max(1, Math.floor(robot.maxHp * healRate));
-                    let actualHealed = robot.heal(healAmt);
-                    robot.statuses.splice(i, 1);
-                    if (actualHealed > 0) {
-                        healedByRocio.push({ robot, isEnemy: isEnemyList, idx, actualHealed });
-                        logCombat(`💚 El Rocío Reparador de [${currentActor.robot.name}] completa su ciclo en [${robot.name}] y le restaura ${actualHealed} HP.`);
+    // Expirar escudos temporales de 1 turno invocados por este combatiente (Rocío Protector, Báculo, etc.)
+    const expireTemporaryShields = (combatantList) => {
+        combatantList.forEach(robot => {
+            if (robot.statuses) {
+                for (let i = robot.statuses.length - 1; i >= 0; i--) {
+                    let s = robot.statuses[i];
+                    if (s.type === 'SHIELD' && (s.subType === 'ROCIO_PROTECTOR' || s.subType === 'BACULO_SHIELD' || s.subType === 'BACULO_ALLY_SHIELD')) {
+                        if (s.casterId === currentActor.robot.id || (!s.casterId && robot === currentActor.robot)) {
+                            robot.statuses.splice(i, 1);
+                            logCombat(`🛡️ El escudo temporal sobre [${robot.name}] ha cumplido su ciclo y se disipa.`);
+                        }
                     }
                 }
             }
         });
     };
-
-    if (GAME_STATE && GAME_STATE.team) {
-        processRocioReparador(GAME_STATE.team, false);
-    }
-    if (combatState.enemies) {
-        processRocioReparador(combatState.enemies, true);
-    }
-
-    // Si se activó Rocío Reparador, actualizar la UI primero y mostrar el efecto visual sin que sea borrado
-    if (healedByRocio.length > 0) {
-        renderPartyCombatUI();
-        healedByRocio.forEach(h => {
-            showHealPopup(h.actualHealed, h.isEnemy, h.idx);
-            showHitAnimation('HEAL', h.isEnemy, h.idx);
-        });
-        await delay(700);
-    }
+    if (GAME_STATE && GAME_STATE.team) expireTemporaryShields(GAME_STATE.team);
+    if (combatState.enemies) expireTemporaryShields(combatState.enemies);
 
     // Expirar Barreras de Plasma invocadas por este combatiente
     if (GAME_STATE && GAME_STATE.team) {
@@ -727,10 +711,8 @@ async function advanceTurnQueue() {
         });
     }
 
-    // Renderizar la UI destacando al robot activo (solo si no se renderizó ya por el rocío)
-    if (healedByRocio.length === 0) {
-        renderPartyCombatUI();
-    }
+    // Renderizar la UI destacando al robot activo
+    renderPartyCombatUI();
     
     // 5. Verificar si está aturdido (STUN)
     if (currentActor.robot.hasStatus('STUN')) {
@@ -759,17 +741,136 @@ async function advanceTurnQueue() {
         renderCombatActions(currentActor.robot, currentActor.allyIndex);
         // Espera a que el jugador haga clic en una acción
     } else if (currentActor.type === 'ENEMY') {
-        showWaitingCombatActions(`TURNO DE [${currentActor.robot.name.toUpperCase()}] // EJECUTANDO ACCIÓN...`);
+        renderEnemyCombatDock(currentActor.robot, 'CALCULANDO TELEMETRÍA...', 'Preparando acción de combate...');
         await delay(800);
         await executeEnemyTurn(currentActor.robot, currentActor.enemyIndex !== undefined ? currentActor.enemyIndex : 0);
+        processPostTurnStaff(currentActor);
         combatState.queueIndex++;
         advanceTurnQueue();
     }
 }
 
+function renderDockStatusesHtml(statuses, owner = null) {
+    if (!statuses || statuses.length === 0) {
+        return `<span class="dock-no-status">Sin alteraciones activas</span>`;
+    }
+    const isDebuff = (s) => ['BURN', 'STUN', 'SLOW', 'SLOW_EXTREME', 'FROST', 'BLIND', 'ARMOR_BREAK'].includes(s.type) || (s.type && s.type.startsWith('MARCA_'));
+    
+    return statuses.map(s => {
+        const isB = !isDebuff(s);
+        let labelText = formatStatusLabel(s.type);
+        const isPermanent = s.isPermanent || s.duration === Infinity || (s.type && s.type.startsWith('MUTACION_'));
+        const turnsHtml = (s.type === 'DEFENDIENDO' || s.type === 'CORAZA_ESPINAS' || s.type === 'BARRIER' || s.type === 'DESFASE_100')
+            ? '<span class="dock-status-turns">ACT</span>'
+            : (s.type === 'SHIELD' && s.amount !== undefined)
+                ? `<span class="dock-status-turns">${s.amount}🛡️</span>`
+                : (isPermanent ? '<span class="dock-status-turns">∞</span>' : `<span class="dock-status-turns">${s.duration}T</span>`);
+        
+        let icon = '✨';
+        if (s.type === 'PASIVA_FURIA') icon = '🔥';
+        else if (s.type === 'BUFF_ESPADA_RACHA') icon = '⚔️';
+        else if (s.type === 'REGENERACION') icon = '💧';
+        else if (s.type === 'SHIELD' || s.type === 'BARRIER') icon = '🛡️';
+        else if (s.type === 'EVADE') icon = '💨';
+        else if (s.type === 'DESFASE_100') icon = '👻';
+        else if (s.type === 'DEFENDIENDO') icon = '🛡️';
+        else if (s.type === 'CORAZA_ESPINAS') icon = '🌵';
+        else if (s.type === 'BURN') icon = '🔥';
+        else if (s.type === 'STUN') icon = '⚡';
+        else if (s.type === 'SLOW' || s.type === 'SLOW_EXTREME') icon = '❄️';
+        else if (s.type === 'FROST') icon = '🧊';
+        else if (s.type === 'BLIND') icon = '👁️';
+        else if (s.type === 'ARMOR_BREAK') icon = '💔';
+        else if (s.type === 'MARCA_FUEGO') icon = '🔥';
+        else if (s.type === 'MARCA_AGUA') icon = '💧';
+        else if (s.type === 'MARCA_TIERRA') icon = '🪨';
+        else if (s.type === 'MARCA_AIRE') icon = '💨';
+        else if (s.type === 'MUTACION_ESPINAS') icon = '🌵';
+        else if (s.type === 'MUTACION_REGENERADOR') icon = '💚';
+        else if (s.type === 'MUTACION_RABIA') icon = '💢';
+        else if (s.type && s.type.startsWith('MUTACION_')) icon = '🧬';
+
+        return `
+            <span class="dock-status-pill ${isB ? 'dock-pill-buff' : 'dock-pill-debuff'}" title="${labelText}">
+                <span class="dock-status-icon">${icon}</span>
+                <span class="dock-status-label">${labelText}</span>
+                ${turnsHtml}
+            </span>
+        `;
+    }).join('');
+}
+
+function renderEnemyCombatDock(enemy, actionTitle = 'CALCULANDO TELEMETRÍA...', actionDesc = '') {
+    const actionsContainer = document.getElementById('combat-actions');
+    if (!actionsContainer || !enemy) return;
+    
+    actionsContainer.className = 'combat-tactical-box dock-mode-enemy';
+    const effSpd = enemy.getEffectiveSpeed ? enemy.getEffectiveSpeed() : enemy.spd;
+    
+    let weaponHtml = '';
+    if (enemy.equippedWeapon) {
+        weaponHtml = `
+            <span class="hud-weapon-icon elem-${enemy.equippedWeapon.element}" 
+                  title="${enemy.equippedWeapon.name}: ${enemy.equippedWeapon.desc}">
+                ${WEAPON_EMOJIS[enemy.equippedWeapon.type]}
+            </span>
+        `;
+    }
+    
+    const berserkClass = enemy.getBerserkGlowClass ? enemy.getBerserkGlowClass() : '';
+    const desfaseClass = (enemy.hasStatus && enemy.hasStatus('DESFASE_100')) ? 'is-desfase' : '';
+
+    actionsContainer.innerHTML = `
+        <!-- Panel Izquierdo: Anuncio de la acción enemiga -->
+        <div class="dock-action-announcement-panel">
+            <div class="announcement-header">
+                <span class="announcement-pulse-dot"></span>
+                <span class="announcement-badge">⚠️ ACCIÓN ENEMIGA EN CURSO</span>
+            </div>
+            <div class="announcement-skill-title elem-${enemy.element}">⚡ ${actionTitle.toUpperCase()}</div>
+            <div class="announcement-skill-desc">${actionDesc || 'Calculando impacto táctico sobre el escuadrón...'}</div>
+            <div class="announcement-cyber-bar"></div>
+        </div>
+
+        <!-- Panel Derecho: Telemetría del enemigo que ataca (Invertido) -->
+        <div class="dock-actor-panel dock-actor-enemy">
+            <div class="dock-actor-info">
+                <div class="dock-actor-top-row">
+                    <span class="dock-actor-spd">⚡ ${effSpd} VEL</span>
+                    <span class="dock-actor-elem elem-${enemy.element}">(${enemy.element})</span>
+                    <span class="dock-actor-lvl">NV. ${enemy.level || 1}</span>
+                    <span class="dock-actor-name">${enemy.name}</span>
+                    ${weaponHtml}
+                </div>
+                <div class="dock-actor-statuses">
+                    ${renderDockStatusesHtml(enemy.statuses, enemy)}
+                </div>
+                <div class="dock-hp-section">
+                    <div class="dock-hp-row">
+                        <span class="dock-hp-numbers">${renderCombatHpText(enemy)}</span>
+                        <span class="dock-hp-label">HP ENEMIGO</span>
+                    </div>
+                    ${renderCombatHpBar(enemy, true)}
+                </div>
+            </div>
+            <div class="dock-actor-avatar-box elem-border-${enemy.element}">
+                <div class="combat-avatar-emoji ${berserkClass} ${desfaseClass}">
+                    ${enemy.getAvatarGraphicHtml ? enemy.getAvatarGraphicHtml(`dock-enemy-avatar`) : `<span class="avatar-base-emoji elem-${enemy.element}">${enemy.emoji}</span>`}
+                </div>
+            </div>
+        </div>
+    `;
+}
+
 function showWaitingCombatActions(msg = 'TURNO ENEMIGO EN PROCESO // CALCULANDO TELEMETRÍA...') {
     const container = document.getElementById('combat-actions');
     if (!container) return;
+    const currentActor = (combatState.initiativeQueue && combatState.initiativeQueue[combatState.queueIndex]) || null;
+    if (currentActor && currentActor.type === 'ENEMY' && currentActor.robot) {
+        renderEnemyCombatDock(currentActor.robot, msg, '');
+        return;
+    }
+    container.className = 'combat-tactical-box dock-mode-waiting';
     container.innerHTML = `
         <div class="tactical-waiting-card">
             <span class="tactical-waiting-spinner">⏳</span>
@@ -838,67 +939,87 @@ function getBasicAttackInfo(robot) {
 function renderCombatActions(playerRobot, allyIndex, view = 'MAIN', activeSkillIdx = null) {
     const actionsContainer = document.getElementById('combat-actions');
     if (!actionsContainer) return;
-    actionsContainer.innerHTML = '';
     
     const aliveEnemies = (combatState.enemies || []).filter(e => !e.isOffline && e.hp > 0);
     if (combatState.isGameOver || aliveEnemies.length === 0) return;
     
+    actionsContainer.className = 'combat-tactical-box dock-mode-player';
+    
     const consumableCount = (GAME_STATE && GAME_STATE.inventory && GAME_STATE.inventory.items) ? GAME_STATE.inventory.items.length : 0;
     const effSpd = playerRobot.getEffectiveSpeed ? playerRobot.getEffectiveSpeed() : playerRobot.spd;
-    
-    let headerHtml = `
-        <div class="tactical-box-header">
-            <div class="tactical-header-left">
-                <span class="tactical-indicator-pulse"></span>
-                <span class="tactical-header-title">CONSOLA TÁCTICA // TURNO DE ${playerRobot.name.toUpperCase()}</span>
+    const extraChips = Math.max(0, playerRobot.skills.length - 2);
+    const chipIcons = extraChips > 0 ? ' 💾'.repeat(extraChips) : '';
+
+    let weaponHtml = '';
+    if (playerRobot.equippedWeapon) {
+        weaponHtml = `
+            <span class="hud-weapon-icon elem-${playerRobot.equippedWeapon.element}" 
+                  title="${playerRobot.equippedWeapon.name}: ${playerRobot.equippedWeapon.desc}">
+                ${WEAPON_EMOJIS[playerRobot.equippedWeapon.type]}
+            </span>
+        `;
+    }
+
+    const berserkClass = playerRobot.getBerserkGlowClass ? playerRobot.getBerserkGlowClass() : '';
+    const desfaseClass = (playerRobot.hasStatus && playerRobot.hasStatus('DESFASE_100')) ? 'is-desfase' : '';
+
+    // Panel Izquierdo: Telemetría del Aliado Activo (50% Ancho)
+    const allyTelemetryHtml = `
+        <div class="dock-actor-panel dock-actor-player">
+            <div class="dock-actor-avatar-box elem-border-${playerRobot.element}">
+                <div class="combat-avatar-emoji ${berserkClass} ${desfaseClass}">
+                    ${playerRobot.getAvatarGraphicHtml ? playerRobot.getAvatarGraphicHtml(`dock-ally-avatar`) : `<span class="avatar-base-emoji elem-${playerRobot.element}">${playerRobot.emoji}</span>`}
+                </div>
             </div>
-            <div class="tactical-header-right">
-                <span class="member-elem-badge elem-${playerRobot.element}">(${playerRobot.element})</span>
-                <span class="member-lvl-badge">NV. ${playerRobot.level || 1}</span>
-                <span class="tactical-spd-badge">⚡ ${effSpd} VEL</span>
+            <div class="dock-actor-info">
+                <div class="dock-actor-top-row">
+                    <span class="dock-actor-name">${playerRobot.name}${chipIcons}</span>
+                    <span class="dock-actor-lvl">NV. ${playerRobot.level || 1}</span>
+                    <span class="dock-actor-elem elem-${playerRobot.element}">(${playerRobot.element})</span>
+                    <span class="dock-actor-spd">⚡ ${effSpd} VEL</span>
+                    ${weaponHtml}
+                </div>
+                <div class="dock-actor-statuses">
+                    ${renderDockStatusesHtml(playerRobot.statuses, playerRobot)}
+                </div>
+                <div class="dock-hp-section">
+                    <div class="dock-hp-row">
+                        <span class="dock-hp-label">HP ALIADO</span>
+                        <span class="dock-hp-numbers">${renderCombatHpText(playerRobot)}</span>
+                    </div>
+                    ${renderCombatHpBar(playerRobot, false)}
+                </div>
             </div>
         </div>
     `;
 
+    // Panel Derecho: Controles según view (50% Ancho)
+    let rightPanelHtml = '';
+
     if (view === 'MAIN') {
-        actionsContainer.innerHTML = `
-            ${headerHtml}
-            <div class="tactical-main-grid">
-                <!-- 1. ATACAR -->
-                <button class="tactical-cmd-btn cmd-attack" onclick="renderCombatActions(GAME_STATE.team[${allyIndex}], ${allyIndex}, 'ATTACK')">
-                    <div class="cmd-icon">⚔️</div>
-                    <div class="cmd-texts">
+        rightPanelHtml = `
+            <div class="dock-controls-panel">
+                <div class="dock-main-commands-grid">
+                    <button class="tactical-cmd-btn cmd-attack" onclick="renderCombatActions(GAME_STATE.team[${allyIndex}], ${allyIndex}, 'ATTACK')">
+                        <span class="cmd-icon">⚔️</span>
                         <span class="cmd-title">ATACAR</span>
-                        <span class="cmd-sub">Básicos & Especiales</span>
-                    </div>
-                </button>
+                    </button>
 
-                <!-- 2. DEFENDER -->
-                <button class="tactical-cmd-btn cmd-defend" onclick="executeDefend(${allyIndex})">
-                    <div class="cmd-icon">🛡️</div>
-                    <div class="cmd-texts">
+                    <button class="tactical-cmd-btn cmd-defend" onclick="executeDefend(${allyIndex})">
+                        <span class="cmd-icon">🛡️</span>
                         <span class="cmd-title">DEFENDER</span>
-                        <span class="cmd-sub">-50% Daño Recibido</span>
-                    </div>
-                </button>
+                    </button>
 
-                <!-- 3. INVENTARIO -->
-                <button class="tactical-cmd-btn cmd-inventory" onclick="renderCombatActions(GAME_STATE.team[${allyIndex}], ${allyIndex}, 'ITEMS')">
-                    <div class="cmd-icon">🎒</div>
-                    <div class="cmd-texts">
-                        <span class="cmd-title">INVENTARIO</span>
-                        <span class="cmd-sub">${consumableCount} Consumibles</span>
-                    </div>
-                </button>
+                    <button class="tactical-cmd-btn cmd-inventory" onclick="renderCombatActions(GAME_STATE.team[${allyIndex}], ${allyIndex}, 'ITEMS')">
+                        <span class="cmd-icon">🎒</span>
+                        <span class="cmd-title">OBJETOS${consumableCount > 0 ? ` (${consumableCount})` : ''}</span>
+                    </button>
 
-                <!-- 4. HISTORIAL -->
-                <button class="tactical-cmd-btn cmd-history" onclick="openCombatHistory()">
-                    <div class="cmd-icon">📜</div>
-                    <div class="cmd-texts">
+                    <button class="tactical-cmd-btn cmd-history" onclick="openCombatHistory()">
+                        <span class="cmd-icon">📜</span>
                         <span class="cmd-title">HISTORIAL</span>
-                        <span class="cmd-sub">Registro de Batalla</span>
-                    </div>
-                </button>
+                    </button>
+                </div>
             </div>
         `;
     } 
@@ -910,7 +1031,7 @@ function renderCombatActions(playerRobot, allyIndex, view = 'MAIN', activeSkillI
             
             const isLocked = (skill.currentCd > 0 || combatState.isProcessing);
             const cdBadge = skill.currentCd > 0 
-                ? `<span class="skill-card-cd">⏳ ENFRIAMIENTO (${skill.currentCd})</span>` 
+                ? `<span class="skill-card-cd">⏳ (${skill.currentCd})</span>` 
                 : `<span class="skill-card-ready">⚡ LISTA</span>`;
             
             let typeTag = 'BÁSICO';
@@ -929,37 +1050,36 @@ function renderCombatActions(playerRobot, allyIndex, view = 'MAIN', activeSkillI
                 cardClass = 'skill-card-special';
                 elemTag = skill.elementOverride || playerRobot.element;
             } else if (isChip) {
-                typeTag = 'CHIP MODULAR';
+                typeTag = 'CHIP';
                 cardClass = 'skill-card-chip';
                 elemTag = skill.elementOverride || playerRobot.element;
             }
 
             return `
                 <div class="tactical-skill-card ${cardClass} ${isLocked ? 'is-disabled' : ''}" 
+                     title="${displayDesc}"
                      ${isLocked ? '' : `onclick="onSelectSkill(${skillIdx}, ${allyIndex})"`}>
                     <div class="skill-card-top">
                         <span class="skill-type-badge elem-${elemTag}">${typeTag}</span>
+                        <span class="member-elem-badge elem-${elemTag}">(${elemTag})</span>
                         ${cdBadge}
                     </div>
-                    <div class="skill-card-name-row">
+                    <div class="skill-card-center">
                         <span class="skill-name-text">${displayName}</span>
-                        <span class="member-elem-badge elem-${elemTag}">(${elemTag})</span>
                     </div>
-                    <div class="skill-card-desc">${displayDesc}</div>
                 </div>
             `;
         }).join('');
 
-        actionsContainer.innerHTML = `
-            ${headerHtml}
-            <div class="tactical-sub-panel">
-                <div class="tactical-sub-header">
+        rightPanelHtml = `
+            <div class="dock-controls-panel dock-sub-panel">
+                <div class="dock-sub-header">
                     <button class="btn-tactical-back" onclick="renderCombatActions(GAME_STATE.team[${allyIndex}], ${allyIndex}, 'MAIN')">
-                        <span>◀ VOLVER AL MENÚ</span>
+                        <span>◀ VOLVER</span>
                     </button>
-                    <span class="tactical-sub-title">SELECCIONAR ACCIÓN TÁCTICA</span>
+                    <span class="dock-sub-title">SELECCIONAR ACCIÓN TÁCTICA</span>
                 </div>
-                <div class="tactical-skills-grid">
+                <div class="dock-skills-grid">
                     ${skillsHtml}
                 </div>
             </div>
@@ -978,39 +1098,35 @@ function renderCombatActions(playerRobot, allyIndex, view = 'MAIN', activeSkillI
         const enemiesHtml = validEnemies.map(item => {
             const enemy = item.robot;
             const eIdx = item.idx;
-            const hpPercent = Math.max(0, Math.min(100, (enemy.hp / enemy.maxHp) * 100));
 
             return `
-                <div class="target-enemy-card">
+                <div class="target-enemy-card" onclick="executePlayerTurn(${activeSkillIdx}, ${allyIndex}, null, ${eIdx})">
                     <span class="ally-target-emoji elem-${enemy.element}">${enemy.emoji}</span>
                     <div class="ally-target-info">
-                        <div style="display: flex; align-items: center; justify-content: space-between;">
+                        <div style="display: flex; align-items: center; justify-content: space-between; gap: 4px;">
                             <span class="ally-target-name">${enemy.name}</span>
                             <span class="member-elem-badge elem-${enemy.element}">(${enemy.element})</span>
                         </div>
                         <div class="ally-target-hp-row">
                             <span class="hud-hp-label">HP</span>
-                            <span class="hud-hp-val">${enemy.hp}/${enemy.maxHp}</span>
+                            <span class="hud-hp-val">${renderCombatHpText(enemy)}</span>
                         </div>
-                        <progress value="${hpPercent}" max="100"></progress>
+                        ${renderCombatHpBar(enemy, true)}
                     </div>
-                    <button class="btn-target-enemy-cta" onclick="executePlayerTurn(${activeSkillIdx}, ${allyIndex}, null, ${eIdx})">
-                        <span>⚔️ ${skillTitle} contra ${enemy.name}</span>
-                    </button>
+                    <span class="target-select-arrow">⚔️</span>
                 </div>
             `;
         }).join('');
 
-        actionsContainer.innerHTML = `
-            ${headerHtml}
-            <div class="tactical-sub-panel">
-                <div class="tactical-sub-header">
+        rightPanelHtml = `
+            <div class="dock-controls-panel dock-sub-panel">
+                <div class="dock-sub-header">
                     <button class="btn-tactical-back" onclick="cancelEnemyTargetSelection(${allyIndex})">
-                        <span>◀ VOLVER A HABILIDADES</span>
+                        <span>◀ VOLVER</span>
                     </button>
-                    <span class="tactical-sub-title">SELECCIONAR OBJETIVO PARA ${skillTitle.toUpperCase()}</span>
+                    <span class="dock-sub-title">OBJETIVO: ${skillTitle.toUpperCase()}</span>
                 </div>
-                <div class="tactical-allies-target-grid">
+                <div class="dock-targets-grid">
                     ${enemiesHtml}
                 </div>
             </div>
@@ -1026,10 +1142,9 @@ function renderCombatActions(playerRobot, allyIndex, view = 'MAIN', activeSkillI
             const r = item.robot;
             const idx = item.idx;
             const isSelf = (idx === allyIndex);
-            const hpPercent = Math.max(0, Math.min(100, (r.hp / r.maxHp) * 100));
 
             return `
-                <div class="tactical-ally-target-card ${isSelf ? 'is-self' : ''}">
+                <div class="tactical-ally-target-card ${isSelf ? 'is-self' : ''}" onclick="executePlayerTurn(${activeSkillIdx}, ${allyIndex}, ${idx})">
                     <div class="ally-target-top">
                         <span class="ally-target-emoji elem-${r.element}">${r.emoji}</span>
                         <div class="ally-target-info">
@@ -1039,26 +1154,22 @@ function renderCombatActions(playerRobot, allyIndex, view = 'MAIN', activeSkillI
                     </div>
                     <div class="ally-target-hp-row">
                         <span class="hud-hp-label">HP</span>
-                        <span class="hud-hp-val">${r.hp}/${r.maxHp}</span>
+                        <span class="hud-hp-val">${renderCombatHpText(r)}</span>
                     </div>
-                    <progress value="${hpPercent}" max="100"></progress>
-                    <button class="btn-target-ally-cta" onclick="executePlayerTurn(${activeSkillIdx}, ${allyIndex}, ${idx})">
-                        <span>🛡️ Proteger a ${r.name}</span>
-                    </button>
+                    ${renderCombatHpBar(r, false)}
                 </div>
             `;
         }).join('');
 
-        actionsContainer.innerHTML = `
-            ${headerHtml}
-            <div class="tactical-sub-panel">
-                <div class="tactical-sub-header">
+        rightPanelHtml = `
+            <div class="dock-controls-panel dock-sub-panel">
+                <div class="dock-sub-header">
                     <button class="btn-tactical-back" onclick="renderCombatActions(GAME_STATE.team[${allyIndex}], ${allyIndex}, 'ATTACK')">
-                        <span>◀ VOLVER A HABILIDADES</span>
+                        <span>◀ VOLVER</span>
                     </button>
-                    <span class="tactical-sub-title">SELECCIONAR ALIADO OBJETIVO PARA ${skill ? skill.name.toUpperCase() : 'HABILIDAD'}</span>
+                    <span class="dock-sub-title">ALIADO: ${skill ? skill.name.toUpperCase() : 'HABILIDAD'}</span>
                 </div>
-                <div class="tactical-allies-target-grid">
+                <div class="dock-targets-grid">
                     ${alliesHtml}
                 </div>
             </div>
@@ -1072,44 +1183,38 @@ function renderCombatActions(playerRobot, allyIndex, view = 'MAIN', activeSkillI
             itemsHtml = `
                 <div class="tactical-items-empty">
                     <div class="empty-icon">🎒</div>
-                    <div class="empty-text">No tienes objetos consumibles en la mochila para usar en combate.</div>
-                    <button class="btn-open-full-inv" onclick="openInventory()">
-                        <span>🎒 Abrir Mochila Completa</span>
-                    </button>
+                    <div class="empty-text">Sin consumibles en la mochila.</div>
                 </div>
             `;
         } else {
             itemsHtml = `
                 <div class="tactical-items-grid">
                     ${items.map((item, idx) => `
-                        <div class="tactical-item-card">
-                            <div class="tactical-item-top">
+                        <div class="tactical-item-card" title="${item.desc}" onclick="useCombatItem(${idx}, ${allyIndex})">
+                            <div class="tactical-item-center">
                                 <span class="tactical-item-emoji">${item.emoji}</span>
                                 <span class="tactical-item-name">${item.name}</span>
                             </div>
-                            <div class="tactical-item-desc">${item.desc}</div>
-                            <button class="btn-use-item-cta" onclick="useCombatItem(${idx}, ${allyIndex})">
-                                <span>⚡ Usar Objeto</span>
-                            </button>
                         </div>
                     `).join('')}
                 </div>
             `;
         }
 
-        actionsContainer.innerHTML = `
-            ${headerHtml}
-            <div class="tactical-sub-panel">
-                <div class="tactical-sub-header">
+        rightPanelHtml = `
+            <div class="dock-controls-panel dock-sub-panel">
+                <div class="dock-sub-header">
                     <button class="btn-tactical-back" onclick="renderCombatActions(GAME_STATE.team[${allyIndex}], ${allyIndex}, 'MAIN')">
-                        <span>◀ VOLVER AL MENÚ</span>
+                        <span>◀ VOLVER</span>
                     </button>
-                    <span class="tactical-sub-title">SUMINISTROS TÁCTICOS (OBJETOS DE MOCHILA)</span>
+                    <span class="dock-sub-title">SUMINISTROS TÁCTICOS</span>
                 </div>
                 ${itemsHtml}
             </div>
         `;
     }
+
+    actionsContainer.innerHTML = allyTelemetryHtml + rightPanelHtml;
 }
 
 function onSelectSkill(skillIdx, allyIndex) {
@@ -1207,6 +1312,7 @@ async function useCombatItem(idx, activeAllyIndex, targetEnemyIndex = 0) {
         setTimeout(() => triggerCombatAnim(false, 'HIT', targetEnemyIndex), 100);
         showHitAnimation('PEM', true, targetEnemyIndex);
         await delay(500);
+        processPostTurnStaff({ type: 'PLAYER', robot: activeRobot, allyIndex: activeAllyIndex, enemyIndex: -1 });
         renderPartyCombatUI();
         await delay(600);
         combatState.isProcessing = false;
@@ -1233,6 +1339,88 @@ async function useCombatItem(idx, activeAllyIndex, targetEnemyIndex = 0) {
         GAME_STATE.inventory.items.splice(idx, 1);
         renderPartyCombatUI();
         renderCombatActions(activeRobot, activeAllyIndex, 'ITEMS');
+    }
+}
+
+function processPostTurnStaff(actor) {
+    if (!actor || !actor.robot || actor.robot.isOffline || actor.robot.hp <= 0) return;
+    const robot = actor.robot;
+    if (!robot.equippedWeapon || robot.equippedWeapon.type !== WEAPON_TYPES.BACULO) return;
+    
+    const isAlly = (actor.type === 'PLAYER');
+    let staffExtra = (isAlly && typeof SkillsManager !== 'undefined')
+        ? (SkillsManager.getModifier('staff_extra_shield', 0) || SkillsManager.getModifier('staff_extra_heal', 0))
+        : 0;
+    let shieldRate = (robot.equippedWeapon.isUpgraded ? 0.15 : 0.10) + staffExtra;
+    
+    // Afinidad de Agua: +25% de potencia y absorción a escudos generados
+    if (robot.hasAffinity && robot.hasAffinity() && robot.element === ELEMENTS.AGUA) {
+        shieldRate *= 1.25;
+    }
+    
+    let shieldAmount = Math.max(1, Math.floor(robot.maxHp * shieldRate));
+    
+    // Reemplazar escudo de Báculo propio previo si existía
+    robot.statuses = robot.statuses.filter(s => !(s.type === 'SHIELD' && s.subType === 'BACULO_SHIELD'));
+    robot.addStatus({
+        type: 'SHIELD',
+        subType: 'BACULO_SHIELD',
+        name: 'Escudo de Plasma (Báculo)',
+        amount: shieldAmount,
+        duration: 1,
+        casterId: robot.id,
+        casterName: robot.name
+    });
+    logCombat(`🪄 [${robot.name}] finaliza su turno y activa un Escudo de plasma de ${shieldAmount} HP.`);
+    showHitAnimation('SHIELD', !isAlly, isAlly ? actor.allyIndex : actor.enemyIndex);
+
+    // Báculo +1: Micro-escudo de soporte al aliado con menor vida (8% HP Máx)
+    if (robot.equippedWeapon.isUpgraded) {
+        let teamGroup = isAlly ? GAME_STATE.team : combatState.enemies;
+        let eligibleAllies = teamGroup.filter(a => !a.isOffline && a.hp > 0 && a !== robot);
+        if (eligibleAllies.length > 0) {
+            eligibleAllies.sort((a, b) => (a.hp / a.maxHp) - (b.hp / b.maxHp));
+            let targetAlly = eligibleAllies[0];
+            let allyShieldRate = 0.08;
+            if (robot.hasAffinity && robot.hasAffinity() && robot.element === ELEMENTS.AGUA) {
+                allyShieldRate *= 1.25;
+            }
+            let allyShieldAmt = Math.max(1, Math.floor(targetAlly.maxHp * allyShieldRate));
+            targetAlly.statuses = targetAlly.statuses.filter(s => !(s.type === 'SHIELD' && s.subType === 'BACULO_ALLY_SHIELD'));
+            targetAlly.addStatus({
+                type: 'SHIELD',
+                subType: 'BACULO_ALLY_SHIELD',
+                name: 'Micro-Escudo (Báculo +1)',
+                amount: allyShieldAmt,
+                duration: 1,
+                casterId: robot.id,
+                casterName: robot.name
+            });
+            logCombat(`🪄 [${robot.name}] transfiere energía con su Báculo +1 y otorga un Micro-Escudo de ${allyShieldAmt} HP a [${targetAlly.name}].`);
+            let allyIdx = isAlly ? GAME_STATE.team.indexOf(targetAlly) : combatState.enemies.indexOf(targetAlly);
+            if (allyIdx !== -1) {
+                showHitAnimation('SHIELD', !isAlly, allyIdx);
+            }
+        }
+
+        // Báculo +1: 20% probabilidad de reducir 1 Cooldown
+        if (Math.random() < 0.20) {
+            let teamForCd = isAlly ? GAME_STATE.team : combatState.enemies;
+            let eligibleMembers = teamForCd.filter(a => !a.isOffline && a.hp > 0 && a.skills && a.skills.some(s => s.currentCd > 0));
+            if (eligibleMembers.length > 0) {
+                let chosenMember = eligibleMembers[Math.floor(Math.random() * eligibleMembers.length)];
+                let onCdSkills = chosenMember.skills.filter(s => s.currentCd > 0);
+                if (onCdSkills.length > 0) {
+                    let chosenSkill = onCdSkills[Math.floor(Math.random() * onCdSkills.length)];
+                    chosenSkill.currentCd = Math.max(0, chosenSkill.currentCd - 1);
+                    logCombat(`⚡🔋 ¡Sobrecarga mística del Báculo +1! Se reduce 1 turno de Cooldown a [${chosenSkill.name}] de [${chosenMember.name}].`);
+                    let memberIdx = isAlly ? GAME_STATE.team.indexOf(chosenMember) : combatState.enemies.indexOf(chosenMember);
+                    if (memberIdx !== -1) {
+                        showCooldownPopup(chosenSkill.name, !isAlly, memberIdx);
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -1268,6 +1456,7 @@ async function executePlayerTurn(skillIndex, allyIndex, targetAllyIndex = null, 
             });
         }
         
+        processPostTurnStaff({ type: 'PLAYER', robot: ally, allyIndex: allyIndex, enemyIndex: -1 });
         renderPartyCombatUI();
         await delay(650);
         combatState.isProcessing = false;
@@ -1308,6 +1497,7 @@ async function executePlayerTurn(skillIndex, allyIndex, targetAllyIndex = null, 
         logCombat(`💀 ¡${targetEnemy.name} ha sido neutralizado!`);
     }
     
+    processPostTurnStaff({ type: 'PLAYER', robot: ally, allyIndex: allyIndex, enemyIndex: -1 });
     renderPartyCombatUI();
     await delay(650);
     
@@ -1327,6 +1517,7 @@ async function executeDefend(allyIndex) {
     
     showHitAnimation('SHIELD', false, allyIndex);
     await delay(350);
+    processPostTurnStaff({ type: 'PLAYER', robot: ally, allyIndex: allyIndex, enemyIndex: -1 });
     renderPartyCombatUI();
     await delay(550);
     
@@ -1367,7 +1558,7 @@ async function executeEnemyTurn(enemy, enemyIndex = 0) {
     
     // Si la habilidad es AoE (ej. Terremoto Cataclísmico o Ventisca de Cero Absoluto)
     if (enemySkill.target === 'ALL_ENEMIES' || (enemySkill.type && enemySkill.type.includes('AOE'))) {
-        showWaitingCombatActions(`⚡ [${enemy.name.toUpperCase()}] EJECUTANDO ${enemySkill.name.toUpperCase()} SOBRE TODO EL ESCUADRÓN...`);
+        renderEnemyCombatDock(enemy, enemySkill.name, '⚡ Ataque de área sobre todo el escuadrón aliado.');
         executeTurnAoE(enemy, enemySkill, false, enemyIndex);
         await delay(600);
         
@@ -1401,7 +1592,7 @@ async function executeEnemyTurn(enemy, enemyIndex = 0) {
                 recipientIdx = lowest.idx;
             }
         }
-        showWaitingCombatActions(`⚡ [${enemy.name.toUpperCase()}] ACTIVANDO ${enemySkill.name.toUpperCase()} SOBRE [${recipientEnemy.name.toUpperCase()}]...`);
+        renderEnemyCombatDock(enemy, enemySkill.name, `🛡️ Activando soporte táctico sobre [${recipientEnemy.name.toUpperCase()}].`);
         executeTurn(enemy, enemySkill, recipientEnemy, false, enemyIndex, null, recipientIdx);
         await delay(450);
         renderPartyCombatUI();
@@ -1432,6 +1623,7 @@ async function executeEnemyTurn(enemy, enemyIndex = 0) {
     let targetIndex = target.idx;
     
     // 3. Ejecutar ataque enemigo
+    renderEnemyCombatDock(enemy, enemySkill.name, `⚔️ Ataque dirigido contra [${targetAlly.name.toUpperCase()}].`);
     executeTurn(enemy, enemySkill, targetAlly, false, enemyIndex, targetIndex, enemyIndex);
     
     // Esperar animación de dash
@@ -2074,12 +2266,14 @@ function executeTurn(attacker, skill, defender, isAttackerAlly, allyIndex = 0, t
                 }
             }
 
-            // Rocío Reparador (REGENERACION): Si el robot con rocío es atacado, salpica agua y adhiere Marca de Agua (3 turnos) al atacante
-            if (defender.hasStatus('REGENERACION') && attacker && attacker !== defender && finalDmg > 0) {
+            // Rocío Protector: Si el robot con escudo de rocío es atacado, salpica agua y adhiere Marca de Agua (3 turnos) al atacante
+            const hadRocioProtection = (defender.hadRocioShieldHit) || (defender.statuses && defender.statuses.some(s => (s.type === 'SHIELD' && s.subType === 'ROCIO_PROTECTOR') || s.type === 'REGENERACION'));
+            if (hadRocioProtection && attacker && attacker !== defender) {
                 attacker.statuses = attacker.statuses.filter(s => !s.type.startsWith('MARCA_'));
                 attacker.addStatus({ type: 'MARCA_AGUA', duration: 3 });
-                logCombat(`- 💧 ¡El Rocío Reparador sobre [${defender.name}] salpica a [${attacker.name}] y le adhiere ${formatStatusLabel('MARCA_AGUA')} (3 turnos)!`);
+                logCombat(`- 💧 ¡El Rocío Protector sobre [${defender.name}] salpica a [${attacker.name}] y le adhiere ${formatStatusLabel('MARCA_AGUA')} (3 turnos)!`);
             }
+            defender.hadRocioShieldHit = false;
             
             // Aplicar marca elemental si es habilidad especial o probabilidad del 20% en ataques básicos
             if (skill.cd > 0 && attackElement !== ELEMENTS.NEUTRO) {
@@ -2237,11 +2431,8 @@ function executeTurn(attacker, skill, defender, isAttackerAlly, allyIndex = 0, t
                 logCombat(`- [${attacker.name}] activa Coraza de Espinas (reduce 50% daño recibido y refleja 50% al atacante hasta su próximo turno).`);
                 showHitAnimation('SHIELD', recipientIsEnemy, recipientAllyIdx);
             } else if (skill.status.type === 'BARRIER') {
-                // Curar 5% de la vida máxima del que recibe la barrera (+25% si tiene Afinidad de Agua)
+                // Curar 5% de la vida máxima del que recibe la barrera
                 let barrierHealRate = 0.05;
-                if (attacker.hasAffinity && attacker.hasAffinity() && attacker.element === ELEMENTS.AGUA) {
-                    barrierHealRate *= 1.25;
-                }
                 let healAmt = Math.max(1, Math.floor(recipient.maxHp * barrierHealRate));
                 let actualHealed = recipient.heal(healAmt);
                 if (actualHealed > 0) {
@@ -2249,14 +2440,27 @@ function executeTurn(attacker, skill, defender, isAttackerAlly, allyIndex = 0, t
                 }
                 logCombat(`🌊 [${attacker.name}] otorga Barrera de Plasma a [${recipient.name}] (100% protección hasta el próximo turno de ${attacker.name}) y le restaura ${actualHealed} HP.`);
                 showHitAnimation('SHIELD', recipientIsEnemy, recipientAllyIdx);
+            } else if (skill.status.type === 'SHIELD' || skill.shieldPct) {
+                // Escudo numérico plomo (Rocío Protector)
+                let shieldRate = (skill.shieldPct || (skill.status && skill.status.shieldPct)) || 0.20;
+                if (attacker.hasAffinity && attacker.hasAffinity() && attacker.element === ELEMENTS.AGUA) {
+                    shieldRate *= 1.25; // Afinidad de Agua: +25% de potencia de escudo -> 25% de absorción
+                }
+                let shieldAmt = Math.max(1, Math.floor(recipient.maxHp * shieldRate));
+                appliedStatus.amount = shieldAmt;
+                appliedStatus.duration = 1;
+                recipient.statuses = recipient.statuses.filter(s => !(s.type === 'SHIELD' && s.subType === 'ROCIO_PROTECTOR'));
+                recipient.addStatus(appliedStatus);
+                logCombat(`🛡️💧 [${attacker.name}] envuelve a [${recipient.name}] en un Rocío Protector (Escudo plomo de ${shieldAmt} HP por 1 turno).`);
+                showHitAnimation('SHIELD', recipientIsEnemy, recipientAllyIdx);
             } else if (skill.status.type === 'REGENERACION') {
-                logCombat(`- 💧 [${recipient.name}] queda envuelto en Rocío Reparador (salpicará Marca de Agua a quien lo ataque y sanará otro 10% de HP al próximo turno de ${attacker.name}).`);
+                logCombat(`- 💧 [${recipient.name}] queda envuelto en Rocío Protector.`);
             } else {
                 logCombat(`- Obtiene ${formatStatusLabel(skill.status.type)} por ${skill.status.duration} turnos.`);
             }
             
             // Si el buff es elemental especial y NO es de reacción defensiva ni buff amistoso, salpica marca al rival
-            const isDefensiveReactionBuff = (skill.status && (skill.status.type === 'BARRIER' || skill.status.type === 'CORAZA_ESPINAS' || skill.status.type === 'REGENERACION'));
+            const isDefensiveReactionBuff = (skill.status && (skill.status.type === 'BARRIER' || skill.status.type === 'CORAZA_ESPINAS' || skill.status.type === 'SHIELD' || skill.status.type === 'REGENERACION'));
             const isFriendlyBuff = (skill.target === 'ALLY' || skill.target === 'SELF');
             if (!isDefensiveReactionBuff && !isFriendlyBuff && skill.cd > 0 && attackElement !== ELEMENTS.NEUTRO && defender && defender.hp > 0 && defender.isAlly !== attacker.isAlly) {
                 let markType = `MARCA_${attackElement}`;
@@ -2267,8 +2471,8 @@ function executeTurn(attacker, skill, defender, isAttackerAlly, allyIndex = 0, t
         }
     }
 
-    // 4. Curación (Habilidades con efecto de curación o tipo HEAL)
-    if (skill.type && (skill.type.includes('HEAL') || skill.healPower || skill.healPct)) {
+    // 4. Curación (Habilidades con efecto de curación o tipo HEAL - Kits de Nanobots, eventos, etc.)
+    if (skill.type && (skill.type.includes('HEAL') || skill.healPower || (skill.healPct && skill.type !== 'BUFF_SHIELD'))) {
         let healRecipient = attacker;
         let healRecipientIdx = isAttackerAlly ? allyIndex : targetEnemyIndex;
         let healRecipientIsEnemy = !isAttackerAlly;
@@ -2290,11 +2494,6 @@ function executeTurn(attacker, skill, defender, isAttackerAlly, allyIndex = 0, t
             healAmount = Math.floor(healRecipient.maxHp * skill.healPct);
         } else {
             healAmount = Math.floor(healRecipient.maxHp * 0.3);
-        }
-
-        // Afinidad de Agua: +25% de potencia a todas las curaciones emitidas
-        if (attacker.hasAffinity && attacker.hasAffinity() && attacker.element === ELEMENTS.AGUA) {
-            healAmount = Math.floor(healAmount * 1.25);
         }
 
         let actualHealed = healRecipient.heal(healAmount);

@@ -120,7 +120,7 @@ class Robot {
             case ELEMENTS.FUEGO:
                 return 'Afinidad Fuego: +15% ATQ y +15% daño adicional a enemigos con Marca o Quemadura.';
             case ELEMENTS.AGUA:
-                return 'Afinidad Agua: +15% HP y +25% potencia a todas las curaciones emitidas.';
+                return 'Afinidad Agua: +15% HP y +25% potencia y absorción a todos los escudos otorgados y generados.';
             case ELEMENTS.TIERRA:
                 return 'Afinidad Tierra: +25% HP y -10% de daño recibido permanente.';
             case ELEMENTS.AIRE:
@@ -241,6 +241,19 @@ class Robot {
         }
     }
 
+    getShieldAmount() {
+        let total = 0;
+        if (this.statuses && Array.isArray(this.statuses)) {
+            for (let i = 0; i < this.statuses.length; i++) {
+                let s = this.statuses[i];
+                if (s && s.type === 'SHIELD' && s.amount > 0) {
+                    total += s.amount;
+                }
+            }
+        }
+        return total;
+    }
+
     takeDamage(amount, penetrationRatio = 0, ignoreDefense = false, attacker = null) {
         if (this.isOffline) return 0;
         
@@ -256,20 +269,37 @@ class Robot {
             }
         }
 
-        // Absorción de Escudo numérico (ej. Cristalización)
-        const shieldIndex = this.statuses.findIndex(s => s.type === 'SHIELD');
-        if (shieldIndex !== -1) {
-            let shield = this.statuses[shieldIndex];
-            if (shield.amount >= finalDamage) {
-                shield.amount -= finalDamage;
-                if (shield.amount <= 0) {
-                    this.statuses.splice(shieldIndex, 1);
+        // Absorción de Escudo numérico plomo (ej. Rocío Protector, Báculo, Cristalización)
+        let totalShieldAbsorbed = 0;
+        let hadRocioShield = false;
+        for (let i = this.statuses.length - 1; i >= 0; i--) {
+            let shield = this.statuses[i];
+            if (shield && shield.type === 'SHIELD' && shield.amount > 0) {
+                if (shield.subType === 'ROCIO_PROTECTOR') {
+                    hadRocioShield = true;
                 }
-                return 0; // Daño completamente absorbido por el escudo
-            } else {
-                finalDamage -= shield.amount;
-                this.statuses.splice(shieldIndex, 1);
+                if (shield.amount >= finalDamage) {
+                    shield.amount -= finalDamage;
+                    totalShieldAbsorbed += finalDamage;
+                    finalDamage = 0;
+                    if (shield.amount <= 0) {
+                        this.statuses.splice(i, 1);
+                    }
+                    break;
+                } else {
+                    finalDamage -= shield.amount;
+                    totalShieldAbsorbed += shield.amount;
+                    this.statuses.splice(i, 1);
+                }
             }
+        }
+
+        this.lastShieldAbsorbed = totalShieldAbsorbed;
+        this.hadRocioShieldHit = hadRocioShield;
+
+        // Si el escudo absorbió todo el impacto, el HP queda 100% intacto
+        if (finalDamage <= 0) {
+            return 0;
         }
 
         // Rompearmaduras: incrementa el daño recibido un +25%
@@ -457,8 +487,8 @@ class Robot {
         for (let i = this.statuses.length - 1; i >= 0; i--) {
             let status = this.statuses[i];
             
-            // DEFENDIENDO, CORAZA_ESPINAS, BARRIER, DESFASE_100, STUN, REGENERACION y Mutaciones permanentes no expiran en fin de ronda global
-            if (status.type === 'DEFENDIENDO' || status.type === 'CORAZA_ESPINAS' || status.type === 'BARRIER' || status.type === 'DESFASE_100' || status.type === 'STUN' || status.type === 'REGENERACION' || status.isPermanent || status.duration === Infinity || (status.type && status.type.startsWith('MUTACION_'))) {
+            // DEFENDIENDO, CORAZA_ESPINAS, BARRIER, SHIELD, DESFASE_100, STUN, REGENERACION y Mutaciones permanentes no expiran en fin de ronda global
+            if (status.type === 'DEFENDIENDO' || status.type === 'CORAZA_ESPINAS' || status.type === 'BARRIER' || status.type === 'SHIELD' || status.type === 'DESFASE_100' || status.type === 'STUN' || status.type === 'REGENERACION' || status.isPermanent || status.duration === Infinity || (status.type && status.type.startsWith('MUTACION_'))) {
                 continue;
             }
 
@@ -479,73 +509,6 @@ class Robot {
             status.duration--;
             if (status.duration <= 0) {
                 this.statuses.splice(i, 1);
-            }
-        }
-        
-        // Efecto Báculo: regeneración al portador y soporte táctico en +1
-        if (this.equippedWeapon && this.equippedWeapon.type === WEAPON_TYPES.BACULO && this.hp > 0) {
-            let staffExtra = (this.isAlly && typeof SkillsManager !== 'undefined') 
-                ? SkillsManager.getModifier('staff_extra_heal', 0) 
-                : 0;
-            let healRate = (this.equippedWeapon.isUpgraded ? 0.07 : 0.05) + staffExtra;
-            if (this.hasAffinity() && this.element === ELEMENTS.AGUA) {
-                healRate *= 1.25; // +25% de potencia de curación por Afinidad de Agua
-            }
-            if (this.hp < this.maxHp) {
-                let healAmount = Math.max(1, Math.floor(this.maxHp * healRate));
-                let actualHeal = this.heal(healAmount);
-                if (actualHeal > 0) {
-                    totalHeal += actualHeal;
-                    messages.push(`${this.name} se cura ${actualHeal} gracias a su Báculo.`);
-                }
-            }
-
-            // Báculo +1: Curación de soporte al aliado más herido (5% HP Máx)
-            if (this.equippedWeapon.isUpgraded) {
-                let allyGroup = this.isAlly 
-                    ? ((typeof GAME_STATE !== 'undefined' && GAME_STATE.team) ? GAME_STATE.team : [])
-                    : ((typeof combatState !== 'undefined' && combatState.enemies) ? combatState.enemies : []);
-                let woundedAllies = allyGroup.filter(a => !a.isOffline && a.hp > 0 && a.hp < a.maxHp && a !== this);
-                if (woundedAllies.length > 0) {
-                    woundedAllies.sort((a, b) => (a.hp / a.maxHp) - (b.hp / b.maxHp));
-                    let targetAlly = woundedAllies[0];
-                    let allyHealRate = 0.05;
-                    if (this.hasAffinity() && this.element === ELEMENTS.AGUA) {
-                        allyHealRate *= 1.25;
-                    }
-                    let allyHealAmt = Math.max(1, Math.floor(targetAlly.maxHp * allyHealRate));
-                    let actualAllyHeal = targetAlly.heal(allyHealAmt);
-                    if (actualAllyHeal > 0) {
-                        messages.push(`🪄 ${this.name} transfiere energía con su Báculo +1 y cura ${actualAllyHeal} HP a ${targetAlly.name}.`);
-                        messages.allyHeal = {
-                            targetRobot: targetAlly,
-                            amount: actualAllyHeal,
-                            isEnemy: !this.isAlly
-                        };
-                    }
-                }
-
-                // Báculo +1: 20% probabilidad de reducir 1 Cooldown a una habilidad de un aliado o propia
-                if (Math.random() < 0.20) {
-                    let teamForCd = this.isAlly 
-                        ? ((typeof GAME_STATE !== 'undefined' && GAME_STATE.team) ? GAME_STATE.team : [])
-                        : ((typeof combatState !== 'undefined' && combatState.enemies) ? combatState.enemies : []);
-                    let eligibleMembers = teamForCd.filter(a => !a.isOffline && a.hp > 0 && a.skills && a.skills.some(s => s.currentCd > 0));
-                    if (eligibleMembers.length > 0) {
-                        let chosenMember = eligibleMembers[Math.floor(Math.random() * eligibleMembers.length)];
-                        let onCdSkills = chosenMember.skills.filter(s => s.currentCd > 0);
-                        if (onCdSkills.length > 0) {
-                            let chosenSkill = onCdSkills[Math.floor(Math.random() * onCdSkills.length)];
-                            chosenSkill.currentCd = Math.max(0, chosenSkill.currentCd - 1);
-                            messages.push(`⚡🔋 ¡Sobrecarga mística del Báculo +1! Se reduce 1 turno de Cooldown a [${chosenSkill.name}] de ${chosenMember.name}.`);
-                            messages.cooldownReduced = {
-                                targetRobot: chosenMember,
-                                skillName: chosenSkill.name,
-                                isEnemy: !this.isAlly
-                            };
-                        }
-                    }
-                }
             }
         }
         

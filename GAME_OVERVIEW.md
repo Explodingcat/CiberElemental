@@ -57,7 +57,7 @@ Desde la ventana modal de **Mochila (`🎒`)** gestionas los recursos del escuad
 2. **Armamento Cibernético:**
    * **Daga 🗡️:** 25% (o 40% en +1) de asestar un segundo ataque consecutivo.
    * **Hacha 🪓:** Perfora el 50% (o 75% en +1) de las reducciones por defensa y barreras.
-   * **Báculo 🪄:** Autocuración pasiva del 5% (o 7% en +1) del HP máx por turno.
+   * **Báculo 🪄:** Al finalizar su turno, genera un Escudo de plasma temporal (10%, o 15% en +1) que absorbe daño antes de tocar la vida.
    * **Espada ⚔️:** +15% (o +30% en +1) de Daño base + 10% (o 20% en +1) de Golpe Crítico en Básicos (+50% daño).
    * **🌟 Afinidad Elemental:** Equipar un arma que coincida con el elemento del robot otorga **+20% de HP y +20% de ATQ**.
 3. **💾 Chips de Habilidad:** Permiten que un robot aprenda un ataque de otro elemento (*Lanzallamas, Geyser, Fisura, Tornado*) para detonar sus propios combos.

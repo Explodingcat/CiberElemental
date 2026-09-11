@@ -52,7 +52,7 @@ function initChestEvent() {
         weapon.name += " +1";
         if (weapon.type === WEAPON_TYPES.DAGA) weapon.desc = '40% prob. doble ataque (con +1). Cada golpe puede aplicar marca.';
         if (weapon.type === WEAPON_TYPES.HACHA) weapon.desc = '+10% ATQ base. Perfora 75% defensas (con +1). 20% prob. Rompearmaduras. +45% Daño a ≤40% HP (Verdugo +1).';
-        if (weapon.type === WEAPON_TYPES.BACULO) weapon.desc = 'Regenera 7% HP portador (con +1) + 5% a un aliado. 20% prob. de reducir 1 CD.';
+        if (weapon.type === WEAPON_TYPES.BACULO) weapon.desc = 'Al finalizar turno: Escudo de plasma 15% HP Máx portador + micro-escudo 8% a un aliado. 20% prob. de reducir 1 CD.';
         if (weapon.type === WEAPON_TYPES.ESPADA) weapon.desc = '+30% Daño base y +20% Crítico (con +1). Críticos activan Racha (+10% ATQ).';
         
         rewardObj = weapon;
@@ -371,7 +371,7 @@ function executeCampForge(robotId) {
     w.name += ' +1';
     if (w.type === WEAPON_TYPES.DAGA) w.desc = '40% prob. doble ataque (con +1). Cada golpe puede aplicar marca.';
     if (w.type === WEAPON_TYPES.HACHA) w.desc = '+10% ATQ base. Perfora 75% defensas (con +1). 20% prob. Rompearmaduras. +45% Daño a ≤40% HP (Verdugo +1).';
-    if (w.type === WEAPON_TYPES.BACULO) w.desc = 'Regenera 7% HP portador (con +1) + 5% a un aliado. 20% prob. de reducir 1 CD.';
+    if (w.type === WEAPON_TYPES.BACULO) w.desc = 'Al finalizar turno: Escudo de plasma 15% HP Máx portador + micro-escudo 8% a un aliado. 20% prob. de reducir 1 CD.';
     if (w.type === WEAPON_TYPES.ESPADA) w.desc = '+30% Daño base y +20% Crítico (con +1). Críticos activan Racha (+10% ATQ).';
     robot.recalculateStats();
     
@@ -505,43 +505,62 @@ function initShopEvent() {
     shopDismissalUsed = false;
     let discountPct = (typeof SkillsManager !== 'undefined') ? SkillsManager.getShopDiscountPct() : 0;
     
-    // 2 Armas con elemento aleatorio (1 unidad disponible de cada una)
-    for (let i = 0; i < 2; i++) {
-        let w = generateRandomWeapon();
-        let rawCost = Math.floor(Math.random() * 15) + 35; // 35 - 49 chatarra
-        let cost = Math.max(10, Math.floor(rawCost * (1 - discountPct)));
-        currentShopItems.push({
-            id: 'shop_weapon_' + i,
-            category: 'WEAPON',
-            data: w,
-            name: w.name,
-            element: w.element,
-            icon: WEAPON_EMOJIS[w.type],
-            desc: w.desc,
-            cost: cost,
-            bought: false
-        });
-    }
+    // 1 Arma con elemento aleatorio (precio rebalanceado: 95 a 109 chatarra)
+    let w = generateRandomWeapon();
+    let rawWeaponCost = Math.floor(Math.random() * 15) + 95; // 95 - 109 chatarra
+    let weaponCost = Math.max(20, Math.floor(rawWeaponCost * (1 - discountPct)));
+    currentShopItems.push({
+        id: 'shop_weapon_0',
+        category: 'WEAPON',
+        data: w,
+        name: w.name,
+        element: w.element,
+        icon: WEAPON_EMOJIS[w.type],
+        desc: w.desc,
+        cost: weaponCost,
+        bought: false
+    });
     
-    // 2 Items (Chips o Consumibles, 1 unidad disponible de cada uno)
+    // 2 Consumibles tácticos aleatorios (Nanobots, PEM o Sobrecarga)
     for (let i = 0; i < 2; i++) {
-        let item = generateRandomItem();
-        let isChip = item.type.includes('CHIP');
-        let rawCost = isChip ? 30 : 25;
+        let item = (typeof generateRandomConsumable === 'function')
+            ? generateRandomConsumable()
+            : (() => {
+                let keys = Object.keys(ITEM_TYPES).filter(k => !k.includes('CHIP'));
+                let t = ITEM_TYPES[keys[Math.floor(Math.random() * keys.length)]];
+                return { type: t, ...ITEM_DEFS[t] };
+            })();
+        let rawCost = 25;
         let cost = Math.max(8, Math.floor(rawCost * (1 - discountPct)));
-        let element = isChip ? item.type.replace('CHIP_', '') : null;
         currentShopItems.push({
             id: 'shop_item_' + i,
-            category: isChip ? 'CHIP' : 'ITEM',
+            category: 'ITEM',
             data: item,
             name: item.name,
-            element: element,
+            element: null,
             icon: item.emoji,
             desc: item.desc,
             cost: cost,
             bought: false
         });
     }
+
+    // 1 Consumible adicional en el hueco del 2º arma: Kit de Nanobots (curación) o Bomba PEM
+    let bonusType = Math.random() < 0.5 ? ITEM_TYPES.NANOBOTS : ITEM_TYPES.PEM;
+    let bonusItem = { type: bonusType, ...ITEM_DEFS[bonusType] };
+    let bonusRawCost = 25;
+    let bonusCost = Math.max(8, Math.floor(bonusRawCost * (1 - discountPct)));
+    currentShopItems.push({
+        id: 'shop_item_2',
+        category: 'ITEM',
+        data: bonusItem,
+        name: bonusItem.name,
+        element: null,
+        icon: bonusItem.emoji,
+        desc: bonusItem.desc,
+        cost: bonusCost,
+        bought: false
+    });
     
     renderShopUI();
 }

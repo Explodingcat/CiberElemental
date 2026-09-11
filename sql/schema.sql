@@ -12,6 +12,7 @@ CREATE TABLE IF NOT EXISTS public.match_runs (
     user_id UUID REFERENCES auth.users NOT NULL DEFAULT auth.uid(),
     player_name TEXT,
     won BOOLEAN NOT NULL DEFAULT FALSE,
+    tower_id INT NOT NULL DEFAULT 1,
     floor_reached INT NOT NULL,
     duration_seconds INT NOT NULL,
     scrap_collected INT DEFAULT 0,
@@ -19,15 +20,16 @@ CREATE TABLE IF NOT EXISTS public.match_runs (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Asegurar columna player_name si la tabla ya existía
+-- Asegurar columnas si la tabla ya existía
 ALTER TABLE public.match_runs ADD COLUMN IF NOT EXISTS player_name TEXT;
+ALTER TABLE public.match_runs ADD COLUMN IF NOT EXISTS tower_id INT NOT NULL DEFAULT 1;
 
 -- 2. Habilitar Seguridad por Fila (Row Level Security - RLS)
 ALTER TABLE public.match_runs ENABLE ROW LEVEL SECURITY;
 
--- 3. Índices para optimizar la velocidad del Leaderboard y consultas
-CREATE INDEX IF NOT EXISTS idx_match_runs_speedrun 
-    ON public.match_runs (won, duration_seconds ASC) 
+-- 3. Índices para optimizar la velocidad del Leaderboard por torre y consultas
+CREATE INDEX IF NOT EXISTS idx_match_runs_speedrun_tower 
+    ON public.match_runs (tower_id, won, duration_seconds ASC) 
     WHERE won = TRUE;
 
 CREATE INDEX IF NOT EXISTS idx_match_runs_user 
@@ -64,16 +66,26 @@ CREATE TABLE IF NOT EXISTS public.player_profiles (
 -- Asegurar columnas si la tabla ya existía
 ALTER TABLE public.player_profiles ADD COLUMN IF NOT EXISTS global_scrap INT DEFAULT 0;
 ALTER TABLE public.player_profiles ADD COLUMN IF NOT EXISTS unlocked_skills JSONB DEFAULT '[]'::jsonb;
+ALTER TABLE public.player_profiles ADD COLUMN IF NOT EXISTS username TEXT;
+ALTER TABLE public.player_profiles ADD COLUMN IF NOT EXISTS avatar_icon TEXT DEFAULT 'DEFAULT';
+ALTER TABLE public.player_profiles ADD COLUMN IF NOT EXISTS tower_completions JSONB DEFAULT '{"1": 0, "2": 0, "3": 0}'::jsonb;
+ALTER TABLE public.player_profiles ADD COLUMN IF NOT EXISTS achievements JSONB DEFAULT '[]'::jsonb;
 ALTER TABLE public.player_profiles ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW();
+
+-- Índice único e insensible a mayúsculas para username
+CREATE UNIQUE INDEX IF NOT EXISTS idx_player_profiles_username_lower 
+    ON public.player_profiles (LOWER(username))
+    WHERE username IS NOT NULL AND username <> '';
 
 -- Habilitar RLS en player_profiles
 ALTER TABLE public.player_profiles ENABLE ROW LEVEL SECURITY;
 
 -- Políticas de Seguridad para player_profiles:
 DROP POLICY IF EXISTS "Users can read their own profile" ON public.player_profiles;
-CREATE POLICY "Users can read their own profile"
+DROP POLICY IF EXISTS "Allow public read of player profiles" ON public.player_profiles;
+CREATE POLICY "Allow public read of player profiles"
     ON public.player_profiles FOR SELECT
-    USING (auth.uid() = user_id);
+    USING (true);
 
 DROP POLICY IF EXISTS "Users can insert their own profile" ON public.player_profiles;
 CREATE POLICY "Users can insert their own profile"

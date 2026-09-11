@@ -252,12 +252,12 @@ function createRobotFromConfig(config, isAlly) {
         if (isLegendary) {
             if (wType === WEAPON_TYPES.DAGA) desc = '40% prob. doble ataque (con +1). Afinidad Universal (+25% ATQ / +15% HP). 1.15x Daño universal.';
             if (wType === WEAPON_TYPES.HACHA) desc = '+10% ATQ base. Perfora 75% defensas (+1). 20% prob. Rompearmaduras. +45% Daño a ≤40% HP (Verdugo +1). Afinidad Universal.';
-            if (wType === WEAPON_TYPES.BACULO) desc = 'Regenera 7% HP portador (+1) + 5% a un aliado. 20% prob. de -1 CD. Afinidad Universal.';
+            if (wType === WEAPON_TYPES.BACULO) desc = 'Al finalizar turno: Escudo de plasma 15% HP Máx portador + micro-escudo 8% a aliado. 20% prob. de -1 CD. Afinidad Universal.';
             if (wType === WEAPON_TYPES.ESPADA) desc = '+30% Daño base y +20% Crítico (+1). Críticos activan Racha (+10% ATQ). Afinidad Universal.';
         } else {
             if (wType === WEAPON_TYPES.DAGA) desc = isPlusOne ? '40% prob. doble ataque (con +1). Cada golpe aplica marca.' : '25% prob. doble ataque. Cada golpe aplica marca.';
             if (wType === WEAPON_TYPES.HACHA) desc = isPlusOne ? '+10% ATQ. Perfora 75% barreras. 20% Rompearmaduras. +45% Daño a ≤40% HP.' : '+10% ATQ. Perfora 50% barreras. 20% Rompearmaduras. +35% Daño a ≤40% HP.';
-            if (wType === WEAPON_TYPES.BACULO) desc = isPlusOne ? 'Regenera 7% HP portador + 5% a aliado. 20% prob. -1 CD. Potenciado por Agua.' : 'Regenera 5% HP por ronda. Potenciado por afinidad Agua.';
+            if (wType === WEAPON_TYPES.BACULO) desc = isPlusOne ? 'Al finalizar turno: Escudo de plasma 15% HP portador + micro-escudo 8% a aliado. 20% prob. -1 CD. Potenciado por Agua.' : 'Al finalizar turno: Escudo de plasma 10% HP portador. Potenciado por afinidad Agua (+25%).';
             if (wType === WEAPON_TYPES.ESPADA) desc = isPlusOne ? '+30% Daño base y +20% Crítico. Críticos activan Racha (+10% ATQ).' : '+15% Daño base y +10% Crítico. Críticos activan Racha (+10% ATQ).';
         }
         

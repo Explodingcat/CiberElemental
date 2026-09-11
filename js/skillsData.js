@@ -264,12 +264,12 @@ const SKILLS_CATALOG = [
         id: 'staff_mastery',
         branch: 'DEFENSE',
         tier: 3,
-        name: 'Báculos de Regeneración',
+        name: 'Báculos de Blindaje',
         icon: '🪄',
         cost: 325,
         prerequisites: ['hp_up_2'],
-        desc: 'Los Báculos regeneran un +2% extra del HP Máximo al final del turno.',
-        modifiers: { staff_extra_heal: 0.02 }
+        desc: 'Los Báculos otorgan un +5% de absorción de escudo de plasma adicional al finalizar el turno.',
+        modifiers: { staff_extra_shield: 0.05, staff_extra_heal: 0.05 }
     },
     {
         id: 'defend_boost',

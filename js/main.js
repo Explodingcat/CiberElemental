@@ -93,8 +93,10 @@ function showScreen(screenId) {
         if (!GAME_STATE.runSaved && typeof AuthManager !== 'undefined') {
             GAME_STATE.runSaved = true;
             const duration = GAME_STATE.startTime ? Math.max(1, Math.round((Date.now() - GAME_STATE.startTime) / 1000)) : 0;
+            const towerId = (GAME_STATE && GAME_STATE.currentTower) ? GAME_STATE.currentTower : ((GAME_STATE.floor <= 10) ? 1 : ((GAME_STATE.floor <= 20) ? 2 : 3));
             AuthManager.saveMatchRun({
                 won: false,
+                tower_id: towerId,
                 floor_reached: GAME_STATE.floor || 1,
                 duration_seconds: duration,
                 scrap_collected: GAME_STATE.scrap || 0,
@@ -126,9 +128,9 @@ function showScreen(screenId) {
         if (teamEl) teamEl.innerText = `${aliveRobots.length} 🤖`;
         if (globalScrapAddedEl) globalScrapAddedEl.innerText = `+${GAME_STATE.scrap} ⚙️ transferidos al Pozo Global de tu Cuenta`;
 
+        const currentTowerId = (GAME_STATE && GAME_STATE.currentTower) ? GAME_STATE.currentTower : 1;
         const sectorEl = document.getElementById('victory-sector-conquered');
         if (sectorEl) {
-            const currentTowerId = (GAME_STATE && GAME_STATE.currentTower) ? GAME_STATE.currentTower : 1;
             const towerCfg = (typeof TOWERS_CONFIG !== 'undefined' && TOWERS_CONFIG[currentTowerId]) ? TOWERS_CONFIG[currentTowerId] : null;
             sectorEl.innerText = towerCfg ? `${towerCfg.name.toUpperCase()} (PISO ${GAME_STATE.floor || 10}) ✔` : `PISO ${GAME_STATE.floor || 10} ✔`;
         }
@@ -147,6 +149,7 @@ function showScreen(screenId) {
             const duration = GAME_STATE.startTime ? Math.max(1, Math.round((Date.now() - GAME_STATE.startTime) / 1000)) : 0;
             AuthManager.saveMatchRun({
                 won: true,
+                tower_id: currentTowerId,
                 floor_reached: GAME_STATE.floor || 10,
                 duration_seconds: duration,
                 scrap_collected: GAME_STATE.scrap || 0,
@@ -208,7 +211,7 @@ function initGame() {
         if (template.element === ELEMENTS.FUEGO) {
             roleSubtitle = '⚔️ Guerrero Ofensivo • Daño Térmico Directo';
         } else if (template.element === ELEMENTS.AGUA) {
-            roleSubtitle = '💧 Soporte Táctico • Médico y Regeneración';
+            roleSubtitle = '💧 Soporte Táctico • Escudos Temporales y Control';
         } else if (template.element === ELEMENTS.TIERRA) {
             roleSubtitle = '🛡️ Coloso Defensivo • Tanque y Provocación';
         } else if (template.element === ELEMENTS.AIRE) {
@@ -277,8 +280,8 @@ function initGame() {
         }
         if (wKey === 'BACULO') { 
             wName = 'Báculo'; 
-            desc = '<strong>Regenera 5% HP del portador</strong> por ronda (7% con +1). En +1 <strong>cura 5% a un aliado</strong> y <strong>20% prob. de reducir 1 CD</strong>.';
-            weaponRoleSubtitle = '🪄 Canalizador • Sustento y Soporte Grupal';
+            desc = '<strong>Al finalizar su turno, genera un Escudo de plasma</strong> (10% HP Máx, 15% con +1). En +1 otorga <strong>micro-escudo (8%) a aliado</strong> y <strong>20% prob. de reducir 1 CD</strong>.';
+            weaponRoleSubtitle = '🪄 Canalizador • Escudos de Plasma y Soporte Grupal';
         }
         if (wKey === 'ESPADA') { 
             wName = 'Espada'; 
@@ -329,7 +332,7 @@ function initGame() {
         if (element === ELEMENTS.FUEGO) {
             synergyDesc = 'Afinidad compartida: <strong>+15% ATQ</strong> y <strong>+15% Daño adicional</strong> contra rivales con Marca o Quemadura activa.';
         } else if (element === ELEMENTS.AGUA) {
-            synergyDesc = 'Afinidad compartida: <strong>+15% HP Máximo</strong> y <strong>+25% Potencia de Curación</strong> a todas las fuentes de regeneración.';
+            synergyDesc = 'Afinidad compartida: <strong>+15% HP Máximo</strong> y <strong>+25% Potencia de Escudos</strong> temporales y barreras de plasma.';
         } else if (element === ELEMENTS.TIERRA) {
             synergyDesc = 'Afinidad compartida: <strong>+25% HP Máximo</strong> y <strong>-10% Daño recibido permanente</strong> (Mitigación pasiva de blindaje).';
         } else if (element === ELEMENTS.AIRE) {
@@ -410,7 +413,7 @@ function initGame() {
         weapon.name = `${selectedWeaponType.charAt(0) + selectedWeaponType.slice(1).toLowerCase()} de ${playerRobot.element}`;
         if (weapon.type === WEAPON_TYPES.DAGA) weapon.desc = '25% prob. doble ataque (40% con +1). Cada golpe puede aplicar marca.';
         if (weapon.type === WEAPON_TYPES.HACHA) weapon.desc = '+10% ATQ base. 20% prob. Rompearmaduras (-25% DEF). Perfora 50% defensas (75% con +1). +35% Daño a ≤40% HP (+45% con +1).';
-        if (weapon.type === WEAPON_TYPES.BACULO) weapon.desc = 'Regenera 5% HP al portador por ronda (7% con +1). En +1 cura 5% a un aliado y 20% prob. de -1 CD.';
+        if (weapon.type === WEAPON_TYPES.BACULO) weapon.desc = 'Al finalizar su turno, genera un Escudo de plasma (10% HP Máx, 15% con +1). En +1 otorga micro-escudo (8%) a aliado y 20% prob. de -1 CD.';
         if (weapon.type === WEAPON_TYPES.ESPADA) weapon.desc = '+15% Daño base y +10% Crítico (+30%/+20% con +1). Críticos otorgan +10% ATQ temporal.';
         
         playerRobot.equipWeapon(weapon);
@@ -429,6 +432,12 @@ function initGame() {
 
         generateFullMap(1);
         renderMap();
+
+        // Al iniciar una nueva expedición desde Torre 1, limpiar checkpoint previo
+        if (typeof AuthManager !== 'undefined' && typeof AuthManager.clearTowerCheckpoint === 'function') {
+            AuthManager.clearTowerCheckpoint();
+        }
+
         showScreen('screen-map');
     };
     
@@ -447,14 +456,14 @@ async function checkSavedCheckpoint() {
     
     try {
         const checkpoint = await AuthManager.getSavedTowerCheckpoint();
-        if (checkpoint && checkpoint.squad && checkpoint.squad.length > 0) {
-            const towerId = checkpoint.current_tower || 2;
+        if (checkpoint && checkpoint.squad && checkpoint.squad.length > 0 && checkpoint.floor) {
+            const towerId = checkpoint.current_tower || ((checkpoint.floor <= 10) ? 1 : ((checkpoint.floor <= 20) ? 2 : 3));
             const towerCfg = (typeof TOWERS_CONFIG !== 'undefined' && TOWERS_CONFIG[towerId]) 
                 ? TOWERS_CONFIG[towerId] 
                 : { name: `Torre ${towerId}` };
             
             const badgeEl = document.getElementById('resume-tower-badge');
-            if (badgeEl) badgeEl.innerText = `${towerCfg.name.toUpperCase()} (PISO ${checkpoint.floor || 11})`;
+            if (badgeEl) badgeEl.innerText = `${towerCfg.name.toUpperCase()} (PISO ${checkpoint.floor})`;
             
             resumeBtn.style.display = 'flex';
             resumeBtn.onclick = () => resumeSavedRun(checkpoint);
@@ -473,13 +482,35 @@ async function resumeSavedRun(checkpoint) {
     }
     if (!checkpoint) return;
 
+    // Restaurar torre y piso
+    GAME_STATE.floor = checkpoint.floor || 1;
+    GAME_STATE.currentTower = checkpoint.current_tower || ((GAME_STATE.floor <= 10) ? 1 : ((GAME_STATE.floor <= 20) ? 2 : 3));
+    GAME_STATE.currentNodeId = checkpoint.currentNodeId || null;
+    GAME_STATE.startTime = checkpoint.startTime || Date.now();
+    GAME_STATE.runSaved = false;
+    startRunTimer();
+
     // Restaurar escuadrón completo
     GAME_STATE.team = [];
     if (Array.isArray(checkpoint.squad)) {
+        const isTowerStart = GAME_STATE.floor === 11 || GAME_STATE.floor === 21;
         checkpoint.squad.forEach(robotData => {
             const robot = (typeof Robot.deserialize === 'function') 
                 ? Robot.deserialize(robotData) 
                 : new Robot(robotData);
+            if (isTowerStart) {
+                robot.isOffline = false;
+                robot.recalculateStats();
+                robot.hp = robot.maxHp;
+                if (robot.statuses) {
+                    robot.statuses = robot.statuses.filter(s => s && s.isPermanent);
+                }
+                if (robot.skills) {
+                    robot.skills.forEach(skill => {
+                        if (skill.currentCd) skill.currentCd = 0;
+                    });
+                }
+            }
             GAME_STATE.team.push(robot);
         });
     }
@@ -495,16 +526,17 @@ async function resumeSavedRun(checkpoint) {
     const disp = document.getElementById('scrap-display');
     if (disp) disp.innerText = `Chatarra: ${GAME_STATE.scrap} ⚙️`;
 
-    // Restaurar torre y piso
-    GAME_STATE.currentTower = checkpoint.current_tower || 2;
-    GAME_STATE.floor = checkpoint.floor || 11;
-    GAME_STATE.currentNodeId = null;
-    GAME_STATE.startTime = Date.now();
-    GAME_STATE.runSaved = false;
-    startRunTimer();
+    // Restaurar mapa o generar de la torre correspondiente
+    if (checkpoint.map && Array.isArray(checkpoint.map) && checkpoint.map.length > 0) {
+        if (typeof setFullMap === 'function') {
+            setFullMap(checkpoint.map);
+        } else if (typeof fullMap !== 'undefined') {
+            fullMap = checkpoint.map;
+        }
+    } else {
+        generateFullMap(GAME_STATE.currentTower);
+    }
 
-    // Generar mapa de la torre correspondiente
-    generateFullMap(GAME_STATE.currentTower);
     renderMap();
     updateTeamUI();
     showScreen('screen-map');

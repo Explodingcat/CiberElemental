@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Cyber-Elemental // Sandbox de Pruebas y Balance</title>
     <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style.css?v=3.8">
     <link rel="stylesheet" href="sandbox.css">
 </head>
 <body class="sandbox-app-wrapper">
@@ -106,9 +106,21 @@
                         <div class="form-group" style="min-width: 170px;">
                             <label>Escenario / Arena</label>
                             <select class="form-control" onchange="Sandbox.combatConfig.options.arenaBg = this.value">
-                                <option value="bg-normal">🏟️ Sector Estándar</option>
-                                <option value="bg-elite">💀 Sector Élite</option>
-                                <option value="bg-boss">👑 Cámara del Jefe Final</option>
+                                <optgroup label="Torre 1: Red de Servidores (Cyan)">
+                                    <option value="combat-tower-1 bg-normal">🌐 T1: Sector Estándar</option>
+                                    <option value="combat-tower-1 bg-elite">💀 T1: Sector Élite</option>
+                                    <option value="combat-tower-1 bg-boss">👑 T1: Cámara del Jefe</option>
+                                </optgroup>
+                                <optgroup label="Torre 2: Procesador Cuántico (Violeta)">
+                                    <option value="combat-tower-2 bg-normal">🔮 T2: Sector Estándar</option>
+                                    <option value="combat-tower-2 bg-elite">💀 T2: Sector Élite</option>
+                                    <option value="combat-tower-2 bg-boss">👑 T2: Cámara del Jefe</option>
+                                </optgroup>
+                                <optgroup label="Torre 3: Reactor de Fusión Solar (Ámbar)">
+                                    <option value="combat-tower-3 bg-normal">⚡ T3: Sector Estándar</option>
+                                    <option value="combat-tower-3 bg-elite">💀 T3: Sector Élite</option>
+                                    <option value="combat-tower-3 bg-boss">👑 T3: Cámara del Jefe</option>
+                                </optgroup>
                             </select>
                         </div>
 
@@ -179,8 +191,8 @@
                         <div id="combat-turn-queue" class="combat-turn-queue"></div>
                         <div id="combat-player-team" class="combat-player-team"></div>
                         <div id="combat-enemy-team" class="combat-enemy-team"></div>
+                        <div id="combat-actions" class="combat-tactical-box"></div>
                     </div>
-                    <div id="combat-actions" class="combat-tactical-box"></div>
                 </div>
 
             </div>

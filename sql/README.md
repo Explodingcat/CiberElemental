@@ -14,6 +14,9 @@ Esta carpeta contiene los scripts SQL necesarios para configurar o restaurar la 
   5. Políticas de seguridad **Row Level Security (RLS)** que protegen la privacidad de los usuarios mientras permiten el Leaderboard público de victorias y la meta-progresión personal.
 * **[`reset_meta_progression.sql`](./reset_meta_progression.sql):** Script administrativo para reiniciar la **Chatarra Global a 0** y vaciar el **Árbol de Pasivas (`[]`)** de todas las cuentas de jugadores en la base de datos.
 * **[`reset_leaderboard.sql`](./reset_leaderboard.sql):** Script administrativo para **borrar el Top 10** o purgar registros sospechosos del ranking de Speedrunners (`match_runs`).
+* **[`add_tower_speedruns.sql`](./add_tower_speedruns.sql):** Script de migración para **separar el Top 10 Speedrun por Torre 1, Torre 2 y Torre 3**, agregando la columna `tower_id`, backfill y nuevo índice optimizado.
+* **[`add_profile_and_achievements.sql`](./add_profile_and_achievements.sql):** Script de migración para **habilitar perfiles de usuario**, nombres únicos, avatares elementales, contadores de victorias por torre y logros.
+* **[`clean_all_match_history.sql`](./clean_all_match_history.sql):** Script administrativo para **borrar el 100% del historial de partidas** y resetear por completo el Top y registros de juego.
 
 ---
 
@@ -22,9 +25,8 @@ Esta carpeta contiene los scripts SQL necesarios para configurar o restaurar la 
 1. Entra a tu proyecto en **[Supabase Dashboard](https://supabase.com/dashboard)**.
 2. En el menú lateral izquierdo, haz clic en **SQL Editor** (`>_`).
 3. Haz clic en **New query** (o `+`).
-4. Abre el archivo [`schema.sql`](./schema.sql), copia todo su contenido y pégalo en el editor.
-5. Haz clic en el botón verde **Run** (o presiona `Ctrl + Enter`).
-6. Verás el mensaje de confirmación `Success. No rows returned`.
+4. Si ya tienes la base de datos funcionando y solo quieres activar el Top 10 por torres, abre [`add_tower_speedruns.sql`](./add_tower_speedruns.sql), pégalo y haz clic en **Run**. Si estás configurando desde cero, usa [`schema.sql`](./schema.sql).
+5. Verás el mensaje de confirmación `Success. No rows returned` (o las tablas con los 3 Top 10).
 
 ---
 
@@ -48,10 +50,11 @@ Para que los jugadores no registrados puedan jugar y almacenar su chatarra/parti
 | `id` | `uuid` | Identificador único de la partida (`PRIMARY KEY`). |
 | `user_id` | `uuid` | ID del usuario autenticado en `auth.users`. |
 | `player_name` | `text` | Nombre o apodo del comandante para el Leaderboard. |
-| `won` | `boolean` | `true` si venció a TITAN-X (Piso 10), `false` si fue Game Over. |
-| `floor_reached` | `int` | Piso máximo alcanzado (1 a 10). |
-| `duration_seconds` | `int` | Tiempo total transcurrido en la partida (en segundos). |
-| `scrap_collected` | `int` | Cantidad de chatarra acumulada al finalizar la partida. |
+| `won` | `boolean` | `true` si venció al jefe de la torre, `false` si fue Game Over. |
+| `tower_id` | `int` | Torre correspondiente: `1` (Cibernética), `2` (Cuántica) o `3` (Singularidad). |
+| `floor_reached` | `int` | Piso máximo alcanzado (1 a 30). |
+| `duration_seconds` | `int` | Tiempo total empleado en conquistar la torre (en segundos). |
+| `scrap_collected` | `int` | Cantidad de chatarra acumulada en la incursión. |
 | `squad` | `jsonb` | Arreglo JSON con robots, elementos, niveles, armas y chips equipados. |
 | `created_at` | `timestamptz`| Fecha y hora de creación del registro. |
 

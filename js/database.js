@@ -30,7 +30,7 @@ const ROBOT_TEMPLATES = {
         name: 'Aqua',
         element: ELEMENTS.AGUA,
         emoji: '🤖',
-        desc: 'Soporte táctico y curandero de agua. Cura aliados, regenera blindaje y salpica con Marca de Agua.',
+        desc: 'Soporte táctico y guardián de agua. Proyecta escudos hidrodinámicos que absorben daño y salpican con Marca de Agua.',
         skills: [
             {
                 name: 'Ataque Básico',
@@ -41,14 +41,14 @@ const ROBOT_TEMPLATES = {
                 power: 1.0
             },
             {
-                name: 'Rocío Reparador',
+                name: 'Rocío Protector',
                 cd: 3,
                 currentCd: 0,
-                desc: 'Cura a un aliado (o a sí mismo) un 10% de su HP máximo de inmediato. Envuelve al objetivo en rocío que salpica Marca de Agua (3 turnos) a quien lo ataque, y al próximo turno de Aqua le restaura otro 10% de HP.',
-                type: 'BUFF_HEAL',
+                desc: 'Otorga un Escudo temporal equivalente al 20% del HP Máximo a un aliado (o a sí mismo) que dura 1 turno. Si el objetivo con este escudo es atacado, salpica Marca de Agua (3 turnos) al agresor. La Afinidad de Agua eleva el escudo al 25%.',
+                type: 'BUFF_SHIELD',
                 target: 'ALLY',
-                healPct: 0.10,
-                status: { type: 'REGENERACION', name: 'Rocío Reparador', duration: 1, healPct: 0.10 }
+                shieldPct: 0.20,
+                status: { type: 'SHIELD', subType: 'ROCIO_PROTECTOR', name: 'Rocío Protector', duration: 1, shieldPct: 0.20 }
             }
         ]
     },
@@ -267,7 +267,7 @@ function generateRandomWeapon(forcedElement = null) {
             break;
         case WEAPON_TYPES.BACULO:
             name = 'Báculo';
-            abilityDesc = 'Regenera 5% HP al portador por ronda (7% con +1). En +1 cura 5% a un aliado y 20% prob. de -1 CD.';
+            abilityDesc = 'Al finalizar su turno, genera un Escudo de plasma (10% HP Máx, 15% con +1). En +1 otorga micro-escudo (8%) a aliado y 20% prob. de -1 CD. Afinidad Agua +25% absorción.';
             break;
         case WEAPON_TYPES.ESPADA:
             name = 'Espada';
@@ -303,7 +303,7 @@ function generateLegendaryWeapon(forcedType = null) {
             break;
         case WEAPON_TYPES.BACULO:
             name = 'Báculo Legendario';
-            abilityDesc = 'Regenera 7% HP portador + 5% al aliado más herido por ronda. 20% prob. de reducir 1 CD. Afinidad Universal (+25% ATQ y +15% HP).';
+            abilityDesc = 'Al finalizar su turno, genera un Escudo de plasma del 15% HP Máx y otorga un micro-escudo (8%) al aliado con menor vida. 20% prob. de -1 CD. Afinidad Universal (+25% ATQ y +15% HP).';
             break;
         case WEAPON_TYPES.ESPADA:
             name = 'Espada Legendaria';
@@ -725,3 +725,13 @@ function generateRandomItem() {
         ...ITEM_DEFS[type]
     };
 }
+
+function generateRandomConsumable() {
+    let consumableKeys = Object.keys(ITEM_TYPES).filter(k => !k.includes('CHIP'));
+    let type = ITEM_TYPES[consumableKeys[Math.floor(Math.random() * consumableKeys.length)]];
+    return {
+        type: type,
+        ...ITEM_DEFS[type]
+    };
+}
+

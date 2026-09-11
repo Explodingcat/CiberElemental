@@ -11,6 +11,9 @@ const AuthManager = {
     },
 
     getPlayerDisplayName() {
+        if (typeof ProfileManager !== 'undefined' && ProfileManager.profileData && ProfileManager.profileData.username) {
+            return ProfileManager.profileData.username;
+        }
         if (!this.currentUser) return 'Piloto Desconocido';
         if (this.isAnonymous()) {
             return `Invitado_${this.currentUser.id.substring(0, 5)}`;
@@ -47,6 +50,12 @@ const AuthManager = {
                         await CosmeticsManager.loadCosmeticsFromDB();
                         CosmeticsManager.updateEquippedDisplay();
                     }
+                    if (typeof ProfileManager !== 'undefined') {
+                        await ProfileManager.loadProfile();
+                    }
+                    if (typeof checkSavedCheckpoint === 'function') {
+                        checkSavedCheckpoint();
+                    }
                 });
             } catch (err) {
                 console.warn('[AuthManager] Error al inicializar sesión:', err);
@@ -59,6 +68,12 @@ const AuthManager = {
         if (typeof CosmeticsManager !== 'undefined') {
             await CosmeticsManager.loadCosmeticsFromDB();
             CosmeticsManager.updateEquippedDisplay();
+        }
+        if (typeof ProfileManager !== 'undefined') {
+            await ProfileManager.loadProfile();
+        }
+        if (typeof checkSavedCheckpoint === 'function') {
+            checkSavedCheckpoint();
         }
     },
 
@@ -212,6 +227,9 @@ const AuthManager = {
             await CosmeticsManager.loadCosmeticsFromDB();
             CosmeticsManager.updateEquippedDisplay();
         }
+        if (typeof ProfileManager !== 'undefined') {
+            await ProfileManager.loadProfile();
+        }
 
         this.loadAndRenderHistory();
     },
@@ -222,104 +240,165 @@ const AuthManager = {
             await SkillsManager.addGlobalScrap(runData.scrap_collected || 0);
         }
 
+        // Recuperar o asegurar sesión de usuario en Supabase si aún no está asignada
+        if (!this.currentUser && isSupabaseConfigured() && supabaseClient) {
+            try {
+                const { data: { session } } = await supabaseClient.auth.getSession();
+                if (session && session.user) {
+                    this.currentUser = session.user;
+                } else {
+                    const { data: anonData } = await supabaseClient.auth.signInAnonymously();
+                    if (anonData && anonData.user) {
+                        this.currentUser = anonData.user;
+                    }
+                }
+            } catch (sessionErr) {
+                console.warn('[AuthManager] No se pudo asegurar sesión activa para guardar run:', sessionErr);
+            }
+        }
+
         // 2. Si hay usuario y Supabase configurado, guardar en la base de datos
         if (this.currentUser && isSupabaseConfigured() && supabaseClient) {
             try {
                 const playerName = this.getPlayerDisplayName();
+                const towerId = runData.tower_id || (runData.floor_reached > 20 ? 3 : (runData.floor_reached > 10 ? 2 : 1));
 
-                const { error } = await supabaseClient
+                const insertPayload = {
+                    user_id: this.currentUser.id,
+                    player_name: playerName,
+                    won: runData.won,
+                    tower_id: towerId,
+                    floor_reached: runData.floor_reached,
+                    duration_seconds: runData.duration_seconds,
+                    scrap_collected: runData.scrap_collected,
+                    squad: runData.squad
+                };
+
+                let { data, error } = await supabaseClient
                     .from('match_runs')
-                    .insert([{
-                        user_id: this.currentUser.id,
-                        player_name: playerName,
-                        won: runData.won,
-                        floor_reached: runData.floor_reached,
-                        duration_seconds: runData.duration_seconds,
-                        scrap_collected: runData.scrap_collected,
-                        squad: runData.squad
-                    }]);
+                    .insert([insertPayload])
+                    .select();
+
+                // Tolerancia a fallos: Si la columna tower_id aún no fue creada en la BD de Supabase
+                if (error && error.message && error.message.includes('tower_id')) {
+                    console.warn('[Supabase] Columna tower_id no detectada en la BD, reintentando inserción básica...');
+                    delete insertPayload.tower_id;
+                    const retry = await supabaseClient.from('match_runs').insert([insertPayload]).select();
+                    error = retry.error;
+                    data = retry.data;
+                }
 
                 if (error) {
                     console.error('[Supabase] Error al insertar match_run:', error);
+                    return { success: false, error };
                 } else {
-                    console.info('[Supabase] Partida guardada exitosamente en la nube para user_id:', this.currentUser.id);
+                    console.info(`[Supabase] Partida guardada exitosamente en la nube (Torre ${towerId}) para user_id:`, this.currentUser.id);
+                    return { success: true, data };
                 }
             } catch (err) {
                 console.error('[Supabase] Excepción al guardar partida:', err);
+                return { success: false, error: err };
             }
         } else {
             console.warn('[Supabase] No se guardó match_run en la nube (sin usuario o sin cliente Supabase).');
+            return { success: false, reason: 'offline_or_no_user' };
         }
     },
 
     async saveTowerCheckpoint(checkpointData) {
-        if (!this.currentUser || !isSupabaseConfigured() || !supabaseClient) {
-            console.warn('[AuthManager] No se puede guardar punto de control sin usuario o sin Supabase');
-            return null;
-        }
+        if (!checkpointData) return null;
+
+        // Limpiar cualquier residuo de localStorage para evitar manipulaciones locales
         try {
-            const payload = {
-                user_id: this.currentUser.id,
-                tower_completed: checkpointData.tower_completed,
-                current_tower: checkpointData.current_tower,
-                floor: checkpointData.floor,
-                scrap: checkpointData.scrap || 0,
-                squad: checkpointData.squad,
-                inventory: checkpointData.inventory,
-                updated_at: new Date().toISOString()
-            };
-            const { data, error } = await supabaseClient
-                .from('saved_tower_runs')
-                .upsert(payload, { onConflict: 'user_id' });
-            if (error) {
-                console.error('[AuthManager] Error al guardar punto de control de torre:', error);
-            } else {
-                console.info('[AuthManager] Punto de control de torre guardado con éxito en Supabase:', payload);
+            localStorage.removeItem('ciber_tower_checkpoint');
+            if (this.currentUser) {
+                localStorage.removeItem(`ciber_tower_checkpoint_${this.currentUser.id}`);
             }
-            return data;
-        } catch (err) {
-            console.error('[AuthManager] Excepción al guardar punto de control de torre:', err);
-            return null;
+        } catch (e) {}
+
+        // Guardar EXCLUSIVAMENTE en la base de datos Supabase
+        if (this.currentUser && isSupabaseConfigured() && supabaseClient) {
+            try {
+                const payload = {
+                    user_id: this.currentUser.id,
+                    tower_completed: checkpointData.tower_completed,
+                    current_tower: checkpointData.current_tower,
+                    floor: checkpointData.floor,
+                    scrap: checkpointData.scrap || 0,
+                    squad: checkpointData.squad,
+                    inventory: checkpointData.inventory,
+                    updated_at: new Date().toISOString()
+                };
+                const { data, error } = await supabaseClient
+                    .from('saved_tower_runs')
+                    .upsert(payload, { onConflict: 'user_id' });
+                if (error) {
+                    console.warn('[AuthManager] Error al guardar checkpoint en Supabase:', error.message);
+                } else {
+                    console.info('[AuthManager] Checkpoint de torre guardado con éxito y de forma 100% segura en Supabase:', payload);
+                }
+                return checkpointData;
+            } catch (err) {
+                console.warn('[AuthManager] Excepción al guardar checkpoint en Supabase:', err);
+                return checkpointData;
+            }
+        } else {
+            console.warn('[AuthManager] No se guardó el checkpoint: se requiere conexión a Supabase (sin localStorage).');
         }
+        return checkpointData;
     },
 
     async getSavedTowerCheckpoint() {
-        if (!this.currentUser || !isSupabaseConfigured() || !supabaseClient) {
-            return null;
-        }
+        // Limpiar cualquier residuo de localStorage
         try {
-            const { data, error } = await supabaseClient
-                .from('saved_tower_runs')
-                .select('*')
-                .eq('user_id', this.currentUser.id)
-                .maybeSingle();
-            if (error) {
-                console.warn('[AuthManager] Error al consultar punto de control de torre:', error);
-                return null;
+            localStorage.removeItem('ciber_tower_checkpoint');
+            if (this.currentUser) {
+                localStorage.removeItem(`ciber_tower_checkpoint_${this.currentUser.id}`);
             }
-            return data;
-        } catch (err) {
-            console.warn('[AuthManager] Excepción al consultar punto de control de torre:', err);
-            return null;
+        } catch (e) {}
+
+        // Consultar EXCLUSIVAMENTE en la base de datos Supabase
+        if (this.currentUser && isSupabaseConfigured() && supabaseClient) {
+            try {
+                const { data, error } = await supabaseClient
+                    .from('saved_tower_runs')
+                    .select('*')
+                    .eq('user_id', this.currentUser.id)
+                    .maybeSingle();
+                if (!error && data && data.squad && Array.isArray(data.squad) && data.squad.length > 0) {
+                    return data;
+                }
+            } catch (err) {
+                console.warn('[AuthManager] Error consultando checkpoint en Supabase:', err);
+            }
         }
+        return null;
     },
 
     async clearTowerCheckpoint() {
-        if (!this.currentUser || !isSupabaseConfigured() || !supabaseClient) {
-            return;
-        }
+        // 1. Limpiar cualquier residuo en localStorage
         try {
-            const { error } = await supabaseClient
-                .from('saved_tower_runs')
-                .delete()
-                .eq('user_id', this.currentUser.id);
-            if (error) {
-                console.warn('[AuthManager] Error al eliminar punto de control de torre:', error);
-            } else {
-                console.info('[AuthManager] Punto de control de torre eliminado de Supabase.');
+            if (this.currentUser) {
+                localStorage.removeItem(`ciber_tower_checkpoint_${this.currentUser.id}`);
             }
-        } catch (err) {
-            console.warn('[AuthManager] Excepción al eliminar punto de control de torre:', err);
+            localStorage.removeItem('ciber_tower_checkpoint');
+        } catch (e) {}
+
+        // 2. Eliminar EXCLUSIVAMENTE de Supabase
+        if (this.currentUser && isSupabaseConfigured() && supabaseClient) {
+            try {
+                const { error } = await supabaseClient
+                    .from('saved_tower_runs')
+                    .delete()
+                    .eq('user_id', this.currentUser.id);
+                if (error) {
+                    console.warn('[AuthManager] Error al eliminar checkpoint de torre en Supabase:', error);
+                } else {
+                    console.info('[AuthManager] Punto de control de torre eliminado de Supabase.');
+                }
+            } catch (err) {
+                console.warn('[AuthManager] Excepción al eliminar punto de control de torre:', err);
+            }
         }
     },
 
@@ -447,19 +526,25 @@ const AuthManager = {
             `;
         }).filter(Boolean).join('');
 
+        const runTowerId = run.tower_id || (run.floor_reached > 20 ? 3 : (run.floor_reached > 10 ? 2 : 1));
+        const towerMaxFloor = runTowerId === 3 ? 30 : (runTowerId === 2 ? 20 : 10);
+        const towerCfg = (typeof TOWERS_CONFIG !== 'undefined' && TOWERS_CONFIG[runTowerId]) ? TOWERS_CONFIG[runTowerId] : null;
+        const towerName = towerCfg ? towerCfg.name.toUpperCase() : `TORRE ${runTowerId}`;
+        const towerEmoji = runTowerId === 3 ? '👑' : (runTowerId === 2 ? '🌌' : '🗼');
+
         return `
             <div class="run-history-card ${isWin ? 'run-win' : 'run-loss'}">
                 <div class="run-card-header">
                     <div class="run-outcome-badge ${isWin ? 'badge-win' : 'badge-loss'}">
-                        ${isWin ? '🏆 VICTORIA // SECTOR LIBERADO' : '💀 GAME OVER // FALLO DE ESCUADRÓN'}
+                        ${isWin ? `🏆 VICTORIA // ${towerName}` : `💀 DERROTA // ${towerName}`}
                     </div>
                     <div class="run-date">${dateFormatted}</div>
                 </div>
 
                 <div class="run-metrics-row">
                     <div class="run-metric">
-                        <span class="metric-lbl">🗼 PISO</span>
-                        <span class="metric-val ${isWin ? 'val-win' : ''}">${run.floor_reached || 1}/10</span>
+                        <span class="metric-lbl">${towerEmoji} TORRE / PISO</span>
+                        <span class="metric-val ${isWin ? 'val-win' : ''}">${towerName} (P.${run.floor_reached || 1}/${towerMaxFloor})</span>
                     </div>
                     <div class="run-metric">
                         <span class="metric-lbl">⏱️ DURACIÓN</span>
@@ -481,37 +566,102 @@ const AuthManager = {
         `;
     },
 
-    async getTop10Speedruns() {
+    activeLeaderboardTower: 1,
+
+    async getTop10Speedruns(towerId = 1) {
         if (!isSupabaseConfigured() || !supabaseClient) {
             return [];
         }
 
+        const tId = Number(towerId) || 1;
+
         try {
-            const { data, error } = await supabaseClient
+            let { data, error } = await supabaseClient
                 .from('match_runs')
                 .select('*')
                 .eq('won', true)
+                .eq('tower_id', tId)
                 .order('duration_seconds', { ascending: true })
                 .limit(10);
 
+            // Fallback si la columna tower_id aún no ha sido migrada en Supabase
+            if (error && error.message && error.message.includes('tower_id')) {
+                console.warn('[Supabase] Columna tower_id no detectada al consultar leaderboard, aplicando fallback retroactivo...');
+                const { data: allWins, error: fallbackError } = await supabaseClient
+                    .from('match_runs')
+                    .select('*')
+                    .eq('won', true)
+                    .order('duration_seconds', { ascending: true })
+                    .limit(50);
+
+                if (!fallbackError && allWins) {
+                    data = allWins.filter(r => {
+                        const calculatedTower = r.tower_id || (r.floor_reached > 20 ? 3 : (r.floor_reached > 10 ? 2 : 1));
+                        return calculatedTower === tId;
+                    }).slice(0, 10);
+                    error = null;
+                }
+            }
+
             if (error) {
-                console.warn('[Supabase] Error al obtener Top 10:', error);
+                console.warn(`[Supabase] Error al obtener Top 10 para Torre ${tId}:`, error);
                 return [];
             }
             return data || [];
         } catch (err) {
-            console.error('[Supabase] Excepción al obtener Top 10:', err);
+            console.error(`[Supabase] Excepción al obtener Top 10 para Torre ${tId}:`, err);
             return [];
         }
     },
 
-    async loadAndRenderLeaderboard() {
+    switchLeaderboardTower(towerId) {
+        this.activeLeaderboardTower = Number(towerId) || 1;
+        
+        // Sincronizar estilo activo de los botones de pestañas
+        const tabBtns = document.querySelectorAll('.leaderboard-tower-tab');
+        tabBtns.forEach(btn => {
+            const btnTower = Number(btn.getAttribute('data-tower')) || 1;
+            if (btnTower === this.activeLeaderboardTower) {
+                btn.classList.add('active');
+            } else {
+                btn.classList.remove('active');
+            }
+        });
+
+        // Recargar clasificación para la torre seleccionada
+        this.loadAndRenderLeaderboard(this.activeLeaderboardTower);
+    },
+
+    async loadAndRenderLeaderboard(towerId) {
+        const tId = towerId ? Number(towerId) : (this.activeLeaderboardTower || 1);
+        this.activeLeaderboardTower = tId;
+
         const container = document.getElementById('leaderboard-runs-list');
         if (!container) return;
 
+        // Asegurar estado visual de las pestañas
+        const tabBtns = document.querySelectorAll('.leaderboard-tower-tab');
+        tabBtns.forEach(btn => {
+            const btnTower = Number(btn.getAttribute('data-tower')) || 1;
+            if (btnTower === tId) {
+                btn.classList.add('active');
+            } else {
+                btn.classList.remove('active');
+            }
+        });
+
+        const towerInfo = (typeof TOWERS_CONFIG !== 'undefined' && TOWERS_CONFIG[tId])
+            ? TOWERS_CONFIG[tId]
+            : { name: `Torre ${tId}`, bossName: 'Jefe del Sector', startFloor: 1, endFloor: 10 };
+
+        const subtitleEl = document.getElementById('leaderboard-current-tower-subtitle');
+        if (subtitleEl) {
+            subtitleEl.innerHTML = `<strong>${towerInfo.name.toUpperCase()}</strong> (Pisos ${towerInfo.startFloor} al ${towerInfo.endFloor}) // Jefe: <strong>${towerInfo.bossName}</strong>`;
+        }
+
         container.innerHTML = `
             <div class="history-loading">
-                <span class="loading-spinner">⚡</span> Escaneando registros de los mejores comandantes en Supabase...
+                <span class="loading-spinner">⚡</span> Escaneando registros de los mejores comandantes de ${towerInfo.name} en Supabase...
             </div>
         `;
 
@@ -520,21 +670,27 @@ const AuthManager = {
                 <div class="history-empty-state">
                     <div class="empty-icon">☁️</div>
                     <div class="empty-title">CLASIFICACIÓN EN LA NUBE OFFLINE</div>
-                    <div class="empty-desc">Conecta Supabase en js/supabaseClient.js para sincronizar y visualizar el Top 10 global.</div>
+                    <div class="empty-desc">Conecta Supabase en js/supabaseClient.js para sincronizar y visualizar el Top 10 global de cada torre.</div>
                 </div>
             `;
             return;
         }
 
         try {
-            const runs = await this.getTop10Speedruns();
+            const runs = await this.getTop10Speedruns(tId);
 
             if (!runs || !Array.isArray(runs) || runs.length === 0) {
+                const emptyBossMsg = tId === 3 
+                    ? 'Aún ningún comandante ha registrado una victoria sobre SINGULARIDAD-ZERO en la Torre de Singularidad. ¡Sé el primero en conquistar la Singularidad!'
+                    : (tId === 2 
+                        ? 'Aún ningún comandante ha registrado una victoria sobre TITAN-OMEGA en la Torre Cuántica. ¡Sé el primero en derrotarlo!'
+                        : 'Aún ningún comandante ha registrado una victoria sobre TITAN-X en la Torre Cibernética. ¡Sé el primero en derrotarlo!');
+
                 container.innerHTML = `
                     <div class="history-empty-state">
                         <div class="empty-icon">👑</div>
-                        <div class="empty-title">SALÓN DE LA FAMA VACÍO</div>
-                        <div class="empty-desc">Aún ningún comandante ha registrado una victoria sobre TITAN-X. ¡Sé el primero en derrotarlo!</div>
+                        <div class="empty-title">SALÓN DE LA FAMA VACÍO // ${towerInfo.name.toUpperCase()}</div>
+                        <div class="empty-desc">${emptyBossMsg}</div>
                     </div>
                 `;
                 return;
@@ -542,7 +698,7 @@ const AuthManager = {
 
             const cardsHtml = runs.map((run, index) => {
                 try {
-                    return this.renderLeaderboardCard(run, index + 1);
+                    return this.renderLeaderboardCard(run, index + 1, tId);
                 } catch (cardErr) {
                     console.error('[AuthManager] Error al renderizar tarjeta de leaderboard individual:', cardErr, run);
                     return '';
@@ -554,7 +710,7 @@ const AuthManager = {
                     <div class="history-empty-state">
                         <div class="empty-icon">👑</div>
                         <div class="empty-title">SALÓN DE LA FAMA VACÍO</div>
-                        <div class="empty-desc">No se pudieron procesar las partidas del Top 10.</div>
+                        <div class="empty-desc">No se pudieron procesar las partidas del Top 10 de ${towerInfo.name}.</div>
                     </div>
                 `;
                 return;
@@ -567,8 +723,8 @@ const AuthManager = {
                 <div class="history-empty-state">
                     <div class="empty-icon">⚠️</div>
                     <div class="empty-title">ERROR AL SINCRONIZAR CLASIFICACIÓN</div>
-                    <div class="empty-desc">Ocurrió una anomalía al recuperar el Top 10 global desde Supabase.</div>
-                    <button class="btn-refresh-history" onclick="AuthManager.loadAndRenderLeaderboard()" style="margin-top: 12px; padding: 8px 16px;">
+                    <div class="empty-desc">Ocurrió una anomalía al recuperar el Top 10 de ${towerInfo.name} desde Supabase.</div>
+                    <button class="btn-refresh-history" onclick="AuthManager.loadAndRenderLeaderboard(${tId})" style="margin-top: 12px; padding: 8px 16px;">
                         🔄 Reintentar conexión
                     </button>
                 </div>
@@ -576,7 +732,7 @@ const AuthManager = {
         }
     },
 
-    renderLeaderboardCard(run, rank) {
+    renderLeaderboardCard(run, rank, towerId) {
         if (!run) return '';
 
         let tierClass = 'tier-silver';
@@ -609,6 +765,11 @@ const AuthManager = {
         }
 
         const commanderName = run.player_name || 'Comandante Anónimo';
+
+        const runTowerId = run.tower_id || towerId || (run.floor_reached > 20 ? 3 : (run.floor_reached > 10 ? 2 : 1));
+        const towerCfg = (typeof TOWERS_CONFIG !== 'undefined' && TOWERS_CONFIG[runTowerId]) ? TOWERS_CONFIG[runTowerId] : null;
+        const towerPillName = towerCfg ? towerCfg.name : `Torre ${runTowerId}`;
+        const towerPillEmoji = runTowerId === 3 ? '👑' : (runTowerId === 2 ? '🌌' : '🗼');
 
         let squad = run.squad;
         if (typeof squad === 'string') {
@@ -646,6 +807,9 @@ const AuthManager = {
                 <div class="leaderboard-main-col">
                     <div class="leaderboard-pilot-row">
                         <span class="leaderboard-pilot-name">👨‍💻 ${commanderName}</span>
+                        <span class="leaderboard-tower-badge tower-${runTowerId}">
+                            ${towerPillEmoji} ${towerPillName} (P.${run.floor_reached || (runTowerId * 10)})
+                        </span>
                         <span class="leaderboard-date">${dateFormatted}</span>
                     </div>
 
@@ -751,31 +915,47 @@ const AuthManager = {
         if (authLoggedInView) {
             authLoggedInView.style.display = (hasUser && !isAnon) ? 'block' : 'none';
         }
+
+        if (typeof ProfileManager !== 'undefined') {
+            ProfileManager.updateAllAvatarDisplays();
+            const accountUserName = document.getElementById('account-user-name');
+            if (accountUserName) {
+                accountUserName.innerText = this.getPlayerDisplayName();
+            }
+        }
     },
 
     // =========================================================================
     // BANNER / CTA POST-PARTIDA (VICTORIA Y GAME OVER)
     // =========================================================================
     renderPostGameAuthBanner(screenId) {
-        const containerId = (screenId === 'screen-victory') ? 'victory-auth-card' : 'gameover-auth-card';
+        const containerId = (screenId === 'screen-victory') 
+            ? 'victory-auth-card' 
+            : ((screenId === 'screen-post-battle') ? 'postbattle-auth-card' : 'gameover-auth-card');
         const container = document.getElementById(containerId);
         if (!container) return;
 
         const isAnon = this.isAnonymous();
         const hasUser = !!this.currentUser;
+        const isPostBattle = (screenId === 'screen-post-battle');
 
         if (!hasUser || isAnon) {
+            const headerBadge = isPostBattle ? '⏱️ SPEEDRUN CONQUISTADO // MODO ANÓNIMO' : '⚠️ MODO ANÓNIMO DETECTADO';
+            const cardTitle = isPostBattle 
+                ? '¿DESEAS REGISTRAR TU CUENTA Y ASEGURAR TU RÉCORD EN EL TOP 10?' 
+                : '¿DESEAS BLINDAR TU PARTIDA Y RECURSOS?';
+            const cardDesc = isPostBattle
+                ? `Tu tiempo de speedrun ha sido registrado provisionalmente bajo el indicativo <strong>${this.getPlayerDisplayName()}</strong>. Vincula un correo y contraseña para que tu nombre quede blindado permanentemente en el Salón de la Fama y tu progreso no se pierda al cerrar o limpiar el navegador.`
+                : `Tus <strong>${GAME_STATE ? GAME_STATE.scrap : 0} ⚙️ de Chatarra</strong> y habilidades están en una sesión anónima temporal. Si cierras o limpias tu navegador, <strong>podrías perderlos definitivamente</strong>. Registra tu correo para asociar todo tu progreso a una cuenta permanente:`;
+            const btnText = isPostBattle ? '<span>🛡️ REGISTRAR Y BLINDAR RÉCORD</span>' : '<span>🛡️ BLINDAR Y VINCULAR CUENTA</span>';
+
             // Ofrecer formulario de registro para vincular la cuenta
             container.innerHTML = `
                 <div class="postgame-auth-box">
                     <div class="postgame-auth-header">
-                        <span class="postgame-auth-badge">⚠️ MODO ANÓNIMO DETECTADO</span>
-                        <h3 class="postgame-auth-title">¿DESEAS BLINDAR TU PARTIDA Y RECURSOS?</h3>
-                        <p class="postgame-auth-desc">
-                            Tus <strong>${GAME_STATE ? GAME_STATE.scrap : 0} ⚙️ de Chatarra</strong> y habilidades están en una sesión anónima temporal.
-                            Si cierras o limpias tu navegador, <strong>podrías perderlos definitivamente</strong>.
-                            Registra tu correo para asociar todo tu progreso a una cuenta permanente:
-                        </p>
+                        <span class="postgame-auth-badge">${headerBadge}</span>
+                        <h3 class="postgame-auth-title">${cardTitle}</h3>
+                        <p class="postgame-auth-desc">${cardDesc}</p>
                     </div>
 
                     <form class="postgame-auth-form" onsubmit="event.preventDefault(); AuthManager.handlePostGameLink('${screenId}');">
@@ -783,7 +963,7 @@ const AuthManager = {
                             <input type="email" id="postgame-email-${screenId}" class="cyber-input postgame-input" placeholder="Tu correo electrónico..." autocomplete="email" required>
                             <input type="password" id="postgame-pass-${screenId}" class="cyber-input postgame-input" placeholder="Contraseña (mín. 6 carácteres)..." autocomplete="new-password" required>
                             <button type="submit" id="btn-postgame-link-${screenId}" class="btn-postgame-link">
-                                <span>🛡️ BLINDAR Y VINCULAR CUENTA</span>
+                                ${btnText}
                             </button>
                         </div>
                         <div id="postgame-msg-${screenId}" class="postgame-auth-feedback" style="display: none;"></div>
@@ -794,12 +974,17 @@ const AuthManager = {
         } else {
             // Usuario ya registrado: confirmar que sus datos están a salvo
             const userEmail = this.currentUser.email || 'tu cuenta';
+            const securedTitle = isPostBattle ? 'RÉCORD DE SPEEDRUN ASEGURADO EN EL TOP 10' : 'PROGRESO ASEGURADO EN LA NUBE';
+            const securedDesc = isPostBattle
+                ? `Tu tiempo de speedrun en esta torre ha quedado respaldado en el Salón de la Fama bajo el comandante <strong>${this.getPlayerDisplayName()}</strong> (${userEmail}).`
+                : `Esta partida, tu chatarra acumulada y tus talentos han quedado respaldados en tu cuenta: <strong>${userEmail}</strong>.`;
+
             container.innerHTML = `
                 <div class="postgame-auth-box postgame-auth-secured">
-                    <div class="secured-icon">☁️</div>
+                    <div class="secured-icon">${isPostBattle ? '👑' : '☁️'}</div>
                     <div class="secured-content">
-                        <div class="secured-title">PROGRESO ASEGURADO EN LA NUBE</div>
-                        <div class="secured-desc">Esta partida, tu chatarra acumulada y tus talentos han quedado respaldados en tu cuenta: <strong>${userEmail}</strong>.</div>
+                        <div class="secured-title">${securedTitle}</div>
+                        <div class="secured-desc">${securedDesc}</div>
                     </div>
                 </div>
             `;
@@ -842,7 +1027,9 @@ const AuthManager = {
         if (res.error) {
             if (btnSubmit) {
                 btnSubmit.disabled = false;
-                btnSubmit.innerHTML = '<span>🛡️ BLINDAR Y VINCULAR CUENTA</span>';
+                btnSubmit.innerHTML = (screenId === 'screen-post-battle')
+                    ? '<span>🛡️ REGISTRAR Y BLINDAR RÉCORD</span>'
+                    : '<span>🛡️ BLINDAR Y VINCULAR CUENTA</span>';
             }
             if (msgEl) {
                 msgEl.className = 'postgame-auth-feedback feedback-error';
@@ -850,9 +1037,29 @@ const AuthManager = {
                 msgEl.style.display = 'block';
             }
         } else {
+            // Actualizar nombre de piloto en match_runs de Supabase tras vincular cuenta
+            if (typeof supabaseClient !== 'undefined' && supabaseClient && this.currentUser) {
+                try {
+                    const newDisplayName = this.getPlayerDisplayName();
+                    await supabaseClient
+                        .from('match_runs')
+                        .update({ player_name: newDisplayName })
+                        .eq('user_id', this.currentUser.id);
+                    console.info('[AuthManager] Nombres de partidas vinculadas actualizados en match_runs a:', newDisplayName);
+                } catch (updErr) {
+                    console.warn('[AuthManager] Error actualizando nombre en match_runs tras vincular:', updErr);
+                }
+            }
+
+            // Si está en pantalla post-batalla, refrescar el indicativo en el banner de speedrun
+            const pilotDisplayVal = document.querySelector('.speedrun-pilot-val');
+            if (pilotDisplayVal) {
+                pilotDisplayVal.innerHTML = `👤 ${this.getPlayerDisplayName()}`;
+            }
+
             if (msgEl) {
                 msgEl.className = 'postgame-auth-feedback feedback-success';
-                msgEl.innerText = '✨ ¡Cuenta vinculada exitosamente! Tu progreso táctico ha sido asegurado permanentemente.';
+                msgEl.innerText = '✨ ¡Cuenta vinculada exitosamente! Tu récord de speedrun y progreso táctico han sido asegurados permanentemente.';
                 msgEl.style.display = 'block';
             }
             setTimeout(() => {
@@ -864,11 +1071,15 @@ const AuthManager = {
     refreshPostGameBanners() {
         const gameOverScreen = document.getElementById('screen-game-over');
         const victoryScreen = document.getElementById('screen-victory');
+        const postBattleScreen = document.getElementById('screen-post-battle');
         if (gameOverScreen && gameOverScreen.classList.contains('active')) {
             this.renderPostGameAuthBanner('screen-game-over');
         }
         if (victoryScreen && victoryScreen.classList.contains('active')) {
             this.renderPostGameAuthBanner('screen-victory');
+        }
+        if (postBattleScreen && postBattleScreen.classList.contains('active')) {
+            this.renderPostGameAuthBanner('screen-post-battle');
         }
     },
 
@@ -898,6 +1109,10 @@ const AuthManager = {
         this.clearAuthMessage();
         if (tabId === 'tab-history') {
             this.loadAndRenderHistory();
+        } else if (tabId === 'tab-profile') {
+            if (typeof ProfileManager !== 'undefined') {
+                ProfileManager.renderProfileTab();
+            }
         }
     }
 };
@@ -929,6 +1144,14 @@ function openLeaderboardModal() {
     if (modal) {
         modal.style.display = 'flex';
         AuthManager.loadAndRenderLeaderboard();
+    }
+}
+
+function openLeaderboardForTower(towerId = 1) {
+    const modal = document.getElementById('leaderboard-modal');
+    if (modal) {
+        modal.style.display = 'flex';
+        AuthManager.switchLeaderboardTower(towerId);
     }
 }
 

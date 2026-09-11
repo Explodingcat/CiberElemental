@@ -2,6 +2,16 @@
 
 let fullMap = []; // Array de 10 pisos
 
+function getFullMap() {
+    return fullMap;
+}
+
+function setFullMap(newMap) {
+    if (Array.isArray(newMap)) {
+        fullMap = newMap;
+    }
+}
+
 function generateFullMap(towerId = null) {
     if (!towerId) {
         if (typeof GAME_STATE !== 'undefined' && GAME_STATE.floor) {
@@ -113,15 +123,23 @@ function generateFullMap(towerId = null) {
 }
 
 function renderMap() {
-    const container = document.getElementById('map-container');
-    container.innerHTML = '';
-    
     const towerId = (typeof GAME_STATE !== 'undefined' && GAME_STATE.currentTower) 
         ? GAME_STATE.currentTower 
         : ((GAME_STATE.floor <= 10) ? 1 : ((GAME_STATE.floor <= 20) ? 2 : 3));
     const tower = (typeof TOWERS_CONFIG !== 'undefined' && TOWERS_CONFIG[towerId]) 
         ? TOWERS_CONFIG[towerId] 
         : { name: 'Torre Cibernética', badge: '🗼 SECTOR 01 // RED CENTRAL', endFloor: 10 };
+
+    // Asignar clase de tema de torre a la pantalla y al contenedor
+    const screenMap = document.getElementById('screen-map');
+    if (screenMap) {
+        screenMap.classList.remove('tower-theme-1', 'tower-theme-2', 'tower-theme-3');
+        screenMap.classList.add(`tower-theme-${towerId}`);
+    }
+
+    const container = document.getElementById('map-container');
+    container.innerHTML = '';
+    container.className = `map-container-tower-${towerId}`;
 
     // Actualizar título y badge dinámicos de la torre
     const towerTitleEl = document.getElementById('map-tower-title') || document.querySelector('.map-main-title');
@@ -198,12 +216,15 @@ function renderMap() {
             let isVisited = node.id === GAME_STATE.currentNodeId;
             
             if (floorNum === GAME_STATE.floor) {
-                if (f === 0) {
+                if (f === 0 || !GAME_STATE.currentNodeId) {
                     isSelectable = true;
                 } else {
                     const prevFloorData = fullMap[f - 1];
-                    const parentNode = prevFloorData.find(n => n.id === GAME_STATE.currentNodeId);
-                    if (parentNode && parentNode.nextNodes.includes(node.id)) {
+                    const parentNode = prevFloorData ? prevFloorData.find(n => n.id === GAME_STATE.currentNodeId) : null;
+                    if (parentNode && parentNode.nextNodes && parentNode.nextNodes.includes(node.id)) {
+                        isSelectable = true;
+                    } else if (!parentNode) {
+                        // Respaldo de seguridad: si no se encuentra el nodo padre, permitir avanzar
                         isSelectable = true;
                     }
                 }
@@ -289,13 +310,17 @@ function drawLines() {
                 line.setAttribute('x2', x2);
                 line.setAttribute('y2', y2);
                 
+                const towerId = (typeof GAME_STATE !== 'undefined' && GAME_STATE.currentTower) 
+                    ? GAME_STATE.currentTower 
+                    : ((GAME_STATE.floor <= 10) ? 1 : ((GAME_STATE.floor <= 20) ? 2 : 3));
+                const activeStroke = (towerId === 3) ? '#f39c12' : ((towerId === 2) ? '#b026ff' : '#66fcf1');
                 const isPathFromCurrent = (floorNum === GAME_STATE.floor - 1 && node.id === GAME_STATE.currentNodeId);
-                
+
                 if (isPathFromCurrent) {
-                    line.setAttribute('stroke', '#66fcf1');
+                    line.setAttribute('stroke', activeStroke);
                     line.setAttribute('stroke-width', '4');
                     line.setAttribute('stroke-dasharray', '6,4');
-                    line.setAttribute('class', 'map-line-active');
+                    line.setAttribute('class', `map-line-active map-line-active-tower-${towerId}`);
                 } else if (floorNum < GAME_STATE.floor && node.id === GAME_STATE.currentNodeId) {
                     line.setAttribute('stroke', '#feca57');
                     line.setAttribute('stroke-width', '3');
@@ -316,9 +341,36 @@ function advanceToNextTower(nextTowerId) {
     GAME_STATE.currentTower = nextTowerId;
     GAME_STATE.floor = TOWERS_CONFIG[nextTowerId].startFloor;
     GAME_STATE.currentNodeId = null;
-    
+    GAME_STATE.startTime = Date.now(); // Cronómetro independiente para el speedrun de la nueva torre
+    GAME_STATE.runSaved = false; // Permitir guardar el resultado de la nueva torre
+    if (typeof startRunTimer === 'function') {
+        startRunTimer();
+    }
+
+    // Revivir a todos los aliados caídos y restaurar vida completa (Full HP) a todo el escuadrón
+    if (GAME_STATE.team && Array.isArray(GAME_STATE.team)) {
+        GAME_STATE.team.forEach(robot => {
+            robot.isOffline = false;
+            robot.recalculateStats();
+            robot.hp = robot.maxHp;
+            if (robot.statuses) {
+                robot.statuses = robot.statuses.filter(s => s && s.isPermanent);
+            }
+            if (robot.skills) {
+                robot.skills.forEach(skill => {
+                    if (skill.currentCd) skill.currentCd = 0;
+                });
+            }
+        });
+    }
+
     // Generar nuevo mapa de la torre correspondiente
     generateFullMap(nextTowerId);
+
+    // Actualizar punto de control con la nueva torre y piso de partida
+    if (typeof saveCurrentTowerCheckpoint === 'function') {
+        saveCurrentTowerCheckpoint(nextTowerId - 1);
+    }
     
     // Renderizar mapa, refrescar escuadrón y activar pantalla de navegación
     renderMap();
