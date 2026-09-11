@@ -407,7 +407,7 @@ class Robot {
         if (this.skills) {
             this.skills.forEach(s => {
                 if (atCombatStart && s.cd > 0) {
-                    s.currentCd = Math.max(1, Math.floor(s.cd / 2));
+                    s.currentCd = s.cd;
                 } else {
                     s.currentCd = 0;
                 }

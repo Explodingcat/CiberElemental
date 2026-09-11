@@ -48,28 +48,25 @@ function startCombat(nodeType) {
     // Generar encuentro de combate (1 a 3 robots según piso y tipo de nodo)
     combatState.enemies = generateEncounter(GAME_STATE.floor, nodeType);
     
-    // Limpiar estados previos, marcas, debuffs y configurar cooldowns iniciales (avanzados) de todo el escuadrón
+    // Limpiar estados previos, marcas, debuffs y configurar cooldowns completos de todo el escuadrón
     if (GAME_STATE && GAME_STATE.team) {
         GAME_STATE.team.forEach(robot => {
             if (robot.clearStatuses) robot.clearStatuses();
             else robot.statuses = [];
             if (robot.resetCooldowns) robot.resetCooldowns(true);
             else if (robot.skills) robot.skills.forEach(s => {
-                if (s.cd > 0) s.currentCd = Math.max(1, Math.floor(s.cd / 2));
-                else s.currentCd = 0;
+                s.currentCd = s.cd > 0 ? s.cd : 0;
             });
         });
     }
 
-    // Configurar cooldowns iniciales para los enemigos generados (salvo si ya traen cooldown específico preconfigurado)
+    // Configurar cooldowns iniciales completos para los enemigos generados
     if (combatState.enemies) {
         combatState.enemies.forEach(enemy => {
             if (enemy.clearStatuses) enemy.clearStatuses();
             if (enemy.skills) {
                 enemy.skills.forEach(s => {
-                    if (s.cd > 0 && (typeof s.currentCd === 'undefined' || s.currentCd === 0)) {
-                        s.currentCd = Math.max(1, Math.floor(s.cd / 2));
-                    }
+                    s.currentCd = s.cd > 0 ? s.cd : 0;
                 });
             }
         });
