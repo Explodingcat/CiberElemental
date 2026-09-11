@@ -169,16 +169,69 @@ function renderCombatMiniHud(robot, isEnemy = false) {
     const shieldPercent = Math.max(0, Math.min(100, (shieldAmt / effectiveMax) * 100));
     const shieldStart = hpPercent;
     
+    // Generar pips de Cooldown (Círculos brillantes por habilidad especial y chips)
+    let cdRowsHtml = '';
+    if (robot.skills && robot.skills.length > 1) {
+        // 1. Habilidad Especial (índice 1)
+        const specialSkill = robot.skills[1];
+        if (specialSkill && typeof specialSkill.cd !== 'undefined' && specialSkill.cd > 0) {
+            const totalPips = specialSkill.cd;
+            const currentCd = typeof specialSkill.currentCd !== 'undefined' ? specialSkill.currentCd : 0;
+            const chargedCount = Math.max(0, totalPips - currentCd);
+            const elem = specialSkill.elementOverride || robot.element || 'NEUTRO';
+            const isReady = currentCd === 0;
+            
+            let pipsHtml = '';
+            for (let i = 0; i < totalPips; i++) {
+                const isLit = i < chargedCount;
+                pipsHtml += `<span class="cd-pip ${isLit ? `is-charged elem-pip-${elem}` : 'is-charging'}"></span>`;
+            }
+            cdRowsHtml += `
+                <div class="mini-cd-pips-row ${isReady ? 'is-all-ready' : ''}" title="${specialSkill.name}: ${isReady ? '⚡ ¡Habilidad Especial Lista!' : `Recargando (${currentCd}/${totalPips} turnos restantes)`}">
+                    ${pipsHtml}
+                </div>
+            `;
+        }
+
+        // 2. Chip Extra (índice 2 en adelante si tiene instalado)
+        if (robot.skills.length > 2) {
+            for (let sIdx = 2; sIdx < robot.skills.length; sIdx++) {
+                const chipSkill = robot.skills[sIdx];
+                if (chipSkill && typeof chipSkill.cd !== 'undefined' && chipSkill.cd > 0) {
+                    const totalPips = chipSkill.cd;
+                    const currentCd = typeof chipSkill.currentCd !== 'undefined' ? chipSkill.currentCd : 0;
+                    const chargedCount = Math.max(0, totalPips - currentCd);
+                    const elem = chipSkill.elementOverride || robot.element || 'NEUTRO';
+                    const isReady = currentCd === 0;
+
+                    let pipsHtml = '';
+                    for (let i = 0; i < totalPips; i++) {
+                        const isLit = i < chargedCount;
+                        pipsHtml += `<span class="cd-pip cd-pip-chip ${isLit ? `is-charged elem-pip-${elem}` : 'is-charging'}"></span>`;
+                    }
+                    cdRowsHtml += `
+                        <div class="mini-cd-pips-row cd-row-chip ${isReady ? 'is-all-ready' : ''}" title="💾 ${chipSkill.name}: ${isReady ? '⚡ ¡Chip Listo!' : `Recargando (${currentCd}/${totalPips} turnos restantes)`}">
+                            ${pipsHtml}
+                        </div>
+                    `;
+                }
+            }
+        }
+    }
+    
     return `
         <div class="combat-mini-hud">
-            <div class="mini-hp-bar-track">
-                <div class="mini-hp-bar-fill ${isEnemy ? 'is-enemy' : ''} elem-fill-${robot.element}" style="width: ${hpPercent}%;"></div>
-                ${shieldAmt > 0 ? `<div class="mini-shield-bar-fill" style="left: ${shieldStart}%; width: ${shieldPercent}%;"></div>` : ''}
+            <div class="mini-hp-row-wrapper">
+                <div class="mini-hp-bar-track">
+                    <div class="mini-hp-bar-fill ${isEnemy ? 'is-enemy' : ''} elem-fill-${robot.element}" style="width: ${hpPercent}%;"></div>
+                    ${shieldAmt > 0 ? `<div class="mini-shield-bar-fill" style="left: ${shieldStart}%; width: ${shieldPercent}%;"></div>` : ''}
+                </div>
+                <div class="mini-hp-text">
+                    <span class="mini-hp-val">${Math.max(0, Math.ceil(robot.hp))}</span>
+                    ${shieldAmt > 0 ? `<span class="mini-shield-val">+${shieldAmt}🛡️</span>` : ''}
+                </div>
             </div>
-            <div class="mini-hp-text">
-                <span class="mini-hp-val">${Math.max(0, Math.ceil(robot.hp))}/${robot.maxHp}</span>
-                ${shieldAmt > 0 ? `<span class="mini-shield-val">+${shieldAmt}🛡️</span>` : ''}
-            </div>
+            ${cdRowsHtml ? `<div class="mini-cd-container">${cdRowsHtml}</div>` : ''}
         </div>
     `;
 }

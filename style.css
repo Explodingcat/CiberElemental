@@ -3014,16 +3014,25 @@ button:disabled {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 2px;
-    margin-top: 4px;
-    width: 84px;
+    gap: 3px;
+    margin-top: 3px;
+    width: 80px;
     z-index: 5;
     pointer-events: none;
 }
 
-.mini-hp-bar-track {
+.mini-hp-row-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 5px;
     width: 100%;
-    height: 6px;
+}
+
+.mini-hp-bar-track {
+    flex: 1;
+    min-width: 0;
+    height: 5.5px;
     background: rgba(0, 0, 0, 0.75);
     border: 1px solid rgba(255, 255, 255, 0.25);
     border-radius: 4px;
@@ -3054,20 +3063,131 @@ button:disabled {
 }
 
 .mini-hp-text {
-    display: flex;
+    display: inline-flex;
     align-items: center;
-    justify-content: center;
-    gap: 3px;
-    font-size: 10px;
+    gap: 2px;
+    font-size: 9.5px;
     font-family: 'Rajdhani', monospace;
     font-weight: 800;
-    color: #e2e8f0;
+    color: #ffffff;
     line-height: 1;
-    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
+    white-space: nowrap;
+    flex-shrink: 0;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.95);
 }
 
 .mini-shield-val {
     color: #70a1ff;
+    font-size: 8px;
+}
+
+/* Indicadores de Cooldown (Círculos de Energía / Pips) */
+.mini-cd-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    width: 100%;
+}
+
+.mini-cd-pips-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 3.5px;
+    width: 100%;
+}
+
+.mini-cd-pips-row.cd-row-chip {
+    gap: 3px;
+}
+
+.cd-pip {
+    width: 5.5px;
+    height: 5.5px;
+    border-radius: 50%;
+    box-sizing: border-box;
+    transition: all 0.25s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+/* Pip en Carga (Apagado / Fondo tenue con borde) */
+.cd-pip.is-charging {
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.22);
+    box-shadow: inset 0 0 2px rgba(0, 0, 0, 0.7);
+}
+
+/* Pip Cargado (Prendido con Color Elemental Brillante) */
+.cd-pip.is-charged {
+    border: 1px solid #ffffff;
+}
+
+.cd-pip.is-charged.elem-pip-FUEGO {
+    background: #ff4757;
+    border-color: #ff6b81;
+    box-shadow: 0 0 6px #ff4757, inset 0 0 2px #fff;
+}
+.cd-pip.is-charged.elem-pip-AGUA {
+    background: #00d2d3;
+    border-color: #48dbfb;
+    box-shadow: 0 0 6px #00d2d3, inset 0 0 2px #fff;
+}
+.cd-pip.is-charged.elem-pip-TIERRA {
+    background: #feca57;
+    border-color: #ff9f43;
+    box-shadow: 0 0 6px #feca57, inset 0 0 2px #fff;
+}
+.cd-pip.is-charged.elem-pip-AIRE {
+    background: #48dbfb;
+    border-color: #00cec9;
+    box-shadow: 0 0 6px #48dbfb, inset 0 0 2px #fff;
+}
+.cd-pip.is-charged.elem-pip-NEUTRO {
+    background: #a29bfe;
+    border-color: #dfe6e9;
+    box-shadow: 0 0 6px #a29bfe, inset 0 0 2px #fff;
+}
+
+/* Chips instalados: pips ligeramente diferenciados */
+.cd-pip.cd-pip-chip {
+    width: 4.5px;
+    height: 4.5px;
+    border-radius: 2px;
+}
+
+/* Animación cuando la habilidad está 100% cargada y lista */
+.mini-cd-pips-row.is-all-ready .cd-pip.is-charged {
+    animation: cdPipPulseReady 1.6s infinite alternate ease-in-out;
+}
+
+@keyframes cdPipPulseReady {
+    0% {
+        transform: scale(1);
+        filter: brightness(1);
+    }
+    100% {
+        transform: scale(1.22);
+        filter: brightness(1.4);
+    }
+}
+
+.team-count-3 .combat-mini-hud,
+.enemy-count-3 .combat-mini-hud {
+    width: 72px;
+}
+.team-count-3 .mini-hp-text,
+.enemy-count-3 .mini-hp-text {
+    font-size: 8.5px;
+}
+.team-count-3 .cd-pip,
+.enemy-count-3 .cd-pip {
+    width: 4.8px;
+    height: 4.8px;
+}
+.team-count-3 .cd-pip.cd-pip-chip,
+.enemy-count-3 .cd-pip.cd-pip-chip {
+    width: 3.8px;
+    height: 3.8px;
 }
 
 /* Tamaños Adaptativos de Emojis y Plataformas según cantidad de combatientes */
@@ -7223,6 +7343,36 @@ progress::-webkit-progress-value {
     .team-count-3 .combat-floor-shadow,
     .enemy-count-3 .combat-floor-shadow { width: 48px; height: 14px; }
 
+    .combat-mini-hud {
+        width: 70px;
+        gap: 2px;
+    }
+    .mini-hp-text {
+        font-size: 9px;
+    }
+    .cd-pip {
+        width: 5px;
+        height: 5px;
+    }
+    .team-count-3 .combat-mini-hud,
+    .enemy-count-3 .combat-mini-hud {
+        width: 58px;
+    }
+    .team-count-3 .mini-hp-text,
+    .enemy-count-3 .mini-hp-text {
+        font-size: 8px;
+    }
+    .team-count-3 .cd-pip,
+    .enemy-count-3 .cd-pip {
+        width: 4.2px;
+        height: 4.2px;
+    }
+    .team-count-3 .cd-pip.cd-pip-chip,
+    .enemy-count-3 .cd-pip.cd-pip-chip {
+        width: 3.2px;
+        height: 3.2px;
+    }
+
     .combat-hud-card {
         padding: 4px 6px;
         border-radius: 6px;
@@ -8085,6 +8235,38 @@ progress::-webkit-progress-value {
     .team-count-3 .combat-avatar-emoji,
     .enemy-count-3 .combat-avatar-emoji {
         font-size: 30px;
+    }
+
+    .combat-mini-hud {
+        width: 62px;
+        gap: 1.5px;
+    }
+    .mini-hp-bar-track {
+        height: 4.5px;
+    }
+    .mini-hp-text {
+        font-size: 8px;
+    }
+    .cd-pip {
+        width: 4.5px;
+        height: 4.5px;
+    }
+    .cd-pip.cd-pip-chip {
+        width: 3.5px;
+        height: 3.5px;
+    }
+    .team-count-3 .combat-mini-hud,
+    .enemy-count-3 .combat-mini-hud {
+        width: 52px;
+    }
+    .team-count-3 .mini-hp-text,
+    .enemy-count-3 .mini-hp-text {
+        font-size: 7.5px;
+    }
+    .team-count-3 .cd-pip,
+    .enemy-count-3 .cd-pip {
+        width: 3.8px;
+        height: 3.8px;
     }
 
     .combat-enemy-unit.is-boss-titan .combat-avatar-emoji {
