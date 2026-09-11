@@ -44,10 +44,17 @@ function recruitRobot(robot) {
     return false;
 }
 
+function updateScrapDisplay() {
+    const disp = document.getElementById('scrap-display');
+    if (disp) {
+        const scrapVal = (GAME_STATE && typeof GAME_STATE.scrap !== 'undefined') ? GAME_STATE.scrap : 0;
+        disp.innerHTML = `<span class="scrap-label">Chatarra: </span><span class="scrap-val">${scrapVal}</span> <span class="scrap-icon">⚙️</span>`;
+    }
+}
+
 function addScrap(amount) {
     GAME_STATE.scrap += amount;
-    const disp = document.getElementById('scrap-display');
-    if(disp) disp.innerText = `Chatarra: ${GAME_STATE.scrap} ⚙️`;
+    updateScrapDisplay();
 }
 
 function isGameOver() {

@@ -4942,6 +4942,11 @@ progress::-webkit-progress-value {
     box-shadow: 0 0 10px rgba(102, 252, 241, 0.3);
 }
 
+.inventory-btn-icon {
+    font-size: 15px;
+    line-height: 1;
+}
+
 #scrap-display {
     font-size: 15px;
     font-weight: 700;
@@ -4952,6 +4957,7 @@ progress::-webkit-progress-value {
     border-radius: 6px;
     display: flex;
     align-items: center;
+    gap: 4px;
     letter-spacing: 0.5px;
     font-family: 'Rajdhani', sans-serif;
     margin: 0;
@@ -6577,17 +6583,34 @@ progress::-webkit-progress-value {
 
     /* Barra Superior */
     #top-bar {
-        padding: 8px 12px;
+        padding: 6px 10px;
+    }
+
+    .top-bar-left, .top-bar-right, .top-bar-center {
+        gap: 8px;
+    }
+
+    .inventory-btn {
+        padding: 5px 9px;
+        font-size: 15px;
+        min-width: 36px;
+        justify-content: center;
+        gap: 0;
+    }
+
+    .inventory-btn .inventory-btn-text {
+        display: none;
     }
 
     #scrap-display {
         font-size: 14px;
-        margin-right: 6px;
+        padding: 4px 8px;
+        margin-right: 0;
+        gap: 3px;
     }
 
-    .inventory-btn {
-        padding: 5px 12px;
-        font-size: 13px;
+    #scrap-display .scrap-label {
+        display: none;
     }
 
     /* Pantallas base */

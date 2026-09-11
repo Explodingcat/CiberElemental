@@ -427,8 +427,12 @@ function initGame() {
         
         // Inicializar chatarra de la run con pasiva de meta-progresión
         GAME_STATE.scrap = (typeof SkillsManager !== 'undefined') ? SkillsManager.getStartingScrap() : 0;
-        const disp = document.getElementById('scrap-display');
-        if (disp) disp.innerText = `Chatarra: ${GAME_STATE.scrap} ⚙️`;
+        if (typeof updateScrapDisplay === 'function') {
+            updateScrapDisplay();
+        } else {
+            const disp = document.getElementById('scrap-display');
+            if (disp) disp.innerText = `Chatarra: ${GAME_STATE.scrap} ⚙️`;
+        }
 
         generateFullMap(1);
         renderMap();
@@ -523,8 +527,12 @@ async function resumeSavedRun(checkpoint) {
 
     // Restaurar chatarra recolectada en la run
     GAME_STATE.scrap = checkpoint.scrap || 0;
-    const disp = document.getElementById('scrap-display');
-    if (disp) disp.innerText = `Chatarra: ${GAME_STATE.scrap} ⚙️`;
+    if (typeof updateScrapDisplay === 'function') {
+        updateScrapDisplay();
+    } else {
+        const disp = document.getElementById('scrap-display');
+        if (disp) disp.innerText = `Chatarra: ${GAME_STATE.scrap} ⚙️`;
+    }
 
     // Restaurar mapa o generar de la torre correspondiente
     if (checkpoint.map && Array.isArray(checkpoint.map) && checkpoint.map.length > 0) {
