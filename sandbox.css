@@ -1951,3 +1951,455 @@ html, body.sandbox-app-wrapper {
     box-shadow: 0 6px 25px rgba(255, 215, 0, 0.6);
 }
 
+/* ==========================================================================
+   5. PROBADOR DE RELIQUIAS (ESTILOS SANDBOX)
+   ========================================================================== */
+
+.relics-sandbox-header {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    background: linear-gradient(135deg, rgba(20, 25, 40, 0.95) 0%, rgba(10, 12, 20, 0.98) 100%);
+    border: 1px solid rgba(102, 252, 241, 0.25);
+    border-radius: 14px;
+    padding: 22px;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.7);
+}
+
+.relics-header-info {
+    text-align: left;
+}
+
+.relics-main-title {
+    margin: 6px 0 8px 0;
+    font-size: 1.6rem;
+    font-weight: 800;
+    letter-spacing: 1.5px;
+    color: #fff;
+    background: linear-gradient(90deg, #ffffff, #66fcf1, #a55eea);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.relics-desc {
+    font-size: 0.95rem;
+    color: #a4b0be;
+    margin: 0;
+    line-height: 1.45;
+}
+
+/* Previsualización del HUD superior en vivo */
+.relics-hud-preview-card {
+    background: rgba(0, 0, 0, 0.45);
+    border: 1px dashed rgba(102, 252, 241, 0.35);
+    border-radius: 10px;
+    padding: 14px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.hud-preview-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.hud-preview-label {
+    font-size: 0.8rem;
+    font-weight: 800;
+    letter-spacing: 1.5px;
+    color: #66fcf1;
+    text-transform: uppercase;
+}
+
+.relics-count-badge {
+    font-size: 0.85rem;
+    font-weight: 800;
+    color: #fed330;
+    background: rgba(254, 211, 48, 0.15);
+    border: 1px solid rgba(254, 211, 48, 0.4);
+    border-radius: 20px;
+    padding: 3px 12px;
+}
+
+.sandbox-relics-hud {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding: 6px 2px;
+    min-height: 48px;
+    align-items: center;
+}
+
+/* Toolbar de Filtros y Presets */
+.relics-toolbar {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    background: rgba(15, 20, 30, 0.85);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 16px 20px;
+}
+
+.relics-toolbar-row {
+    display: flex;
+    gap: 14px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.relics-search-box {
+    flex: 1 1 280px;
+}
+
+.relics-category-filters {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.relics-presets-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    padding-top: 12px;
+}
+
+.btn-relic-preset {
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #dfe4ea;
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 700;
+    padding: 6px 14px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-relic-preset:hover {
+    background: rgba(255, 255, 255, 0.15);
+    color: #fff;
+    border-color: rgba(255, 255, 255, 0.4);
+    transform: translateY(-1px);
+}
+
+.btn-preset-fuego { border-color: rgba(255, 107, 129, 0.4); color: #ff6b81; }
+.btn-preset-fuego:hover { background: rgba(255, 107, 129, 0.2); }
+
+.btn-preset-tank { border-color: rgba(46, 213, 115, 0.4); color: #2ed573; }
+.btn-preset-tank:hover { background: rgba(46, 213, 115, 0.2); }
+
+.btn-preset-weapons { border-color: rgba(254, 202, 87, 0.4); color: #feca57; }
+.btn-preset-weapons:hover { background: rgba(254, 202, 87, 0.2); }
+
+.btn-preset-speed { border-color: rgba(72, 219, 251, 0.4); color: #48dbfb; }
+.btn-preset-speed:hover { background: rgba(72, 219, 251, 0.2); }
+
+.btn-preset-corrupted { border-color: rgba(235, 77, 75, 0.4); color: #eb4d4b; }
+.btn-preset-corrupted:hover { background: rgba(235, 77, 75, 0.2); }
+
+.btn-preset-test-combat {
+    background: linear-gradient(135deg, #66fcf1 0%, #45a29e 100%);
+    border: 1px solid #66fcf1;
+    color: #0b0c10;
+    font-weight: 800;
+    box-shadow: 0 0 15px rgba(102, 252, 241, 0.35);
+    margin-left: auto;
+}
+
+.btn-preset-test-combat:hover {
+    background: #66fcf1;
+    box-shadow: 0 0 25px rgba(102, 252, 241, 0.6);
+    transform: translateY(-2px);
+}
+
+/* Grid de Tarjetas de Reliquias */
+.sandbox-relics-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+    gap: 16px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.sandbox-relic-card {
+    background: rgba(13, 17, 24, 0.85);
+    border: 1.5px solid rgba(255, 255, 255, 0.12);
+    border-radius: 12px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    position: relative;
+}
+
+.sandbox-relic-card:hover {
+    border-color: rgba(102, 252, 241, 0.4);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.7);
+    transform: translateY(-3px);
+}
+
+.sandbox-relic-card.relic-card-active {
+    border-color: #66fcf1 !important;
+    background: linear-gradient(180deg, rgba(16, 30, 45, 0.95) 0%, rgba(10, 18, 30, 0.98) 100%) !important;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.8), 0 0 20px rgba(102, 252, 241, 0.3) !important;
+}
+
+.sandbox-relic-card.rarity-legendario.relic-card-active {
+    border-color: #fed330 !important;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.8), 0 0 25px rgba(254, 211, 48, 0.4) !important;
+}
+
+.sandbox-relic-card.rarity-corrupta.relic-card-active {
+    border-color: #eb4d4b !important;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.8), 0 0 25px rgba(235, 77, 75, 0.4) !important;
+}
+
+.sandbox-relic-card-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+/* Switch toggle */
+.relic-switch-label {
+    position: relative;
+    display: inline-block;
+    width: 44px;
+    height: 24px;
+    cursor: pointer;
+}
+
+.relic-switch-label input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.relic-slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(255, 255, 255, 0.15);
+    transition: .3s;
+    border-radius: 24px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.relic-slider:before {
+    position: absolute;
+    content: "";
+    height: 16px;
+    width: 16px;
+    left: 3px;
+    bottom: 3px;
+    background-color: #a4b0be;
+    transition: .3s;
+    border-radius: 50%;
+}
+
+.relic-switch-label input:checked + .relic-slider {
+    background-color: rgba(102, 252, 241, 0.3);
+    border-color: #66fcf1;
+}
+
+.relic-switch-label input:checked + .relic-slider:before {
+    transform: translateX(20px);
+    background-color: #66fcf1;
+    box-shadow: 0 0 8px #66fcf1;
+}
+
+.sandbox-relic-hero {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.sandbox-relic-pedestal {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, rgba(0, 0, 0, 0.5) 70%);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.sandbox-relic-icon {
+    font-size: 26px;
+}
+
+.sandbox-relic-title-wrap {
+    display: flex;
+    flex-direction: column;
+    text-align: left;
+}
+
+.sandbox-relic-name {
+    font-size: 1.15rem;
+    font-weight: 800;
+    color: #fff;
+    letter-spacing: 0.5px;
+    line-height: 1.2;
+}
+
+.sandbox-relic-category-tag {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #8395a7;
+    letter-spacing: 0.5px;
+    margin-top: 2px;
+}
+
+.sandbox-relic-desc {
+    font-size: 0.88rem;
+    color: #c5c6c7;
+    line-height: 1.4;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    padding: 10px 12px;
+    flex-grow: 1;
+    margin-bottom: 8px;
+    text-align: left;
+}
+
+.sandbox-relic-desc strong {
+    color: #66fcf1;
+}
+
+.sandbox-relic-lore {
+    font-size: 0.78rem;
+    color: #747d8c;
+    font-style: italic;
+    margin-bottom: 12px;
+    line-height: 1.3;
+    text-align: left;
+    border-left: 2px solid rgba(255, 255, 255, 0.1);
+    padding-left: 8px;
+}
+
+.sandbox-relic-footer {
+    display: flex;
+    gap: 8px;
+    margin-top: auto;
+}
+
+.btn-relic-action {
+    flex: 1;
+    padding: 8px 10px;
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 0.88rem;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+}
+
+.btn-inspect {
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #c5c6c7;
+}
+
+.btn-inspect:hover {
+    background: rgba(255, 255, 255, 0.15);
+    color: #fff;
+}
+
+.btn-active {
+    background: rgba(102, 252, 241, 0.2);
+    border: 1px solid #66fcf1;
+    color: #66fcf1;
+}
+
+.btn-active:hover {
+    background: rgba(255, 71, 87, 0.2);
+    border-color: #ff4757;
+    color: #ff4757;
+}
+
+.btn-inactive {
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #fff;
+}
+
+.btn-inactive:hover {
+    background: var(--accent-color);
+    border-color: var(--accent-color);
+    color: #0b0c10;
+}
+
+.sandbox-relics-empty {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 60px 20px;
+    color: #8395a7;
+    font-size: 1.1rem;
+}
+
+/* Resumen rápido en el simulador de combate */
+.combat-relics-quick-summary {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    background: rgba(0, 0, 0, 0.35);
+    padding: 8px 12px;
+    border-radius: 8px;
+    border: 1px solid rgba(254, 211, 48, 0.2);
+}
+
+.btn-mini-preset {
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #fff;
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 0.78rem;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-mini-preset:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.btn-preset-relics {
+    border-color: rgba(165, 94, 234, 0.5) !important;
+    color: #a55eea !important;
+}
+
+.btn-preset-relics:hover {
+    background: rgba(165, 94, 234, 0.25) !important;
+    color: #fff !important;
+}
+
+.sandbox-combat-relics-bar {
+    max-width: 320px;
+    overflow-x: auto;
+    padding: 2px 4px;
+}
+
+

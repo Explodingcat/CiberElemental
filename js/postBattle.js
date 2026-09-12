@@ -18,7 +18,8 @@ function initPostBattle(enemies) {
     // Normalizar a arreglo
     defeatedRobots = Array.isArray(enemies) ? enemies : [enemies];
     
-    let scrapGainMult = (typeof SkillsManager !== 'undefined') ? SkillsManager.getScrapGainMultiplier() : 1;
+    let relicScrapMult = (typeof RelicsManager !== 'undefined') ? RelicsManager.getScrapMultiplier() : 1;
+    let scrapGainMult = ((typeof SkillsManager !== 'undefined') ? SkillsManager.getScrapGainMultiplier() : 1) * relicScrapMult;
     let xpGainMult = (typeof SkillsManager !== 'undefined') ? SkillsManager.getXpGainMultiplier() : 1;
     
     let totalScrap = 0;
@@ -31,6 +32,7 @@ function initPostBattle(enemies) {
     let allDroppedWeapons = [];
     let allDroppedItems = [];
     let allDroppedConsumables = [];
+    let allDroppedRelics = [];
 
     // Procesar recompensas de cada robot derrotado
     defeatedRobots.forEach(enemy => {
@@ -69,34 +71,26 @@ function initPostBattle(enemies) {
             allDroppedConsumables.push(cons);
             
         } else if (isElite) {
-            // Elite drop: 33% Upgraded Weapon (+1), 33% Chip, 34% Nada
-            let eliteRoll = Math.random();
-            if (eliteRoll < 0.33) {
-                let wp = generateRandomWeapon(enemy.element);
-                wp.isUpgraded = true;
-                wp.name += " +1";
-                if (wp.type === WEAPON_TYPES.DAGA) wp.desc = '40% prob. doble ataque (con +1). Cada golpe puede aplicar marca.';
-                if (wp.type === WEAPON_TYPES.HACHA) wp.desc = '+10% ATQ base. Perfora 75% defensas (con +1). 20% prob. Rompearmaduras. +45% Daño a ≤40% HP (Verdugo +1).';
-                if (wp.type === WEAPON_TYPES.BACULO) wp.desc = 'Al finalizar turno: Escudo de plasma 15% HP Máx portador + micro-escudo 8% a un aliado. 20% prob. de reducir 1 CD.';
-                if (wp.type === WEAPON_TYPES.ESPADA) wp.desc = '+30% Daño base y +20% Crítico (con +1). Críticos activan Racha (+10% ATQ).';
-                allDroppedWeapons.push(wp);
-            } else if (eliteRoll < 0.66) {
-                let chipKeys = Object.keys(ITEM_TYPES).filter(k => k.includes('CHIP'));
-                let randomChipType = ITEM_TYPES[chipKeys[Math.floor(Math.random() * chipKeys.length)]];
-                allDroppedItems.push({ type: randomChipType, ...ITEM_DEFS[randomChipType] });
+            // Elite drop: 100% Reliquia Pasiva (70% Común, 20% Rara, 10% Épica) + 1 Consumible garantizado
+            let excludeList = (GAME_STATE && GAME_STATE.relics) ? [...GAME_STATE.relics] : [];
+            allDroppedRelics.forEach(r => { if (r && r.id) excludeList.push(r.id); });
+
+            let droppedRelic = (typeof getRandomWeightedRelic === 'function')
+                ? getRandomWeightedRelic(excludeList, { COMUN: 0.70, RARO: 0.20, EPICO: 0.10 })
+                : null;
+
+            if (droppedRelic) {
+                allDroppedRelics.push(droppedRelic);
             }
-            
+
             let consumableKeys = Object.keys(ITEM_TYPES).filter(k => !k.includes('CHIP'));
             let randomConsumableType = ITEM_TYPES[consumableKeys[Math.floor(Math.random() * consumableKeys.length)]];
             let cons = { type: randomConsumableType, ...ITEM_DEFS[randomConsumableType] };
             allDroppedConsumables.push(cons);
             
         } else {
-            // Normal monster: 1% weapon, 30% consumable item
-            if (Math.random() < 0.01) {
-                allDroppedWeapons.push(generateRandomWeapon(enemy.element));
-            }
-            if (Math.random() < 0.3) {
+            // Normal monster: 0% armas (los enemigos regulares no dropean armas), 30% consumible
+            if (Math.random() < 0.30) {
                 let consumableKeys = Object.keys(ITEM_TYPES).filter(k => !k.includes('CHIP'));
                 let randomConsumableType = ITEM_TYPES[consumableKeys[Math.floor(Math.random() * consumableKeys.length)]];
                 allDroppedItems.push({ type: randomConsumableType, ...ITEM_DEFS[randomConsumableType] });
@@ -256,12 +250,31 @@ function initPostBattle(enemies) {
         if (postAuthCard) postAuthCard.style.display = 'none';
     }
     
+    if (hasBoss) {
+        // Mostrar selector de 3 reliquias de Jefe
+        renderBossRelicSelection(currentTowerId);
+    } else {
+        const relicSec = document.getElementById('boss-relic-reward-section');
+        if (relicSec) relicSec.style.display = 'none';
+    }
+
     allDroppedWeapons.forEach(wp => {
         let isGold = wp.isLegendary || wp.element === 'LEGENDARIO';
         let goldTag = isGold ? ' 👑 [DORADA LEGENDARIA]' : '';
         logsHTML.push(`<div class="post-log-item log-weapon ${isGold ? 'log-weapon-legendary' : ''}">🎁 ¡Soltó un arma: <strong>${wp.name}${goldTag}</strong> ${WEAPON_EMOJIS[wp.type]}!</div>`);
         GAME_STATE.inventory.weapons.push(wp);
         droppedWeapon = wp;
+    });
+
+    allDroppedRelics.forEach(relic => {
+        const rarityKey = relic.rarity ? relic.rarity.toLowerCase() : 'comun';
+        logsHTML.push(`<div class="post-log-item log-relic rarity-${rarityKey}">✨ ¡Botín Élite: <strong>${relic.name}</strong> (${relic.rarity}) ${relic.icon}!</div>`);
+        if (typeof RelicsManager !== 'undefined') {
+            RelicsManager.addRelic(relic.id);
+        } else {
+            if (!GAME_STATE.relics) GAME_STATE.relics = [];
+            if (!GAME_STATE.relics.includes(relic.id)) GAME_STATE.relics.push(relic.id);
+        }
     });
     
     allDroppedItems.forEach(item => {
@@ -317,7 +330,7 @@ function initPostBattle(enemies) {
 
     // Botón Desmantelar todo el botín derrotado
     const dismantleBase = (typeof SkillsManager !== 'undefined') ? SkillsManager.getDismantleRewards() : { scrap: 30, healPct: 0.10 };
-    const dismantleScrap = dismantleBase.scrap * defeatedRobots.length;
+    const dismantleScrap = Math.floor(dismantleBase.scrap * defeatedRobots.length * relicScrapMult);
     const dismantleHeal = dismantleBase.healPct;
     
     const btnScrap = document.createElement('button');
@@ -601,10 +614,110 @@ async function saveCurrentTowerCheckpoint(towerCompletedId = null) {
             items: [...((GAME_STATE && GAME_STATE.inventory && GAME_STATE.inventory.items) ? GAME_STATE.inventory.items : [])],
             weapons: [...((GAME_STATE && GAME_STATE.inventory && GAME_STATE.inventory.weapons) ? GAME_STATE.inventory.weapons : [])]
         },
+        relics: [...((GAME_STATE && GAME_STATE.relics) ? GAME_STATE.relics : [])],
         saved_at: new Date().toISOString()
     };
 
     await AuthManager.saveTowerCheckpoint(checkpointData);
+}
+
+let bossRelicClaimed = false;
+
+function renderBossRelicSelection(currentTowerId) {
+    const section = document.getElementById('boss-relic-reward-section');
+    if (!section) return;
+    
+    bossRelicClaimed = false;
+    let pool = (typeof getRandomRelicPool === 'function' && typeof GAME_STATE !== 'undefined')
+        ? getRandomRelicPool(3, GAME_STATE.relics, ['LEGENDARIO', 'EPICO'])
+        : [];
+    
+    // Si quedan menos de 3 reliquias entre Legendarias y Épicas, rellenar con cualquier reliquia no poseída
+    if (pool.length < 3 && typeof getRandomRelicPool === 'function' && typeof GAME_STATE !== 'undefined') {
+        const excludeCombined = [...(GAME_STATE.relics || []), ...pool.map(r => r.id)];
+        const filler = getRandomRelicPool(3 - pool.length, excludeCombined);
+        pool.push(...filler);
+    }
+    
+    if (pool.length === 0) {
+        section.style.display = 'none';
+        return;
+    }
+    
+    const relicCards = pool.map(relic => {
+        const rarityKey = relic.rarity ? relic.rarity.toLowerCase() : 'legendario';
+        return `
+            <div class="boss-relic-card rarity-${rarityKey}" id="boss-relic-card-${relic.id}">
+                <div class="boss-relic-top">
+                    <span class="relic-modal-rarity-badge badge-${rarityKey}">✨ ${relic.rarity || 'RELIQUIA'}</span>
+                    <span class="boss-relic-category">${relic.category || 'PASIVA'}</span>
+                </div>
+                <div class="boss-relic-icon-wrap">
+                    <div class="boss-relic-icon">${relic.icon}</div>
+                </div>
+                <div class="boss-relic-name">${relic.name}</div>
+                <div class="boss-relic-desc">${relic.desc}</div>
+                ${relic.lore ? `<div class="boss-relic-lore">"${relic.lore}"</div>` : ''}
+                <button class="btn-boss-relic-claim" onclick="claimBossVictoryRelic('${relic.id}', ${currentTowerId})">
+                    <span>✨ Reclamar Reliquia</span>
+                </button>
+            </div>
+        `;
+    }).join('');
+    
+    section.innerHTML = `
+        <div class="boss-relic-picker-box">
+            <div class="boss-relic-picker-header">
+                <div class="boss-relic-badge">🏆 BOTÍN DE JEFE // RECOMPENSA DE PODER ANCESTRAL</div>
+                <h2 class="boss-relic-title">SELECCIONA UNA RELIQUIA DE JEFE (1 DE ${pool.length})</h2>
+                <p class="boss-relic-subtitle">Elige 1 artefacto pasivo para potenciar a tu escuadrón permanentemente durante toda la expedición:</p>
+            </div>
+            <div class="boss-relic-grid">
+                ${relicCards}
+            </div>
+        </div>
+    `;
+    section.style.display = 'block';
+}
+
+function claimBossVictoryRelic(relicId, currentTowerId) {
+    if (bossRelicClaimed) return;
+    bossRelicClaimed = true;
+    
+    if (typeof RelicsManager !== 'undefined') {
+        RelicsManager.addRelic(relicId);
+        const relicData = (typeof getRelicData === 'function') ? getRelicData(relicId) : null;
+        if (relicData) {
+            RelicsManager.showRelicAcquiredToast(relicData);
+        }
+    } else {
+        if (!GAME_STATE.relics) GAME_STATE.relics = [];
+        if (!GAME_STATE.relics.includes(relicId)) GAME_STATE.relics.push(relicId);
+    }
+    
+    // Deshabilitar botones de relic cards y marcar la elegida
+    document.querySelectorAll('.boss-relic-card').forEach(card => {
+        const btn = card.querySelector('.btn-boss-relic-claim');
+        if (card.id === `boss-relic-card-${relicId}`) {
+            card.classList.add('is-claimed');
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = '<span>✓ RELIQUIA ADQUIRIDA</span>';
+                btn.classList.add('btn-claimed');
+            }
+        } else {
+            card.classList.add('is-unpicked');
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = '<span>🔒 No seleccionada</span>';
+            }
+        }
+    });
+    
+    // Actualizar checkpoint si existe
+    if (typeof saveCurrentTowerCheckpoint === 'function') {
+        saveCurrentTowerCheckpoint(currentTowerId);
+    }
 }
 
 

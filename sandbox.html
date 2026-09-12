@@ -20,10 +20,13 @@
             </div>
         </div>
 
-        <!-- 4 Botones / Modos Principales -->
+        <!-- 5 Botones / Modos Principales -->
         <div class="sandbox-nav-modes">
             <button id="tab-btn-combat" class="sandbox-tab-btn active" onclick="switchSandboxTab('combat')">
                 <span>⚔️</span> SIMULADOR DE COMBATE
+            </button>
+            <button id="tab-btn-relics" class="sandbox-tab-btn" onclick="switchSandboxTab('relics')">
+                <span>✨</span> PROBADOR DE RELIQUIAS
             </button>
             <button id="tab-btn-events" class="sandbox-tab-btn" onclick="switchSandboxTab('events')">
                 <span>🎲</span> EVENTOS ALEATORIOS
@@ -63,6 +66,7 @@
                     <button class="btn-preset" onclick="applyCombatPreset('VS_TITAN_OMEGA')">3 Starters vs TITAN-OMEGA (Jefe 2)</button>
                     <button class="btn-preset" onclick="applyCombatPreset('VS_SINGULARIDAD')">3 Starters vs SINGULARIDAD (Jefe 3)</button>
                     <button class="btn-preset btn-preset-legendary" onclick="applyCombatPreset('LEGENDARY_SQUAD')">👑 Armas Legendarias</button>
+                    <button class="btn-preset btn-preset-relics" onclick="applyCombatPreset('RELICS_SHOWCASE')">✨ Con 34 Reliquias Activas</button>
                     <button class="btn-preset" onclick="applyCombatPreset('VS_3_ELITES')">3 Starters vs 3 Élites</button>
                     <button class="btn-preset" onclick="applyCombatPreset('BOSS_DUEL')">Duelo de Jefes (TITAN vs TITAN)</button>
                     <button class="btn-preset" onclick="applyCombatPreset('MIRROR')">🔁 Espejo</button>
@@ -146,6 +150,16 @@
                                 </label>
                             </div>
                         </div>
+
+                        <!-- Resumen Rápido de Reliquias Activas en Combate -->
+                        <div class="combat-relics-quick-summary">
+                            <label style="font-size: 0.8rem; font-weight: 700; color: #fed330; text-transform: uppercase;">✨ Reliquias Activas (<span id="combat-relics-count-inline">0</span>/34)</label>
+                            <div style="display: flex; gap: 6px; align-items: center;">
+                                <button type="button" class="btn-mini-preset" onclick="applyRelicPreset('ALL')">⚡ Todas</button>
+                                <button type="button" class="btn-mini-preset" onclick="applyRelicPreset('NONE')">🧹 Ninguna</button>
+                                <button type="button" class="btn-mini-preset" style="color: #66fcf1; border-color: rgba(102, 252, 241, 0.4);" onclick="switchSandboxTab('relics')">🔍 Configurar...</button>
+                            </div>
+                        </div>
                     </div>
 
                     <button class="btn-launch-combat" onclick="launchSandboxCombat()">
@@ -172,6 +186,9 @@
                             <span>📜</span> Registro Táctico
                         </button>
                     </div>
+
+                    <!-- Barra de Reliquias en Combate Activo -->
+                    <div id="top-relics-bar" class="top-relics-bar sandbox-combat-relics-bar" style="margin: 0 10px;"></div>
 
                     <div class="live-controls-right">
                         <span style="font-size: 0.85rem; font-weight: 700; color: #8395a7;">VELOCIDAD:</span>
@@ -200,7 +217,63 @@
         </section>
 
         <!-- ====================================================================
-             2. MODO PROBADOR DE EVENTOS
+             2. MODO PROBADOR DE RELIQUIAS (NUEVO)
+             ==================================================================== -->
+        <section id="view-relics" class="sandbox-view">
+            <!-- Dashboard y Barra de Control de Reliquias -->
+            <div class="relics-sandbox-header">
+                <div class="relics-header-info">
+                    <div class="sub-header-badge" style="color: #66fcf1; border-color: rgba(102, 252, 241, 0.4);">
+                        ✨ LABORATORIO CUÁNTICO // CATÁLOGO OFICIAL DE 34 RELIQUIAS PASIVAS
+                    </div>
+                    <h2 class="relics-main-title">PROBADOR Y CATALOGADOR DE RELIQUIAS</h2>
+                    <p class="relics-desc">Explora, inspecciona, activa o desactiva cualquier reliquia con un solo clic. Mira la previsualización del HUD superior en vivo y prueba sus efectos y sinergias elementales directamente en combate.</p>
+                </div>
+                
+                <!-- Barra de Previsualización del HUD Superior en Vivo -->
+                <div class="relics-hud-preview-card">
+                    <div class="hud-preview-top">
+                        <span class="hud-preview-label">🛡️ PREVISUALIZACIÓN DEL HUD SUPERIOR (CLIC PARA INSPECCIONAR):</span>
+                        <span id="sandbox-relics-count-badge" class="relics-count-badge">0 / 34 ACTIVAS</span>
+                    </div>
+                    <div id="sandbox-top-relics-bar" class="top-relics-bar sandbox-relics-hud"></div>
+                </div>
+            </div>
+
+            <!-- Toolbar de Filtros y Presets de Reliquias -->
+            <div class="relics-toolbar">
+                <div class="relics-toolbar-row">
+                    <div class="relics-search-box">
+                        <input type="text" id="relics-search-input" class="form-control" placeholder="🔍 Buscar reliquia por nombre, efecto, mecánica o lore..." oninput="filterSandboxRelics(this.value)">
+                    </div>
+                    <div class="relics-category-filters" id="relics-category-filters">
+                        <!-- Generado por renderRelicsCategoryFilters() -->
+                    </div>
+                </div>
+
+                <div class="relics-presets-row">
+                    <span class="presets-label">⚡ PRESETS TEMÁTICOS:</span>
+                    <button class="btn-relic-preset" onclick="applyRelicPreset('ALL')">⚡ Activar Todas (34)</button>
+                    <button class="btn-relic-preset" onclick="applyRelicPreset('NONE')">🧹 Desactivar Todas</button>
+                    <button class="btn-relic-preset btn-preset-fuego" onclick="applyRelicPreset('ELEMENTAL')">🔥 Sinergias Elementales</button>
+                    <button class="btn-relic-preset btn-preset-tank" onclick="applyRelicPreset('SURVIVAL')">🛡️ Supervivencia & Barreras</button>
+                    <button class="btn-relic-preset btn-preset-weapons" onclick="applyRelicPreset('WEAPONS')">⚔️ Maestrías de Armas</button>
+                    <button class="btn-relic-preset btn-preset-speed" onclick="applyRelicPreset('SPEED')">⚡ Velocidad & Iniciativa</button>
+                    <button class="btn-relic-preset btn-preset-corrupted" onclick="applyRelicPreset('CORRUPTED')">💀 Poder Corrupto</button>
+                    <button class="btn-relic-preset btn-preset-test-combat" onclick="launchCombatWithActiveRelics()">
+                        <span>⚔️</span> PROBAR RELIQUIAS EN COMBATE ➔
+                    </button>
+                </div>
+            </div>
+
+            <!-- Grid de las 34 Tarjetas de Reliquias -->
+            <div id="sandbox-relics-grid" class="sandbox-relics-grid">
+                <!-- Renderizado dinámico de las 34 reliquias -->
+            </div>
+        </section>
+
+        <!-- ====================================================================
+             3. MODO PROBADOR DE EVENTOS
              ==================================================================== -->
         <section id="view-events" class="sandbox-view">
             
@@ -265,7 +338,7 @@
         </section>
 
         <!-- ====================================================================
-             3. MODO BALANCEADOR DE STATS
+             4. MODO BALANCEADOR DE STATS
              ==================================================================== -->
         <section id="view-balance" class="sandbox-view">
             <!-- Barra Superior de Acciones de Balance -->
@@ -308,7 +381,7 @@
         </section>
 
         <!-- ====================================================================
-             4. MODO PASO ENTRE TORRES & ARMAS LEGENDARIAS
+             5. MODO PASO ENTRE TORRES & ARMAS LEGENDARIAS
              ==================================================================== -->
         <section id="view-towers" class="sandbox-view">
             <!-- Barra Superior: Selector de Torres y Estado Global -->
@@ -463,12 +536,21 @@
         </div>
     </div>
 
+    <!-- Modal de Inspección de Reliquia -->
+    <div id="relic-tooltip-modal" class="relic-modal-backdrop" style="display: none;" onclick="RelicsManager.closeRelicTooltip()">
+        <div class="relic-modal-wrapper" onclick="event.stopPropagation()">
+            <div id="relic-tooltip-content"></div>
+        </div>
+    </div>
+
     <!-- Scripts del Motor del Juego -->
     <script src="js/constants.js"></script>
     <script src="js/balanceManager.js"></script>
     <script src="js/database.js"></script>
     <script src="js/skinsData.js"></script>
     <script src="js/eventsDatabase.js"></script>
+    <script src="js/relicsData.js"></script>
+    <script src="js/relicsManager.js"></script>
     <script src="js/Robot.js"></script>
     <script src="js/teamManager.js"></script>
     <script src="js/inventory.js"></script>

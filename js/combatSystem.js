@@ -93,6 +93,11 @@ function startCombat(nodeType) {
         });
     }
 
+    // Aplicar disparadores pasivos de inicio de combate de Reliquias
+    if (typeof RelicsManager !== 'undefined') {
+        RelicsManager.onCombatStart(combatState);
+    }
+
     // Construir la cola de iniciativa inicial por velocidad
     buildInitiativeQueue();
     
@@ -717,6 +722,9 @@ async function advanceTurnQueue() {
         // Nueva ronda: regenerar cola de turnos con velocidades actualizadas
         combatState.round++;
         buildInitiativeQueue();
+        if (typeof RelicsManager !== 'undefined') {
+            RelicsManager.onRoundStart(combatState);
+        }
         const nextActor = combatState.initiativeQueue[combatState.queueIndex];
         renderTurnQueue(nextActor);
         await delay(400);
@@ -730,6 +738,11 @@ async function advanceTurnQueue() {
     if (currentActor.robot.hp <= 0 || currentActor.robot.isOffline) {
         combatState.queueIndex++;
         return advanceTurnQueue();
+    }
+
+    // Disparador de inicio de turno de Reliquias (Célula Regenerativa, Núcleo Hipercaliente, etc.)
+    if (typeof RelicsManager !== 'undefined') {
+        RelicsManager.onTurnStart(currentActor);
     }
     
     // Al iniciar el turno del combatiente, baja su postura defensiva, coraza de espinas o barreras que haya invocado
@@ -1475,6 +1488,15 @@ function processPostTurnStaff(actor) {
     }
     
     let shieldAmount = Math.max(1, Math.floor(robot.maxHp * shieldRate));
+    if (isAlly && typeof RelicsManager !== 'undefined' && RelicsManager.hasRelic('nucleo_canalizador')) {
+        shieldAmount = Math.floor(shieldAmount * 1.50);
+        const debuffs = ['BURN', 'STUN', 'SLOW', 'FROST', 'BLIND', 'ARMOR_BREAK'];
+        const debuffIdx = robot.statuses.findIndex(s => debuffs.includes(s.type));
+        if (debuffIdx !== -1) {
+            const removed = robot.statuses.splice(debuffIdx, 1)[0];
+            logCombat(`🪄✨ [Reliquia] Núcleo Canalizador purga [${formatStatusLabel(removed.type)}] de [${robot.name}]!`);
+        }
+    }
     
     // Reemplazar escudo de Báculo propio previo si existía
     robot.statuses = robot.statuses.filter(s => !(s.type === 'SHIELD' && s.subType === 'BACULO_SHIELD'));
@@ -1502,6 +1524,15 @@ function processPostTurnStaff(actor) {
                 allyShieldRate *= 1.25;
             }
             let allyShieldAmt = Math.max(1, Math.floor(targetAlly.maxHp * allyShieldRate));
+            if (isAlly && typeof RelicsManager !== 'undefined' && RelicsManager.hasRelic('nucleo_canalizador')) {
+                allyShieldAmt = Math.floor(allyShieldAmt * 1.50);
+                const debuffs = ['BURN', 'STUN', 'SLOW', 'FROST', 'BLIND', 'ARMOR_BREAK'];
+                const debuffIdx = targetAlly.statuses.findIndex(s => debuffs.includes(s.type));
+                if (debuffIdx !== -1) {
+                    const removed = targetAlly.statuses.splice(debuffIdx, 1)[0];
+                    logCombat(`🪄✨ [Reliquia] Núcleo Canalizador purga [${formatStatusLabel(removed.type)}] de [${targetAlly.name}]!`);
+                }
+            }
             targetAlly.statuses = targetAlly.statuses.filter(s => !(s.type === 'SHIELD' && s.subType === 'BACULO_ALLY_SHIELD'));
             targetAlly.addStatus({
                 type: 'SHIELD',
@@ -1558,7 +1589,7 @@ async function executePlayerTurn(skillIndex, allyIndex, targetAllyIndex = null, 
     
     if (isAoE) {
         showWaitingCombatActions(`⚡ [${ally.name.toUpperCase()}] DESATANDO ${skill.name.toUpperCase()} SOBRE TODOS LOS ENEMIGOS...`);
-        executeTurnAoE(ally, skill, true, allyIndex);
+        await executeTurnAoE(ally, skill, true, allyIndex);
         await delay(600);
         
         // Verificar muertes de enemigos por el AoE
@@ -1568,6 +1599,9 @@ async function executePlayerTurn(skillIndex, allyIndex, targetAllyIndex = null, 
                     e.hp = 0;
                     e.isOffline = true;
                     logCombat(`💀 ¡${e.name} ha sido neutralizado!`);
+                    if (typeof RelicsManager !== 'undefined') {
+                        RelicsManager.onEnemyKilled(ally, e);
+                    }
                 }
             });
         }
@@ -1601,7 +1635,7 @@ async function executePlayerTurn(skillIndex, allyIndex, targetAllyIndex = null, 
     showWaitingCombatActions(actionDesc);
     
     // Ejecutar la acción del aliado contra el objetivo
-    executeTurn(ally, skill, isSelfOrAllyBuff ? targetAlly : targetEnemy, true, allyIndex, targetAllyIndex, targetEnemyIndex);
+    await executeTurn(ally, skill, isSelfOrAllyBuff ? targetAlly : targetEnemy, true, allyIndex, targetAllyIndex, targetEnemyIndex);
     
     // Esperar a que la animación de dash y golpe termine antes de re-renderizar la UI
     await delay(450);
@@ -1611,6 +1645,9 @@ async function executePlayerTurn(skillIndex, allyIndex, targetAllyIndex = null, 
         targetEnemy.hp = 0;
         targetEnemy.isOffline = true;
         logCombat(`💀 ¡${targetEnemy.name} ha sido neutralizado!`);
+        if (typeof RelicsManager !== 'undefined') {
+            RelicsManager.onEnemyKilled(ally, targetEnemy);
+        }
     }
     
     processPostTurnStaff({ type: 'PLAYER', robot: ally, allyIndex: allyIndex, enemyIndex: -1 });
@@ -1676,7 +1713,7 @@ async function executeEnemyTurn(enemy, enemyIndex = 0) {
     // Si la habilidad es AoE (ej. Terremoto Cataclísmico o Ventisca de Cero Absoluto)
     if (enemySkill.target === 'ALL_ENEMIES' || (enemySkill.type && enemySkill.type.includes('AOE'))) {
         renderEnemyCombatDock(enemy, enemySkill.name, '⚡ Ataque de área sobre todo el escuadrón aliado.');
-        executeTurnAoE(enemy, enemySkill, false, enemyIndex);
+        await executeTurnAoE(enemy, enemySkill, false, enemyIndex);
         await delay(600);
         
         // Verificar muertes de aliados por el AoE
@@ -1710,7 +1747,7 @@ async function executeEnemyTurn(enemy, enemyIndex = 0) {
             }
         }
         renderEnemyCombatDock(enemy, enemySkill.name, `🛡️ Activando soporte táctico sobre [${recipientEnemy.name.toUpperCase()}].`);
-        executeTurn(enemy, enemySkill, recipientEnemy, false, enemyIndex, null, recipientIdx);
+        await executeTurn(enemy, enemySkill, recipientEnemy, false, enemyIndex, null, recipientIdx);
         await delay(450);
         renderPartyCombatUI();
         await delay(650);
@@ -1741,7 +1778,7 @@ async function executeEnemyTurn(enemy, enemyIndex = 0) {
     
     // 3. Ejecutar ataque enemigo
     renderEnemyCombatDock(enemy, enemySkill.name, `⚔️ Ataque dirigido contra [${targetAlly.name.toUpperCase()}].`);
-    executeTurn(enemy, enemySkill, targetAlly, false, enemyIndex, targetIndex, enemyIndex);
+    await executeTurn(enemy, enemySkill, targetAlly, false, enemyIndex, targetIndex, enemyIndex);
     
     // Esperar animación de dash
     await delay(450);
@@ -1757,22 +1794,123 @@ async function executeEnemyTurn(enemy, enemyIndex = 0) {
     await delay(650);
 }
 
-function showComboPopup(reaction, isTargetEnemy, targetIndex = 0) {
+async function playEpicComboAnimation(reaction, isTargetEnemy, targetIndex = 0) {
+    if (!reaction) return;
+
+    // 1. Audio con SoundManager y ducking dinámico
+    if (typeof SoundManager !== 'undefined') {
+        if (reaction.sound && typeof SoundManager[reaction.sound] === 'function') {
+            SoundManager.play(reaction.sound);
+        } else if (reaction.sound) {
+            SoundManager.play(reaction.sound);
+        } else {
+            SoundManager.play('elemental_reaction');
+        }
+    }
+
+    // 2. Sacudida de pantalla en el escenario
+    const arena = document.getElementById('combat-arena-bg') || document.querySelector('.combat-screen');
+    if (arena) {
+        const shakeClass = reaction.shakeType === 'quake' 
+            ? 'anim-shake-quake' 
+            : (reaction.shakeType === 'vortex' ? 'anim-shake-vortex' : 'anim-shake-heavy');
+        arena.classList.remove('anim-shake-heavy', 'anim-shake-quake', 'anim-shake-vortex');
+        void arena.offsetWidth; // Forzar reflow para reiniciar la animación
+        arena.classList.add(shakeClass);
+        setTimeout(() => arena.classList.remove(shakeClass), 750);
+    }
+
+    // 3. Contenedor de impacto en el objetivo
     let containerId = isTargetEnemy ? `enemy-hit-container-${targetIndex}` : `player-hit-container-${targetIndex}`;
-    const container = document.getElementById(containerId) || (isTargetEnemy ? document.getElementById('enemy-hit-container') : null);
-    if (!container) return;
+    let container = document.getElementById(containerId) || (isTargetEnemy ? document.getElementById('enemy-hit-container') : null);
+    if (!container) {
+        container = document.querySelector('.combat-screen') || document.body;
+    }
+
+    // 4. Capa de destello en la arena
+    const flashLayer = document.createElement('div');
+    flashLayer.className = 'epic-arena-flash-layer';
+    if (reaction.color) {
+        flashLayer.style.background = `radial-gradient(circle, ${reaction.color}77 0%, rgba(0,0,0,0) 70%)`;
+    }
+    if (arena) arena.appendChild(flashLayer);
+    setTimeout(() => { if (flashLayer.parentNode) flashLayer.remove(); }, 600);
+
+    // 5. Onda de choque expansiva
+    const shockwave = document.createElement('div');
+    shockwave.className = 'epic-shockwave-ring';
+    if (reaction.color) {
+        shockwave.style.borderColor = reaction.color;
+        shockwave.style.boxShadow = `0 0 35px ${reaction.color}, inset 0 0 25px ${reaction.color}`;
+    }
+    container.appendChild(shockwave);
+    setTimeout(() => { if (shockwave.parentNode) shockwave.remove(); }, 850);
+
+    // 6. Ráfaga de partículas elementales
+    const particleList = reaction.particles || ['⚡', '💥', '✨', '🔥', '💫'];
+    const particleCount = 14;
+    for (let i = 0; i < particleCount; i++) {
+        const p = document.createElement('div');
+        p.className = 'epic-combo-particle';
+        p.textContent = particleList[i % particleList.length];
+        
+        const angle = (i / particleCount) * 2 * Math.PI + (Math.random() * 0.4 - 0.2);
+        const distance = 75 + Math.random() * 85;
+        const tx = Math.cos(angle) * distance;
+        const ty = Math.sin(angle) * distance;
+        const rot = (Math.random() * 720 - 360) + 'deg';
+        
+        p.style.setProperty('--tx', `${tx}px`);
+        p.style.setProperty('--ty', `${ty}px`);
+        p.style.setProperty('--rot', rot);
+        p.style.left = '50%';
+        p.style.top = '50%';
+        p.style.fontSize = `${1.2 + Math.random() * 0.8}rem`;
+        
+        container.appendChild(p);
+        setTimeout(() => { if (p.parentNode) p.remove(); }, 950);
+    }
+
+    // 7. Banner monumental de la combinación elemental
+    const banner = document.createElement('div');
+    const themeClass = reaction.themeClass || 'combo-theme-vaporizacion';
+    banner.className = `epic-combo-banner ${themeClass}`;
     
-    if (typeof SoundManager !== 'undefined') SoundManager.play('elemental_reaction');
-    const popup = document.createElement('div');
-    popup.className = 'combo-popup-banner';
-    popup.style.borderColor = reaction.color;
-    popup.innerHTML = `
-        <span class="combo-popup-title" style="color: ${reaction.color}">${reaction.name}</span>
-        <span class="combo-popup-desc">${reaction.desc}</span>
+    const elem1Emoji = reaction.elem1Emoji || '⚡';
+    const elem1Text = reaction.elem1 || '';
+    const elem2Emoji = reaction.elem2Emoji || '💥';
+    const elem2Text = reaction.elem2 || '';
+    const tagText = reaction.tacticalTag || reaction.name;
+
+    banner.innerHTML = `
+        <div class="epic-combo-elements-collision">
+            <span class="element-icon left-elem">${elem1Emoji} ${elem1Text}</span>
+            <span class="collision-symbol">⚡ REACCIÓN ⚡</span>
+            <span class="element-icon right-elem">${elem2Emoji} ${elem2Text}</span>
+        </div>
+        <div class="epic-combo-main-title">${reaction.name}</div>
+        <div class="epic-combo-tactical-badge">${tagText}</div>
+        <div class="epic-combo-subtitle">${reaction.desc}</div>
     `;
-    container.appendChild(popup);
+
+    container.appendChild(banner);
     
-    setTimeout(() => popup.remove(), 1200);
+    // El cartel se desvanece suavemente
+    setTimeout(() => {
+        if (banner.parentNode) {
+            banner.style.transition = 'opacity 0.35s ease, transform 0.35s ease';
+            banner.style.opacity = '0';
+            banner.style.transform = 'translate(-50%, -60%) scale(0.9)';
+            setTimeout(() => { if (banner.parentNode) banner.remove(); }, 350);
+        }
+    }, 1400);
+
+    // Pausa dramática para asimilar la reacción elemental
+    await delay(1200);
+}
+
+function showComboPopup(reaction, isTargetEnemy, targetIndex = 0) {
+    playEpicComboAnimation(reaction, isTargetEnemy, targetIndex);
 }
 
 function showDamagePopup(amount, isTargetEnemy, targetIndex = 0, isRed = false, isCrit = false) {
@@ -1854,19 +1992,56 @@ function processElementalCombo(attackElement, defender, attacker, baseDmg) {
         if (attackElement === ELEMENTS.FUEGO) {
             // Vaporización (💦 + 🔥): 1.5x Daño
             finalDmg = Math.floor(baseDmg * 1.5);
-            reaction = { name: '¡VAPORIZACIÓN!', desc: '¡Daño térmico x1.5!', color: '#ff6b6b' };
+            reaction = { 
+                name: '¡VAPORIZACIÓN!', 
+                desc: '¡Daño térmico supercrítico x1.5!', 
+                tacticalTag: 'DAÑO TÉRMICO x1.5',
+                elem1: 'AGUA', elem1Emoji: '💧',
+                elem2: 'FUEGO', elem2Emoji: '🔥',
+                themeClass: 'combo-theme-vaporizacion',
+                shakeType: 'heavy',
+                sound: 'combo_vaporize',
+                color: '#ff6b6b',
+                particles: ['💨', '🔥', '💧', '✨', '⚡']
+            };
             defender.removeStatus('MARCA_AGUA');
         } else if (attackElement === ELEMENTS.TIERRA) {
             // Lodo (💦 + 🪨): 1.2x Daño + Ralentización (-50% Vel por 2 turnos)
             finalDmg = Math.floor(baseDmg * 1.2);
             defender.addStatus({ type: 'SLOW', duration: 2 });
-            reaction = { name: '¡LODO!', desc: '¡Daño x1.2 + Ralentiza (-50% VEL 2T)!', color: '#feca57' };
+            reaction = { 
+                name: '¡LODO!', 
+                desc: '¡Daño x1.2 + Ralentización (-50% VEL 2T)!', 
+                tacticalTag: 'RALENTIZACIÓN -50% VEL',
+                elem1: 'AGUA', elem1Emoji: '💧',
+                elem2: 'TIERRA', elem2Emoji: '🪨',
+                themeClass: 'combo-theme-lodo',
+                shakeType: 'quake',
+                sound: 'combo_quake',
+                color: '#feca57',
+                particles: ['🪨', '💧', '🧱', '💥', '💦']
+            };
             defender.removeStatus('MARCA_AGUA');
         } else if (attackElement === ELEMENTS.AIRE) {
-            // Ventisca (💦 + 💨): 1.35x Daño + Congelación leve (-20% Precisión rival)
+            // Ventisca (💦 + 💨): 1.35x Daño + Congelación
             finalDmg = Math.floor(baseDmg * 1.35);
-            defender.addStatus({ type: 'FROST', duration: 2 });
-            reaction = { name: '¡VENTISCA!', desc: '¡Daño x1.35 + Congelación (-20% PREC)!', color: '#48dbfb' };
+            let hasPrisma = typeof RelicsManager !== 'undefined' && attacker && attacker.isAlly && RelicsManager.hasRelic('prisma_escarcha');
+            let frostDuration = hasPrisma ? 3 : 2;
+            let frostTag = hasPrisma ? 'CONGELACIÓN REFORZADA (-35% PREC 3T)' : 'CONGELACIÓN CERO ABSOLUTO';
+            let frostDesc = hasPrisma ? '¡Daño x1.35 + Congelación (-35% PREC 3T)!' : '¡Daño x1.35 + Congelación (-20% PREC 2T)!';
+            defender.addStatus({ type: 'FROST', duration: frostDuration });
+            reaction = { 
+                name: '¡VENTISCA!', 
+                desc: frostDesc, 
+                tacticalTag: frostTag,
+                elem1: 'AGUA', elem1Emoji: '💧',
+                elem2: 'AIRE', elem2Emoji: '💨',
+                themeClass: 'combo-theme-ventisca',
+                shakeType: 'vortex',
+                sound: 'combo_frost',
+                color: '#48dbfb',
+                particles: ['❄️', '🧊', '💨', '✨', '💎']
+            };
             defender.removeStatus('MARCA_AGUA');
         }
     }
@@ -1877,7 +2052,18 @@ function processElementalCombo(attackElement, defender, attacker, baseDmg) {
             finalDmg = Math.floor(baseDmg * 1.3);
             defender.removeStatus('BURN');
             defender.addStatus({ type: 'BURN', duration: 3 });
-            reaction = { name: '¡TORMENTA ÍGNEA!', desc: '¡Daño x1.3 + Renueva Quemadura (3T)!', color: '#ff4757' };
+            reaction = { 
+                name: '¡TORMENTA ÍGNEA!', 
+                desc: '¡Daño x1.3 + Renueva Quemadura (3T)!', 
+                tacticalTag: 'COMBUSTIÓN EXPANSIVA',
+                elem1: 'FUEGO', elem1Emoji: '🔥',
+                elem2: 'AIRE', elem2Emoji: '💨',
+                themeClass: 'combo-theme-tormenta-ignea',
+                shakeType: 'heavy',
+                sound: 'combo_firestorm',
+                color: '#ff4757',
+                particles: ['🔥', '🌪️', '💥', '☄️', '✨']
+            };
             defender.removeStatus('MARCA_FUEGO');
         } else if (attackElement === ELEMENTS.AGUA) {
             // Choque Térmico (🔥 + 💦): 1.45x Daño + Remueve ventajas/bufos del rival
@@ -1888,36 +2074,102 @@ function processElementalCombo(attackElement, defender, attacker, baseDmg) {
                 const buffTypes = ['BARRIER', 'SHIELD', 'DEFENDIENDO', 'CORAZA_ESPINAS', 'EVADE'];
                 defender.statuses = defender.statuses.filter(s => !buffTypes.includes(s.type));
             }
-            reaction = { name: '¡CHOQUE TÉRMICO!', desc: '¡Daño x1.45 + Purga ventajas enemigas!', color: '#48dbfb' };
+            reaction = { 
+                name: '¡CHOQUE TÉRMICO!', 
+                desc: '¡Daño x1.45 + Purga ventajas enemigas!', 
+                tacticalTag: 'PURGA DE DEFENSAS',
+                elem1: 'FUEGO', elem1Emoji: '🔥',
+                elem2: 'AGUA', elem2Emoji: '💧',
+                themeClass: 'combo-theme-choque-termico',
+                shakeType: 'heavy',
+                sound: 'combo_vaporize',
+                color: '#48dbfb',
+                particles: ['🔥', '💧', '⚡', '💥', '💨']
+            };
             defender.removeStatus('MARCA_FUEGO');
         } else if (attackElement === ELEMENTS.TIERRA) {
-            // Erupción (🔥 + 🪨): 1.4x Daño + Rompearmaduras (-25% Defensa enemiga)
+            // Erupción (🔥 + 🪨): 1.4x Daño + Rompearmaduras (-25% DEF, -40% con Fisión Volcánica)
             finalDmg = Math.floor(baseDmg * 1.4);
+            let hasFision = typeof RelicsManager !== 'undefined' && attacker && attacker.isAlly && RelicsManager.hasRelic('fision_volcanica');
             defender.addStatus({ type: 'ARMOR_BREAK', duration: 2 });
-            reaction = { name: '¡ERUPCIÓN!', desc: '¡Daño x1.4 + Rompearmaduras (-25% DEF)!', color: '#ffa502' };
+            reaction = { 
+                name: '¡ERUPCIÓN!', 
+                desc: hasFision ? '¡Daño x1.4 + Rompearmaduras (-40% DEF 2T) + Fisión!' : '¡Daño x1.4 + Rompearmaduras (-25% DEF 2T)!', 
+                tacticalTag: hasFision ? 'FISIÓN VOLCÁNICA (-40% DEF)' : 'ROMPEARMADURAS -25% DEF',
+                elem1: 'FUEGO', elem1Emoji: '🔥',
+                elem2: 'TIERRA', elem2Emoji: '🪨',
+                themeClass: 'combo-theme-erupcion',
+                shakeType: 'quake',
+                sound: 'combo_quake',
+                color: '#ffa502',
+                particles: ['🌋', '🔥', '🪨', '💥', '☄️']
+            };
             defender.removeStatus('MARCA_FUEGO');
         }
     }
     // 3. Reacciones sobre MARCA_TIERRA
     else if (defender.hasStatus('MARCA_TIERRA')) {
         if (attackElement === ELEMENTS.FUEGO) {
-            // Cristalización (🪨 + 🔥): 1.2x Daño + Escudo equivalente al 25% de la vida actual
+            // Cristalización (🪨 + 🔥): 1.2x Daño + Escudo (25%, 35% con Geoda de Resonancia)
             finalDmg = Math.floor(baseDmg * 1.2);
-            let shieldAmt = Math.max(1, Math.floor(attacker.hp * 0.25));
+            let hasGeoda = typeof RelicsManager !== 'undefined' && attacker && attacker.isAlly && RelicsManager.hasRelic('geoda_resonancia');
+            let shieldPct = hasGeoda ? 0.35 : 0.25;
+            let shieldAmt = Math.max(1, Math.floor(attacker.hp * shieldPct));
             attacker.removeStatus('SHIELD');
             attacker.addStatus({ type: 'SHIELD', duration: 2, amount: shieldAmt });
-            reaction = { name: '¡CRISTALIZACIÓN!', desc: `¡Daño x1.2 + Escudo ${shieldAmt} HP (25% Vida)!`, color: '#feca57' };
+            reaction = { 
+                name: '¡CRISTALIZACIÓN!', 
+                desc: `¡Daño x1.2 + Escudo ${shieldAmt} HP (${Math.round(shieldPct * 100)}% Vida)!`, 
+                tacticalTag: `ESCUDO CRISTALINO +${shieldAmt} HP`,
+                elem1: 'TIERRA', elem1Emoji: '🪨',
+                elem2: 'FUEGO', elem2Emoji: '🔥',
+                themeClass: 'combo-theme-cristalizacion',
+                shakeType: 'heavy',
+                sound: 'combo_crystal',
+                color: '#feca57',
+                particles: ['💎', '🛡️', '✨', '🪨', '🔥']
+            };
             defender.removeStatus('MARCA_TIERRA');
         } else if (attackElement === ELEMENTS.AGUA) {
-            // Erosión (🪨 + 💦): 1.3x Daño + Cura al usuario el 30% del daño infligido
+            // Erosión (🪨 + 💦): 1.3x Daño + Drena 30% (50% con Sifón Biotelúrico)
             finalDmg = Math.floor(baseDmg * 1.3);
-            reaction = { name: '¡EROSIÓN!', desc: '¡Daño x1.3 + Drena 30% del daño en HP!', color: '#2ed573', lifesteal: 0.30 };
+            let hasSifon = typeof RelicsManager !== 'undefined' && attacker && attacker.isAlly && RelicsManager.hasRelic('sifon_biotelurico');
+            let lifestealRatio = hasSifon ? 0.50 : 0.30;
+            reaction = { 
+                name: '¡EROSIÓN!', 
+                desc: `¡Daño x1.3 + Drena ${Math.round(lifestealRatio * 100)}% del daño en HP!`, 
+                tacticalTag: `DRENAJE DE VIDA ${Math.round(lifestealRatio * 100)}%`,
+                elem1: 'TIERRA', elem1Emoji: '🪨',
+                elem2: 'AGUA', elem2Emoji: '💧',
+                themeClass: 'combo-theme-erosion',
+                shakeType: 'quake',
+                sound: 'combo_frost',
+                color: '#2ed573', 
+                lifesteal: lifestealRatio,
+                particles: ['🌿', '💧', '💚', '🪨', '✨']
+            };
             defender.removeStatus('MARCA_TIERRA');
         } else if (attackElement === ELEMENTS.AIRE) {
-            // Tormenta de Arena (🪨 + 💨): 1.3x Daño + Ceguera (-50% Precisión en el siguiente ataque rival)
+            // Tormenta de Arena (🪨 + 💨): 1.3x Daño + Ceguera (2 turnos + -3 SPD con Turbina)
             finalDmg = Math.floor(baseDmg * 1.3);
-            defender.addStatus({ type: 'BLIND', duration: 1 });
-            reaction = { name: '¡TORMENTA DE ARENA!', desc: '¡Daño x1.3 + Ceguera (-50% PREC próx. ataque)!', color: '#eccc68' };
+            let hasTurbina = typeof RelicsManager !== 'undefined' && attacker && attacker.isAlly && RelicsManager.hasRelic('turbina_torbellino');
+            let blindDur = hasTurbina ? 2 : 1;
+            defender.addStatus({ type: 'BLIND', duration: blindDur });
+            if (hasTurbina) {
+                defender.spd = Math.max(1, (defender.spd || 10) - 3);
+            }
+            reaction = { 
+                name: '¡TORMENTA DE ARENA!', 
+                desc: hasTurbina ? '¡Daño x1.3 + Ceguera (2T) + Ralentización (-3 SPD)!' : '¡Daño x1.3 + Ceguera (-50% PREC próx. ataque)!', 
+                tacticalTag: hasTurbina ? 'VÓRTICE ABRASIVO (-50% PREC 2T / -3 SPD)' : 'CEGUERA TÁCTICA (-50% PREC)',
+                elem1: 'TIERRA', elem1Emoji: '🪨',
+                elem2: 'AIRE', elem2Emoji: '💨',
+                themeClass: 'combo-theme-tormenta-arena',
+                shakeType: 'vortex',
+                sound: 'combo_cyclone',
+                color: '#eccc68',
+                particles: ['🌪️', '🪨', '👁️‍🗨️', '💨', '💥']
+            };
             defender.removeStatus('MARCA_TIERRA');
         }
     }
@@ -1926,12 +2178,35 @@ function processElementalCombo(attackElement, defender, attacker, baseDmg) {
         if (attackElement === ELEMENTS.FUEGO) {
             // Deflagración (💨 + 🔥): 1.45x Daño directo puro
             finalDmg = Math.floor(baseDmg * 1.45);
-            reaction = { name: '¡DEFLAGRACIÓN!', desc: '¡Daño puro x1.45!', color: '#ff6348' };
+            reaction = { 
+                name: '¡DEFLAGRACIÓN!', 
+                desc: '¡Daño puro explosivo x1.45!', 
+                tacticalTag: 'EXPLOSIÓN PURA x1.45',
+                elem1: 'AIRE', elem1Emoji: '💨',
+                elem2: 'FUEGO', elem2Emoji: '🔥',
+                themeClass: 'combo-theme-deflagracion',
+                shakeType: 'heavy',
+                sound: 'combo_firestorm',
+                color: '#ff6348',
+                particles: ['💥', '🔥', '💨', '⚡', '☄️']
+            };
             defender.removeStatus('MARCA_AIRE');
         } else if (attackElement === ELEMENTS.AGUA) {
             // Ciclón (💨 + 💦): 1.35x Daño + Retrasa el turno del rival al final de la ronda
             finalDmg = Math.floor(baseDmg * 1.35);
-            reaction = { name: '¡CICLÓN!', desc: '¡Daño x1.35 + Retrasa turno rival!', color: '#70a1ff', delayTurn: true };
+            reaction = { 
+                name: '¡CICLÓN!', 
+                desc: '¡Daño x1.35 + Retrasa turno rival!', 
+                tacticalTag: 'CONTROL TEMPORAL DE TURNO',
+                elem1: 'AIRE', elem1Emoji: '💨',
+                elem2: 'AGUA', elem2Emoji: '💧',
+                themeClass: 'combo-theme-ciclon',
+                shakeType: 'vortex',
+                sound: 'combo_cyclone',
+                color: '#70a1ff', 
+                delayTurn: true,
+                particles: ['🌀', '💧', '💨', '⚡', '🌊']
+            };
             defender.removeStatus('MARCA_AIRE');
         } else if (attackElement === ELEMENTS.TIERRA) {
             // Colapso Sísmico (💨 + 🪨): 1.4x Daño + Aturdimiento condicional con 40% de probabilidad
@@ -1939,18 +2214,45 @@ function processElementalCombo(attackElement, defender, attacker, baseDmg) {
             let stunSuccess = Math.random() < 0.40;
             if (stunSuccess) {
                 defender.addStatus({ type: 'STUN', duration: 1 });
-                reaction = { name: '¡COLAPSO SÍSMICO!', desc: '¡Daño x1.4 + Aturdimiento (40%)!', color: '#a4b0be' };
+                reaction = { 
+                    name: '¡COLAPSO SÍSMICO!', 
+                    desc: '¡Daño x1.4 + Aturdimiento (40%)!', 
+                    tacticalTag: 'ATURDIMIENTO SÍSMICO',
+                    elem1: 'AIRE', elem1Emoji: '💨',
+                    elem2: 'TIERRA', elem2Emoji: '🪨',
+                    themeClass: 'combo-theme-colapso-sismico',
+                    shakeType: 'quake',
+                    sound: 'combo_quake',
+                    color: '#a4b0be',
+                    particles: ['💫', '🪨', '⚡', '💥', '💨']
+                };
             } else {
-                reaction = { name: '¡COLAPSO SÍSMICO!', desc: '¡Daño x1.4 (Aturdimiento resistido)!', color: '#a4b0be' };
+                reaction = { 
+                    name: '¡COLAPSO SÍSMICO!', 
+                    desc: '¡Daño x1.4 (Aturdimiento resistido)!', 
+                    tacticalTag: 'IMPACTO SÍSMICO x1.4',
+                    elem1: 'AIRE', elem1Emoji: '💨',
+                    elem2: 'TIERRA', elem2Emoji: '🪨',
+                    themeClass: 'combo-theme-colapso-sismico',
+                    shakeType: 'quake',
+                    sound: 'combo_quake',
+                    color: '#a4b0be',
+                    particles: ['💫', '🪨', '⚡', '💥', '💨']
+                };
             }
             defender.removeStatus('MARCA_AIRE');
         }
     }
     
+    // Potenciador de daño de reacciones por Lente de Refracción
+    if (reaction && attacker && attacker.isAlly && typeof RelicsManager !== 'undefined' && RelicsManager.hasRelic('lente_refraccion')) {
+        finalDmg = Math.floor(finalDmg * 1.20);
+    }
+
     return { finalDmg, reaction };
 }
 
-function executeTurnAoE(attacker, skill, isAttackerAlly, actorIndex = 0) {
+async function executeTurnAoE(attacker, skill, isAttackerAlly, actorIndex = 0) {
     logCombat(`💥 [${attacker.name}] desata ${skill.name} en área!`);
     skill.currentCd = skill.cd;
     
@@ -1986,10 +2288,23 @@ function executeTurnAoE(attacker, skill, isAttackerAlly, actorIndex = 0) {
             arena.classList.add('anim-emp-flash');
             setTimeout(() => arena.classList.remove('anim-emp-flash'), 800);
         }
-        showComboPopup({ name: `⚡ ¡${skill.name.toUpperCase()}! ⚡`, desc: '¡Sobrecarga de rayos! Escudos y barreras destruidos', color: '#66fcf1' }, false, 1);
+        await playEpicComboAnimation({
+            name: `⚡ ¡${skill.name.toUpperCase()}! ⚡`,
+            desc: '¡Sobrecarga de pulsos! Escudos y barreras destruidos',
+            color: '#66fcf1',
+            themeClass: 'combo-theme-barrera-counter',
+            shakeType: 'heavy',
+            sound: 'combo_plasma',
+            elem1: 'ENERGÍA',
+            elem1Emoji: '⚡',
+            elem2: 'PEM',
+            elem2Emoji: '📡',
+            tacticalTag: 'SOBRECARGA ELECTROMAGNÉTICA',
+            particles: ['⚡', '📡', '✨', '💥', '🔵']
+        }, false, 1);
     }
     
-    targets.forEach(item => {
+    for (const item of targets) {
         let defender = item.robot;
         let targetIdx = item.idx;
         
@@ -2006,7 +2321,7 @@ function executeTurnAoE(attacker, skill, isAttackerAlly, actorIndex = 0) {
             }
             triggerCombatAnim(!isAttackerAlly, 'DODGE', targetIdx);
             showDodgePopup(isAttackerAlly, targetIdx);
-            return;
+            continue;
         }
         
         setTimeout(() => triggerCombatAnim(!isAttackerAlly, 'HIT', targetIdx), 100);
@@ -2032,7 +2347,7 @@ function executeTurnAoE(attacker, skill, isAttackerAlly, actorIndex = 0) {
         }
         
         if (reaction) {
-            showComboPopup(reaction, isAttackerAlly, targetIdx);
+            await playEpicComboAnimation(reaction, isAttackerAlly, targetIdx);
             logCombat(`💥⚡ [COMBO] ${reaction.name} ${reaction.desc}`);
         }
         
@@ -2071,10 +2386,10 @@ function executeTurnAoE(attacker, skill, isAttackerAlly, actorIndex = 0) {
             defender.addStatus({ type: markType, duration: duration });
             logCombat(`- Adhiere ${formatStatusLabel(markType)} a ${defender.name} (${duration} turnos).`);
         }
-    });
+    }
 }
 
-function executeTurn(attacker, skill, defender, isAttackerAlly, allyIndex = 0, targetAllyIndex = null, targetEnemyIndex = 0) {
+async function executeTurn(attacker, skill, defender, isAttackerAlly, allyIndex = 0, targetAllyIndex = null, targetEnemyIndex = 0) {
     const isBasicAttack = (skill.cd === 0);
     let effectiveSkillName = skill.name;
     if (isBasicAttack) {
@@ -2101,7 +2416,8 @@ function executeTurn(attacker, skill, defender, isAttackerAlly, allyIndex = 0, t
         let defenderDodge = defender.getEffectiveDodge ? defender.getEffectiveDodge() : (defender.dodge || 0);
         let hitChance = defenderDodge >= 100 ? 0 : (attackerAcc - defenderDodge);
         
-        let isGuaranteedHit = !!skill.cannotMiss || skill.name === 'Protocolo Exterminio';
+        let hasAnyStatus = defender.statuses && defender.statuses.length > 0;
+        let isGuaranteedHit = !!skill.cannotMiss || skill.name === 'Protocolo Exterminio' || (isAttackerAlly && typeof RelicsManager !== 'undefined' && RelicsManager.hasRelic('chip_punteria_laser') && hasAnyStatus);
         
         if (!isGuaranteedHit && (defenderDodge >= 100 || Math.random() * 100 > hitChance)) {
             if (defenderDodge >= 100) {
@@ -2123,7 +2439,20 @@ function executeTurn(attacker, skill, defender, isAttackerAlly, allyIndex = 0, t
                     arena.classList.add('anim-titan-quake');
                     setTimeout(() => arena.classList.remove('anim-titan-quake'), 900);
                 }
-                showComboPopup({ name: `🔨 ¡${skill.name.toUpperCase()}! 💥`, desc: '¡Impacto sísmico contundente!', color: '#ff4757' }, !isAttackerAlly, isAttackerAlly ? targetEnemyIndex : (targetAllyIndex !== null ? targetAllyIndex : allyIndex));
+                await playEpicComboAnimation({
+                    name: `🔨 ¡${skill.name.toUpperCase()}! 💥`,
+                    desc: '¡Impacto sísmico contundente!',
+                    color: '#ff4757',
+                    themeClass: 'combo-theme-titan-cataclysm',
+                    shakeType: 'quake',
+                    sound: 'combo_quake',
+                    elem1: 'TITÁN',
+                    elem1Emoji: '🔨',
+                    elem2: 'SÍSMICO',
+                    elem2Emoji: '💥',
+                    tacticalTag: 'IMPACTO DEMOLEDOR',
+                    particles: ['🪨', '💥', '⚡', '🔨', '🌋']
+                }, !isAttackerAlly, isAttackerAlly ? targetEnemyIndex : (targetAllyIndex !== null ? targetAllyIndex : allyIndex));
             } else if (['Protocolo Exterminio', 'Protocolo Aniquilación', 'Protocolo Singularidad'].includes(skill.name)) {
                 const arena = document.getElementById('combat-arena-bg');
                 if (arena) {
@@ -2132,7 +2461,20 @@ function executeTurn(attacker, skill, defender, isAttackerAlly, allyIndex = 0, t
                         arena.classList.remove('anim-extermination-screen');
                     }, 1300);
                 }
-                showComboPopup({ name: `☠️ ${skill.name.toUpperCase()} ☠️`, desc: '¡Fijación de blanco absoluta! Daño masivo ineludible', color: '#ff4757' }, !isAttackerAlly, isAttackerAlly ? targetEnemyIndex : (targetAllyIndex !== null ? targetAllyIndex : allyIndex));
+                await playEpicComboAnimation({
+                    name: `☠️ ${skill.name.toUpperCase()} ☠️`,
+                    desc: '¡Fijación de blanco absoluta! Daño masivo ineludible',
+                    color: '#ff4757',
+                    themeClass: 'combo-theme-deflagracion',
+                    shakeType: 'heavy',
+                    sound: 'combo_firestorm',
+                    elem1: 'SISTEMA',
+                    elem1Emoji: '🎯',
+                    elem2: 'EXTERMINIO',
+                    elem2Emoji: '☠️',
+                    tacticalTag: 'ANIQUILACIÓN BALÍSTICA',
+                    particles: ['☠️', '🎯', '💥', '⚡', '🔥']
+                }, !isAttackerAlly, isAttackerAlly ? targetEnemyIndex : (targetAllyIndex !== null ? targetAllyIndex : allyIndex));
             }
 
             // Animar retroceso del defensor
@@ -2141,9 +2483,15 @@ function executeTurn(attacker, skill, defender, isAttackerAlly, allyIndex = 0, t
             let mult = getMultiplier(attackElement, defender.element);
             let baseDmg = Math.floor(attacker.atk * skill.power * mult);
 
-            // Buff de Racha de Espada (+10% ATQ si asestó crítico en ronda previa)
+            // Modificadores de daño de Reliquias (Núcleo Hipercaliente, Reciclador de Energía)
+            if (typeof RelicsManager !== 'undefined') {
+                baseDmg = RelicsManager.modifyOutgoingDamage(attacker, defender, baseDmg, skill, isBasicAttack);
+            }
+
+            // Buff de Racha de Espada (+10% ATQ si asestó crítico en ronda previa, +25% con Afilador de Neutrones)
             if (attacker.hasStatus && attacker.hasStatus('BUFF_ESPADA_RACHA')) {
-                baseDmg = Math.floor(baseDmg * 1.10);
+                let rachaBonus = (isAttackerAlly && typeof RelicsManager !== 'undefined' && RelicsManager.hasRelic('afilador_neutrones')) ? 1.25 : 1.10;
+                baseDmg = Math.floor(baseDmg * rachaBonus);
             }
 
             // Pasiva Berserker: Furia Sobrecalentada
@@ -2180,13 +2528,16 @@ function executeTurn(attacker, skill, defender, isAttackerAlly, allyIndex = 0, t
                 }
             }
 
-            // Hacha (Efecto Verdugo): +35% (+45% con +1) contra objetivos con menos del 40% de vida
+            // Hacha (Efecto Verdugo): +35% (+45% con +1) contra objetivos con menos del 40% de vida (o ≤50% +15% con Válvula Hidráulica)
             if (attacker.equippedWeapon && attacker.equippedWeapon.type === WEAPON_TYPES.HACHA) {
-                if (defender.maxHp > 0 && (defender.hp / defender.maxHp) <= 0.40) {
+                let hasValvula = isAttackerAlly && typeof RelicsManager !== 'undefined' && RelicsManager.hasRelic('valvula_hidraulica');
+                let hpThreshold = hasValvula ? 0.50 : 0.40;
+                if (defender.maxHp > 0 && (defender.hp / defender.maxHp) <= hpThreshold) {
                     let execMult = attacker.equippedWeapon.isUpgraded ? 1.45 : 1.35;
+                    if (hasValvula) execMult += 0.15;
                     baseDmg = Math.floor(baseDmg * execMult);
                     let execPctStr = Math.round((execMult - 1) * 100);
-                    logCombat(`🪓 [Hacha del Verdugo] ¡Golpe de gracia! +${execPctStr}% daño a rival herido (≤40% HP).`);
+                    logCombat(`🪓 [Hacha del Verdugo] ¡Golpe de gracia! +${execPctStr}% daño a rival herido (≤${Math.round(hpThreshold * 100)}% HP).`);
                 }
             }
 
@@ -2195,10 +2546,16 @@ function executeTurn(attacker, skill, defender, isAttackerAlly, allyIndex = 0, t
             // Daño Crítico Global: Exclusivo de ataques básicos (skill.cd === 0)
             if (isBasicAttack) {
                 let critRate = (attacker.critChance || 5) + (berserkBonus.critBonus || 0);
+                if (isAttackerAlly && typeof RelicsManager !== 'undefined') {
+                    critRate = RelicsManager.modifyCritChance(attacker, critRate);
+                }
                 if (Math.random() * 100 < critRate) {
                     let critMult = (isAttackerAlly && typeof SkillsManager !== 'undefined') 
                         ? SkillsManager.getCritDmgMultiplier() 
                         : 1.5;
+                    if (isAttackerAlly && typeof RelicsManager !== 'undefined') {
+                        critMult = RelicsManager.modifyCritMultiplier(attacker, critMult);
+                    }
                     baseDmg = Math.floor(baseDmg * critMult);
                     isCrit = true;
                     let critPctStr = Math.round((critMult - 1) * 100);
@@ -2232,13 +2589,24 @@ function executeTurn(attacker, skill, defender, isAttackerAlly, allyIndex = 0, t
             }
             
             if (reaction) {
-                showComboPopup(reaction, isAttackerAlly, isAttackerAlly ? targetEnemyIndex : (targetAllyIndex !== null ? targetAllyIndex : allyIndex));
+                if (typeof RelicsManager !== 'undefined') {
+                    RelicsManager.onReactionTriggered(reaction, attacker, defender, isAttackerAlly);
+                }
+                await playEpicComboAnimation(reaction, isAttackerAlly, isAttackerAlly ? targetEnemyIndex : (targetAllyIndex !== null ? targetAllyIndex : allyIndex));
                 logCombat(`💥⚡ [COMBO] ${reaction.name} ${reaction.desc}`);
             }
 
             let dmgDealt = defender.takeDamage(finalDmg, penetrationRatio, false, attacker);
             let multMsg = mult > 1 ? " ¡Súper efectivo!" : (mult < 1 ? " Poco efectivo..." : "");
             logCombat(`- Inflige ${dmgDealt} de daño a ${defender.name}.${multMsg}`);
+
+            // Deflector Reflectante: Refleja 40% del daño si defendía
+            if (defender.hasStatus('DEFENDIENDO') && !isAttackerAlly && typeof RelicsManager !== 'undefined' && RelicsManager.hasRelic('deflector_reflectante') && dmgDealt > 0) {
+                let reflectAmt = Math.max(1, Math.floor(dmgDealt * 0.40));
+                attacker.takeDamage(reflectAmt, 0, true);
+                logCombat(`🪞 [Reliquia] Deflector Reflectante devuelve ${reflectAmt} de daño a [${attacker.name}].`);
+                setTimeout(() => showDamagePopup(reflectAmt, !isAttackerAlly, isAttackerAlly ? allyIndex : targetEnemyIndex, false), 250);
+            }
 
             // Hacha: 20% de probabilidad de quebrar la defensa aplicando Rompearmaduras (-25% DEF, 2 turnos)
             if (attacker.equippedWeapon && attacker.equippedWeapon.type === WEAPON_TYPES.HACHA && defender.hp > 0 && Math.random() < 0.20) {
@@ -2302,7 +2670,7 @@ function executeTurn(attacker, skill, defender, isAttackerAlly, allyIndex = 0, t
                     let actualReflected = attacker.takeDamage(reflectDmg, 0, true);
                     logCombat(`🌵 ¡[${defender.name}] reacciona con Coraza de Espinas e inflige ${actualReflected} de daño a [${attacker.name}]!`);
                     setTimeout(() => showDamagePopup(actualReflected, !isAttackerAlly, isAttackerAlly ? allyIndex : targetEnemyIndex, true), 200);
-                    showComboPopup(reflectReaction, !isAttackerAlly, isAttackerAlly ? allyIndex : targetEnemyIndex);
+                    await playEpicComboAnimation(reflectReaction, !isAttackerAlly, isAttackerAlly ? allyIndex : targetEnemyIndex);
                     logCombat(`💥⚡ [COMBO] ${reflectReaction.name} ${reflectReaction.desc}`);
                     showHitAnimation(ELEMENTS.TIERRA, !isAttackerAlly, isAttackerAlly ? allyIndex : targetEnemyIndex);
 
@@ -2326,10 +2694,12 @@ function executeTurn(attacker, skill, defender, isAttackerAlly, allyIndex = 0, t
                         }
                     }
                 } else {
-                    // Reflejo estándar (50% del daño recibido) + Marca de Tierra si no hubo combo
-                    let standardReflectDmg = Math.max(1, Math.floor(finalDmg * 0.50));
+                    // Reflejo estándar (50% del daño recibido, 70% con Manto de Espinas Reactivas) + Marca de Tierra si no hubo combo
+                    let hasManto = typeof RelicsManager !== 'undefined' && !isAttackerAlly && RelicsManager.hasRelic('manto_espinas_reactivas');
+                    let reflectPct = hasManto ? 0.70 : 0.50;
+                    let standardReflectDmg = Math.max(1, Math.floor(finalDmg * reflectPct));
                     let actualReflected = attacker.takeDamage(standardReflectDmg, 0, true);
-                    logCombat(`🌵 ¡[${defender.name}] refleja ${actualReflected} de daño a [${attacker.name}] con Coraza de Espinas!`);
+                    logCombat(`🌵 ¡[${defender.name}] refleja ${actualReflected} de daño a [${attacker.name}] con Coraza de Espinas${hasManto ? ' (+70% Manto)' : ''}!`);
                     setTimeout(() => showDamagePopup(actualReflected, !isAttackerAlly, isAttackerAlly ? allyIndex : targetEnemyIndex, false), 200);
 
                     attacker.statuses = attacker.statuses.filter(s => !s.type.startsWith('MARCA_'));
@@ -2357,7 +2727,7 @@ function executeTurn(attacker, skill, defender, isAttackerAlly, allyIndex = 0, t
                     let actualCounterDmg = attacker.takeDamage(counterDmg, 0, true);
                     logCombat(`🌊 ¡La Barrera de Plasma reacciona e inflige ${actualCounterDmg} de daño a [${attacker.name}]!`);
                     setTimeout(() => showDamagePopup(actualCounterDmg, !isAttackerAlly, isAttackerAlly ? allyIndex : targetEnemyIndex, true), 200);
-                    showComboPopup(barrierReaction, !isAttackerAlly, isAttackerAlly ? allyIndex : targetEnemyIndex);
+                    await playEpicComboAnimation(barrierReaction, !isAttackerAlly, isAttackerAlly ? allyIndex : targetEnemyIndex);
                     logCombat(`💥⚡ [COMBO] ${barrierReaction.name} ${barrierReaction.desc}`);
                     showHitAnimation(ELEMENTS.AGUA, !isAttackerAlly, isAttackerAlly ? allyIndex : targetEnemyIndex);
 
@@ -2394,6 +2764,10 @@ function executeTurn(attacker, skill, defender, isAttackerAlly, allyIndex = 0, t
                 attacker.statuses = attacker.statuses.filter(s => !s.type.startsWith('MARCA_'));
                 attacker.addStatus({ type: 'MARCA_AGUA', duration: 3 });
                 logCombat(`- 💧 ¡El Rocío Protector sobre [${defender.name}] salpica a [${attacker.name}] y le adhiere ${formatStatusLabel('MARCA_AGUA')} (3 turnos)!`);
+                if (!isAttackerAlly && typeof RelicsManager !== 'undefined' && RelicsManager.hasRelic('condensador_rocio')) {
+                    attacker.addStatus({ type: 'BLIND', duration: 1 });
+                    logCombat(`💧👁️ [Reliquia] Condensador de Rocío ciega los sensores de [${attacker.name}] (1 turno).`);
+                }
             }
             defender.hadRocioShieldHit = false;
             
@@ -2420,10 +2794,13 @@ function executeTurn(attacker, skill, defender, isAttackerAlly, allyIndex = 0, t
                 showHitAnimation(attackElement, isAttackerAlly, isAttackerAlly ? targetEnemyIndex : (targetAllyIndex !== null ? targetAllyIndex : allyIndex));
             }
             
-            // Pasiva Daga: 25% doble ataque (40% si mejorada) + pasiva Dagas de Frecuencia
+            // Pasiva Daga: 25% doble ataque (40% si mejorada) + pasiva Dagas de Frecuencia + Giroscopio de Frecuencia
             let daggerExtraChance = (isAttackerAlly && typeof SkillsManager !== 'undefined') 
                 ? SkillsManager.getModifier('dagger_double_chance', 0) 
                 : 0;
+            if (isAttackerAlly && typeof RelicsManager !== 'undefined') {
+                daggerExtraChance += RelicsManager.getDaggerBonusProbability(attacker);
+            }
             let daggerProb = (attacker.equippedWeapon && attacker.equippedWeapon.type === WEAPON_TYPES.DAGA)
                 ? ((attacker.equippedWeapon.isUpgraded ? 0.4 : 0.25) + daggerExtraChance)
                 : 0;
@@ -2470,6 +2847,18 @@ function executeTurn(attacker, skill, defender, isAttackerAlly, allyIndex = 0, t
                         }, 200);
                     }
                 }
+            }
+
+            // Guantelete de Plasma Dual (si NO tiene daga, 25% segundo golpe básico al 50% de daño)
+            if (typeof RelicsManager !== 'undefined' && RelicsManager.checkDualGauntletExtraAttack(attacker) && isBasicAttack && defender.hp > 0) {
+                logCombat(`🥊 [Reliquia] ¡Guantelete de Plasma Dual desata un segundo impacto básico!`);
+                let gauntletDmg = Math.max(1, Math.floor(baseDmg * 0.5));
+                let dmgGauntlet = defender.takeDamage(gauntletDmg, penetrationRatio, false, attacker);
+                setTimeout(() => {
+                    showHitAnimation(attackElement, isAttackerAlly, isAttackerAlly ? targetEnemyIndex : (targetAllyIndex !== null ? targetAllyIndex : allyIndex));
+                    showDamagePopup(dmgGauntlet, isAttackerAlly, isAttackerAlly ? targetEnemyIndex : (targetAllyIndex !== null ? targetAllyIndex : allyIndex), false, false);
+                }, 220);
+                logCombat(`- Impacto secundario inflige ${dmgGauntlet} de daño a ${defender.name}.`);
             }
         }
     }
@@ -2528,11 +2917,20 @@ function executeTurn(attacker, skill, defender, isAttackerAlly, allyIndex = 0, t
             triggerCombatAnim(isAttackerAlly, 'HIT', attackerIdx);
             showHitAnimation('BURN', attackerIsEnemy, attackerIdx);
 
-            // Banner / Cuadro rojo estilo combo con el nombre de la habilidad
-            showComboPopup({
+            // Banner monumental con el nombre de la habilidad y activación de Furia
+            await playEpicComboAnimation({
                 name: `🔥 ¡${skill.name.toUpperCase()}!`,
                 desc: `-${selfDmg} HP • ¡Activa Furia Sobrecalentada!`,
-                color: '#ff4757'
+                color: '#ff4757',
+                themeClass: 'combo-theme-tormenta-ignea',
+                shakeType: 'heavy',
+                sound: 'combo_firestorm',
+                elem1: 'NÚCLEO',
+                elem1Emoji: '🔋',
+                elem2: 'IGNICIÓN',
+                elem2Emoji: '🔥',
+                tacticalTag: 'SOBRECARGA TÉRMICA',
+                particles: ['🔥', '⚡', '💥', '☄️', '🩸']
             }, attackerIsEnemy, attackerIdx);
 
             logCombat(`🔥 [${attacker.name}] sobrecarga su núcleo térmico (-${selfDmg} HP) para entrar en ¡Furia Sobrecalentada!`);

@@ -12,7 +12,7 @@ window.setTimeout = function(fn, delayTime, ...args) {
 
 // Estado de configuración del Sandbox
 const Sandbox = {
-    currentTab: 'combat', // 'combat' | 'events'
+    currentTab: 'combat', // 'combat' | 'relics' | 'events' | 'balance' | 'towers'
     activeCombatSetup: null,
     
     combatConfig: {
@@ -34,6 +34,12 @@ const Sandbox = {
             hasNanobots: true,
             hasSobrecarga: true
         }
+    },
+
+    relicsState: {
+        activeRelics: new Set(),
+        selectedCategory: 'ALL',
+        filterQuery: ''
     },
 
     eventsState: {
@@ -59,6 +65,9 @@ function initSandbox() {
     renderTeamBuilder('allies');
     renderTeamBuilder('enemies');
     
+    // Inicializar probador de reliquias
+    initRelicsSandbox();
+
     // Inicializar probador de eventos
     initEventsTester();
 
@@ -79,7 +88,9 @@ function switchSandboxTab(tabName) {
     if (activeBtn) activeBtn.classList.add('active');
     if (activeView) activeView.classList.add('active');
     
-    if (tabName === 'events') {
+    if (tabName === 'relics') {
+        renderRelicsSandbox();
+    } else if (tabName === 'events') {
         syncSandboxGameStateTeam();
         renderEventStage();
     } else if (tabName === 'balance') {
@@ -617,6 +628,19 @@ function applyCombatPreset(presetKey) {
         Sandbox.combatConfig.options.arenaBg = 'bg-boss';
     } else if (presetKey === 'MIRROR') {
         Sandbox.combatConfig.enemies = JSON.parse(JSON.stringify(Sandbox.combatConfig.allies));
+    } else if (presetKey === 'RELICS_SHOWCASE') {
+        applyRelicPreset('ALL');
+        Sandbox.combatConfig.allies = [
+            { enabled: true, templateKey: 'IGNIS', level: 10, weaponType: 'ESPADA', weaponElement: 'FUEGO', isUpgraded: true, chipType: 'CHIP_FUEGO', mutatorType: 'NONE', skin: 'PRIMAL_FIRE_SHADES', aura: 'FUEGO', particles: 'FUEGO' },
+            { enabled: true, templateKey: 'AQUA', level: 10, weaponType: 'BACULO', weaponElement: 'AGUA', isUpgraded: true, chipType: 'CHIP_AGUA', mutatorType: 'NONE', skin: 'PRIMAL_WATER_SHADES', aura: 'AGUA', particles: 'AGUA' },
+            { enabled: true, templateKey: 'TERRA', level: 10, weaponType: 'HACHA', weaponElement: 'TIERRA', isUpgraded: true, chipType: 'CHIP_TIERRA', mutatorType: 'NONE', skin: 'PRIMAL_EARTH_SHADES', aura: 'TIERRA', particles: 'TIERRA' }
+        ];
+        Sandbox.combatConfig.enemies = [
+            { enabled: true, templateKey: 'TITAN_X', level: 12, weaponType: 'NONE', weaponElement: 'NEUTRO', isUpgraded: false, chipType: 'NONE', mutatorType: 'RABIA', skin: 'CYBER_SKULL_SHADES', aura: 'GOLD', particles: 'GOLD' },
+            { enabled: true, templateKey: 'BERSERKER_TERMICO', level: 10, weaponType: 'NONE', weaponElement: 'FUEGO', isUpgraded: false, chipType: 'NONE', mutatorType: 'RABIA' },
+            { enabled: true, templateKey: 'COLOSO_SISMICO', level: 10, weaponType: 'NONE', weaponElement: 'TIERRA', isUpgraded: false, chipType: 'NONE', mutatorType: 'ESPINAS' }
+        ];
+        Sandbox.combatConfig.options.arenaBg = 'bg-boss';
     } else if (presetKey === 'SKINS_SHOWCASE') {
         Sandbox.combatConfig.allies = [
             { enabled: true, templateKey: 'IGNIS', level: 5, weaponType: 'ESPADA', weaponElement: 'FUEGO', isUpgraded: true, chipType: 'CHIP_FUEGO', mutatorType: 'NONE', skin: 'PRIMAL_FIRE_SHADES', aura: 'FUEGO', particles: 'FUEGO' },
@@ -663,6 +687,7 @@ function launchSandboxCombat() {
     GAME_STATE.team = allies;
     GAME_STATE.floor = Math.max(...allies.map(a => a.level), ...enemies.map(e => e.level));
     GAME_STATE.scrap = Sandbox.combatConfig.options.startingScrap || 100;
+    GAME_STATE.relics = Array.from(Sandbox.relicsState.activeRelics);
     GAME_STATE.inventory = {
         weapons: [],
         items: []
@@ -704,6 +729,12 @@ function launchSandboxCombat() {
             s.currentCd = s.cd > 0 ? s.cd : 0;
         });
     });
+    
+    // Disparar hooks de reliquias al inicio del combate
+    if (typeof RelicsManager !== 'undefined') {
+        RelicsManager.onCombatStart(combatState);
+        RelicsManager.renderRelicsBar();
+    }
     
     buildInitiativeQueue();
     renderPartyCombatUI();
@@ -1096,7 +1127,6 @@ function startSpecialNodeSimulation(nodeType) {
     stageContainer.innerHTML = `
         <div id="screen-event" class="screen active" style="display: block; min-height: 400px;">
             <div id="event-actions" class="actions-container"></div>
-            <div id="team-status-event" class="team-status" style="margin-top: 20px;"></div>
         </div>
         <div style="text-align: center; margin-top: 20px;">
             <button class="btn-preset" onclick="renderEventStage()">🔙 Volver a la Selección de Eventos</button>
@@ -1977,5 +2007,240 @@ function sendLegendaryToCombatSimulator(weaponType, robotKey) {
     renderTeamBuilder('allies');
     alert(`👑 ¡${robotKey} equipado con ${weaponType} Legendaria Dorada listo en el Slot 1 del Simulador de Combate!`);
 }
+
+/* ==========================================================================
+   PROBADOR Y CATALOGADOR DE RELIQUIAS EN EL SANDBOX
+   ========================================================================== */
+
+function initRelicsSandbox() {
+    if (!Sandbox.relicsState) {
+        Sandbox.relicsState = {
+            activeRelics: new Set(),
+            selectedCategory: 'ALL',
+            filterQuery: ''
+        };
+    }
+    updateSandboxRelicsCount();
+}
+
+function renderRelicsSandbox() {
+    renderRelicsCategoryFilters();
+    renderSandboxRelicsGrid();
+    updateSandboxRelicsHudPreview();
+}
+
+function renderRelicsCategoryFilters() {
+    const container = document.getElementById('relics-category-filters');
+    if (!container) return;
+
+    const allRelics = (typeof getAllRelicsArray === 'function') ? getAllRelicsArray() : [];
+    const currentCat = Sandbox.relicsState.selectedCategory;
+
+    let catButtons = [
+        { id: 'ALL', name: 'Todas', icon: '💎', count: allRelics.length }
+    ];
+
+    if (typeof RELIC_CATEGORIES !== 'undefined') {
+        Object.keys(RELIC_CATEGORIES).forEach(k => {
+            const cat = RELIC_CATEGORIES[k];
+            const count = allRelics.filter(r => r.category === cat.id).length;
+            catButtons.push({
+                id: cat.id,
+                name: cat.name,
+                icon: cat.icon,
+                count: count
+            });
+        });
+    }
+
+    container.innerHTML = catButtons.map(btn => `
+        <button class="btn-hp-preset btn-cat-filter ${currentCat === btn.id ? 'active' : ''}" 
+                onclick="setSandboxRelicsCategory('${btn.id}')">
+            <span>${btn.icon}</span> ${btn.name} (${btn.count})
+        </button>
+    `).join('');
+}
+
+function renderSandboxRelicsGrid() {
+    const grid = document.getElementById('sandbox-relics-grid');
+    if (!grid) return;
+
+    const allRelics = (typeof getAllRelicsArray === 'function') ? getAllRelicsArray() : [];
+    const cat = Sandbox.relicsState.selectedCategory;
+    const query = (Sandbox.relicsState.filterQuery || '').toLowerCase();
+
+    const filtered = allRelics.filter(r => {
+        const matchesCat = (cat === 'ALL' || r.category === cat);
+        const matchesQuery = !query || 
+            r.name.toLowerCase().includes(query) || 
+            r.desc.toLowerCase().includes(query) || 
+            (r.lore && r.lore.toLowerCase().includes(query)) ||
+            (r.category && r.category.toLowerCase().includes(query)) ||
+            (r.rarity && r.rarity.toLowerCase().includes(query));
+        return matchesCat && matchesQuery;
+    });
+
+    if (filtered.length === 0) {
+        grid.innerHTML = `
+            <div class="sandbox-relics-empty">
+                <span style="font-size: 2.5rem;">🔍</span>
+                <p>No se encontraron reliquias con los filtros seleccionados.</p>
+            </div>
+        `;
+        return;
+    }
+
+    grid.innerHTML = filtered.map(r => {
+        const isActive = Sandbox.relicsState.activeRelics.has(r.id);
+        const rarityKey = r.rarity ? r.rarity.toLowerCase() : 'comun';
+        const rarityInfo = (typeof RELIC_RARITIES !== 'undefined' && RELIC_RARITIES[r.rarity]) ? RELIC_RARITIES[r.rarity] : { name: r.rarity };
+        const categoryInfo = (typeof RELIC_CATEGORIES !== 'undefined' && RELIC_CATEGORIES[r.category]) ? RELIC_CATEGORIES[r.category] : { name: r.category, icon: '✨' };
+
+        return `
+            <div class="sandbox-relic-card rarity-${rarityKey} ${isActive ? 'relic-card-active' : ''}" id="relic-card-${r.id}">
+                <div class="sandbox-relic-card-top">
+                    <span class="relic-modal-rarity-badge badge-${rarityKey}">${rarityInfo.name.toUpperCase()}</span>
+                    <label class="relic-switch-label" title="${isActive ? 'Desactivar reliquia' : 'Activar reliquia'}">
+                        <input type="checkbox" class="relic-checkbox" ${isActive ? 'checked' : ''} onchange="toggleSandboxRelic('${r.id}', this.checked)">
+                        <span class="relic-slider"></span>
+                    </label>
+                </div>
+
+                <div class="sandbox-relic-hero">
+                    <div class="sandbox-relic-pedestal platform-relic rarity-${rarityKey}">
+                        <span class="sandbox-relic-icon">${r.icon}</span>
+                    </div>
+                    <div class="sandbox-relic-title-wrap">
+                        <div class="sandbox-relic-name">${r.name}</div>
+                        <div class="sandbox-relic-category-tag">${categoryInfo.icon} ${categoryInfo.name}</div>
+                    </div>
+                </div>
+
+                <div class="sandbox-relic-desc">
+                    ${r.desc}
+                </div>
+
+                ${r.lore ? `<div class="sandbox-relic-lore">"${r.lore}"</div>` : ''}
+
+                <div class="sandbox-relic-footer">
+                    <button class="btn-relic-action btn-inspect" onclick="RelicsManager.openRelicTooltip('${r.id}', event)" title="Inspeccionar tarjeta oficial">
+                        <span>👁️</span> Inspeccionar
+                    </button>
+                    <button class="btn-relic-action ${isActive ? 'btn-active' : 'btn-inactive'}" onclick="toggleSandboxRelic('${r.id}')">
+                        <span>${isActive ? '✓ ACTIVA' : '⚡ ACTIVAR'}</span>
+                    </button>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+function toggleSandboxRelic(relicId, forceState = null) {
+    const current = Sandbox.relicsState.activeRelics.has(relicId);
+    const target = (forceState !== null) ? Boolean(forceState) : !current;
+
+    if (target) {
+        Sandbox.relicsState.activeRelics.add(relicId);
+        if (typeof SoundManager !== 'undefined') SoundManager.play('ui_equip');
+    } else {
+        Sandbox.relicsState.activeRelics.delete(relicId);
+    }
+
+    GAME_STATE.relics = Array.from(Sandbox.relicsState.activeRelics);
+    updateSandboxRelicsCount();
+    updateSandboxRelicsHudPreview();
+    renderSandboxRelicsGrid();
+}
+
+function setSandboxRelicsCategory(catKey) {
+    Sandbox.relicsState.selectedCategory = catKey;
+    renderRelicsCategoryFilters();
+    renderSandboxRelicsGrid();
+}
+
+function filterSandboxRelics(query) {
+    Sandbox.relicsState.filterQuery = query;
+    renderSandboxRelicsGrid();
+}
+
+function applyRelicPreset(presetKey) {
+    const allRelics = (typeof getAllRelicsArray === 'function') ? getAllRelicsArray() : [];
+
+    if (presetKey === 'ALL') {
+        allRelics.forEach(r => Sandbox.relicsState.activeRelics.add(r.id));
+    } else if (presetKey === 'NONE') {
+        Sandbox.relicsState.activeRelics.clear();
+    } else if (presetKey === 'ELEMENTAL') {
+        Sandbox.relicsState.activeRelics.clear();
+        allRelics.filter(r => r.category === 'ELEMENTAL').forEach(r => Sandbox.relicsState.activeRelics.add(r.id));
+    } else if (presetKey === 'SURVIVAL') {
+        Sandbox.relicsState.activeRelics.clear();
+        allRelics.filter(r => r.category === 'SURVIVAL').forEach(r => Sandbox.relicsState.activeRelics.add(r.id));
+    } else if (presetKey === 'WEAPONS') {
+        Sandbox.relicsState.activeRelics.clear();
+        allRelics.filter(r => r.category === 'WEAPONS').forEach(r => Sandbox.relicsState.activeRelics.add(r.id));
+    } else if (presetKey === 'SPEED') {
+        Sandbox.relicsState.activeRelics.clear();
+        allRelics.filter(r => r.category === 'SPEED').forEach(r => Sandbox.relicsState.activeRelics.add(r.id));
+    } else if (presetKey === 'CORRUPTED') {
+        Sandbox.relicsState.activeRelics.clear();
+        allRelics.filter(r => r.category === 'CORRUPTED').forEach(r => Sandbox.relicsState.activeRelics.add(r.id));
+    }
+
+    GAME_STATE.relics = Array.from(Sandbox.relicsState.activeRelics);
+    updateSandboxRelicsCount();
+    updateSandboxRelicsHudPreview();
+    renderSandboxRelicsGrid();
+
+    if (typeof SoundManager !== 'undefined') SoundManager.play('ui_equip');
+}
+
+function updateSandboxRelicsCount() {
+    const count = (Sandbox.relicsState && Sandbox.relicsState.activeRelics) ? Sandbox.relicsState.activeRelics.size : 0;
+    const badge = document.getElementById('sandbox-relics-count-badge');
+    if (badge) badge.innerText = `${count} / 34 ACTIVAS`;
+
+    const inlineBadge = document.getElementById('combat-relics-count-inline');
+    if (inlineBadge) inlineBadge.innerText = `${count}`;
+}
+
+function updateSandboxRelicsHudPreview() {
+    const previewContainer = document.getElementById('sandbox-top-relics-bar');
+    if (!previewContainer) return;
+
+    const activeList = Array.from(Sandbox.relicsState.activeRelics).map(id => (typeof getRelicData === 'function' ? getRelicData(id) : null)).filter(Boolean);
+
+    if (activeList.length === 0) {
+        previewContainer.innerHTML = `
+            <div class="relics-bar-empty">
+                <span>💎 Ninguna reliquia activa seleccionada. (Haz clic en '⚡ Activar' en cualquier tarjeta inferior)</span>
+            </div>
+        `;
+        return;
+    }
+
+    previewContainer.innerHTML = activeList.map(r => {
+        const rarityKey = r.rarity ? r.rarity.toLowerCase() : 'comun';
+        const rarityInfo = (typeof RELIC_RARITIES !== 'undefined' && RELIC_RARITIES[r.rarity]) ? RELIC_RARITIES[r.rarity] : { glow: 'rgba(102, 252, 241, 0.4)' };
+
+        return `
+            <div class="top-relic-slot rarity-${rarityKey}" 
+                 onclick="RelicsManager.openRelicTooltip('${r.id}', event)" 
+                 title="${r.name} (${r.rarity}) - Clic para inspeccionar">
+                <span class="top-relic-icon">${r.icon}</span>
+                <span class="top-relic-glow" style="background: ${rarityInfo.glow};"></span>
+            </div>
+        `;
+    }).join('');
+}
+
+function launchCombatWithActiveRelics() {
+    switchSandboxTab('combat');
+    applyCombatPreset('3V3_STARTERS');
+    setTimeout(() => {
+        launchSandboxCombat();
+    }, 150);
+}
+
 
 

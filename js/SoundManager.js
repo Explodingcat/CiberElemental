@@ -642,7 +642,7 @@ const SoundManager = (() => {
             if (!ctx) return;
             const now = ctx.currentTime;
 
-            duckMusic(0.25, 0.45);
+            duckMusic(0.2, 0.6);
 
             const notes = [440, 554.37, 659.25, 880];
             notes.forEach((freq, idx) => {
@@ -675,6 +675,209 @@ const SoundManager = (() => {
             gainExp.connect(sfxGain);
             oscExp.start(now);
             oscExp.stop(now + 0.3);
+        },
+
+        combo_vaporize: () => {
+            const ctx = ensureContext();
+            if (!ctx) return;
+            const now = ctx.currentTime;
+            duckMusic(0.15, 0.7);
+
+            // 1. Explosión de fuego/térmica
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(320, now);
+            osc.frequency.exponentialRampToValueAtTime(40, now + 0.4);
+            gain.gain.setValueAtTime(0.4, now);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
+            osc.connect(gain);
+            gain.connect(sfxGain);
+            osc.start(now);
+            osc.stop(now + 0.4);
+
+            // 2. Silbido de vapor a presión (Noise + Bandpass)
+            const noise = createNoiseBuffer(0.6);
+            if (noise) {
+                const src = ctx.createBufferSource();
+                src.buffer = noise;
+                const filter = ctx.createBiquadFilter();
+                filter.type = 'bandpass';
+                filter.frequency.setValueAtTime(1200, now);
+                filter.frequency.exponentialRampToValueAtTime(3400, now + 0.3);
+                filter.Q.value = 3.0;
+                const nGain = ctx.createGain();
+                nGain.gain.setValueAtTime(0.35, now);
+                nGain.gain.exponentialRampToValueAtTime(0.001, now + 0.6);
+                src.connect(filter);
+                filter.connect(nGain);
+                nGain.connect(sfxGain);
+                src.start(now + 0.05);
+                src.stop(now + 0.65);
+            }
+        },
+
+        combo_frost: () => {
+            const ctx = ensureContext();
+            if (!ctx) return;
+            const now = ctx.currentTime;
+            duckMusic(0.15, 0.7);
+
+            // Cristal / Hielo rompiéndose (Triangles armónicos agudos)
+            [880, 1318.51, 1760, 2637].forEach((freq, idx) => {
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                const t = now + idx * 0.025;
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(freq, t);
+                osc.frequency.exponentialRampToValueAtTime(freq * 1.5, t + 0.3);
+                gain.gain.setValueAtTime(0.28, t);
+                gain.gain.exponentialRampToValueAtTime(0.001, t + 0.35);
+                osc.connect(gain);
+                gain.connect(sfxGain);
+                osc.start(t);
+                osc.stop(t + 0.35);
+            });
+
+            // Viento gélido
+            const noise = createNoiseBuffer(0.5);
+            if (noise) {
+                const src = ctx.createBufferSource();
+                src.buffer = noise;
+                const filter = ctx.createBiquadFilter();
+                filter.type = 'highpass';
+                filter.frequency.setValueAtTime(2000, now);
+                const nGain = ctx.createGain();
+                nGain.gain.setValueAtTime(0.25, now);
+                nGain.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
+                src.connect(filter);
+                filter.connect(nGain);
+                nGain.connect(sfxGain);
+                src.start(now);
+                src.stop(now + 0.5);
+            }
+        },
+
+        combo_quake: () => {
+            const ctx = ensureContext();
+            if (!ctx) return;
+            const now = ctx.currentTime;
+            duckMusic(0.1, 0.8);
+
+            // Sub-bass telúrico
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(140, now);
+            osc.frequency.exponentialRampToValueAtTime(25, now + 0.6);
+            gain.gain.setValueAtTime(0.55, now);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.65);
+            osc.connect(gain);
+            gain.connect(sfxGain);
+            osc.start(now);
+            osc.stop(now + 0.65);
+
+            // Rumble de rocas (Noise Lowpass)
+            const noise = createNoiseBuffer(0.65);
+            if (noise) {
+                const src = ctx.createBufferSource();
+                src.buffer = noise;
+                const filter = ctx.createBiquadFilter();
+                filter.type = 'lowpass';
+                filter.frequency.setValueAtTime(300, now);
+                const nGain = ctx.createGain();
+                nGain.gain.setValueAtTime(0.45, now);
+                nGain.gain.exponentialRampToValueAtTime(0.001, now + 0.65);
+                src.connect(filter);
+                filter.connect(nGain);
+                nGain.connect(sfxGain);
+                src.start(now);
+                src.stop(now + 0.65);
+            }
+        },
+
+        combo_firestorm: () => {
+            const ctx = ensureContext();
+            if (!ctx) return;
+            const now = ctx.currentTime;
+            duckMusic(0.15, 0.7);
+
+            // Vórtice de fuego
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(180, now);
+            osc.frequency.linearRampToValueAtTime(520, now + 0.25);
+            osc.frequency.exponentialRampToValueAtTime(80, now + 0.5);
+            gain.gain.setValueAtTime(0.35, now);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.55);
+            osc.connect(gain);
+            gain.connect(sfxGain);
+            osc.start(now);
+            osc.stop(now + 0.55);
+        },
+
+        combo_cyclone: () => {
+            const ctx = ensureContext();
+            if (!ctx) return;
+            const now = ctx.currentTime;
+            duckMusic(0.15, 0.7);
+
+            // Viento arremolinado
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(250, now);
+            osc.frequency.exponentialRampToValueAtTime(800, now + 0.2);
+            osc.frequency.exponentialRampToValueAtTime(180, now + 0.5);
+            gain.gain.setValueAtTime(0.35, now);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.55);
+            osc.connect(gain);
+            gain.connect(sfxGain);
+            osc.start(now);
+            osc.stop(now + 0.55);
+        },
+
+        combo_crystal: () => {
+            const ctx = ensureContext();
+            if (!ctx) return;
+            const now = ctx.currentTime;
+            duckMusic(0.15, 0.7);
+
+            // Acordes cristalinos prismáticos
+            [523.25, 659.25, 783.99, 1046.50, 1318.51].forEach((freq, idx) => {
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                const t = now + idx * 0.04;
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(freq, t);
+                gain.gain.setValueAtTime(0.25, t);
+                gain.gain.exponentialRampToValueAtTime(0.001, t + 0.5);
+                osc.connect(gain);
+                gain.connect(sfxGain);
+                osc.start(t);
+                osc.stop(t + 0.5);
+            });
+        },
+
+        combo_plasma: () => {
+            const ctx = ensureContext();
+            if (!ctx) return;
+            const now = ctx.currentTime;
+            duckMusic(0.12, 0.75);
+
+            // Descarga de plasma láser y anulación
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(950, now);
+            osc.frequency.exponentialRampToValueAtTime(120, now + 0.4);
+            gain.gain.setValueAtTime(0.4, now);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.45);
+            osc.connect(gain);
+            gain.connect(sfxGain);
+            osc.start(now);
+            osc.stop(now + 0.45);
         },
 
         item_heal: () => {

@@ -9,24 +9,43 @@
 </head>
 <body>
     <div id="game-container">
-        <!-- Barra superior genérica -->
+        <!-- Barra Superior Persistente (2 Filas / Pestañas) -->
         <div id="top-bar">
-            <div class="top-bar-left">
-                <div id="top-bar-status" class="session-status-badge">
-                    <span class="status-indicator offline"></span> OFFLINE
+            <!-- Fila 1: Pestaña Superior Principal (Usuario, Timer y Controles de Audio) -->
+            <div class="top-bar-primary">
+                <div class="top-bar-left">
+                    <div id="top-bar-status" class="session-status-badge" onclick="openAccountModal('tab-account')" title="Perfil de Usuario">
+                        <span class="status-indicator offline"></span> OFFLINE
+                    </div>
+                </div>
+                <div class="top-bar-center">
+                    <div id="run-timer-display" class="run-timer-badge" title="Tiempo de Incursión (Speedrun)">
+                        <span class="timer-icon">⏱️</span>
+                        <span id="run-timer-val" class="timer-val">00:00</span>
+                    </div>
+                </div>
+                <div class="top-bar-right">
+                    <button id="btn-audio-toggle" class="audio-top-btn" onclick="SoundManager.toggleMute()" title="Silenciar / Activar Sonido"><span class="audio-icon">🔊</span></button>
+                    <button id="btn-audio-settings" class="audio-top-btn" onclick="openAudioSettingsModal()" title="Configuración de Audio">⚙️</button>
                 </div>
             </div>
-            <div class="top-bar-center">
-                <div id="run-timer-display" class="run-timer-badge" title="Tiempo de Incursión (Speedrun)">
-                    <span class="timer-icon">⏱️</span>
-                    <span id="run-timer-val" class="timer-val">00:00</span>
+
+            <!-- Fila 2: Nueva Sub-Barra Inferior (Reliquias + Chatarra e Inventario) -->
+            <div class="top-bar-secondary">
+                <div class="top-bar-secondary-left">
+                    <div id="top-relics-bar" class="top-relics-bar" title="Reliquias Pasivas Activas"></div>
                 </div>
-            </div>
-            <div class="top-bar-right">
-                <button id="btn-audio-toggle" class="audio-top-btn" onclick="SoundManager.toggleMute()" title="Silenciar / Activar Sonido"><span class="audio-icon">🔊</span></button>
-                <button id="btn-audio-settings" class="audio-top-btn" onclick="openAudioSettingsModal()" title="Configuración de Audio">⚙️</button>
-                <button id="btn-inventory" class="inventory-btn" onclick="openInventory()" title="Abrir Mochila e Inventario"><span class="inventory-btn-icon">🎒</span><span class="inventory-btn-text"> Inventario</span></button>
-                <div id="scrap-display" title="Chatarra acumulada en la expedición"><span class="scrap-label">Chatarra: </span><span class="scrap-val">0</span> <span class="scrap-icon">⚙️</span></div>
+                <div class="top-bar-secondary-right">
+                    <button id="btn-inventory" class="inventory-btn" onclick="openInventory()" title="Abrir Mochila e Inventario">
+                        <span class="inventory-btn-icon">🎒</span>
+                        <span class="inventory-btn-text"> Inventario</span>
+                    </button>
+                    <div id="scrap-display" title="Chatarra acumulada en la expedición">
+                        <span class="scrap-label">Chatarra: </span>
+                        <span class="scrap-val">0</span>
+                        <span class="scrap-icon">⚙️</span>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -175,7 +194,6 @@
             <div id="event-actions" class="actions-container">
                 <!-- Botones de acción -->
             </div>
-            <div id="team-status-event" class="team-status"></div>
         </div>
 
         <!-- Pantalla de Combate -->
@@ -239,6 +257,9 @@
                         <div id="post-battle-desc" class="post-battle-log"></div>
                     </div>
                 </div>
+
+                <!-- Sección de Elección de Reliquia de Jefe -->
+                <div id="boss-relic-reward-section" class="boss-relic-reward-section" style="display: none;"></div>
 
                 <div id="post-battle-actions" class="post-actions-row">
                     <!-- Botones generados dinámicamente -->
@@ -716,6 +737,13 @@
                 </div>
             </div>
         </div>
+
+        <!-- Modal de Inspección de Reliquia -->
+        <div id="relic-tooltip-modal" class="modal-backdrop relic-modal-backdrop" onclick="RelicsManager.closeRelicTooltip()">
+            <div class="relic-modal-container" onclick="event.stopPropagation()">
+                <div id="relic-tooltip-content"></div>
+            </div>
+        </div>
     </div>
 
     <!-- SDK Supabase vía CDN -->
@@ -727,6 +755,10 @@
     <!-- Meta-Progresión y Habilidades Pasivas -->
     <script src="js/skillsData.js"></script>
     <script src="js/skillsManager.js"></script>
+
+    <!-- Catálogo y Gestor de Reliquias Pasivas -->
+    <script src="js/relicsData.js"></script>
+    <script src="js/relicsManager.js"></script>
 
     <!-- Motor de Sonido y Música Web Audio API -->
     <script src="js/SoundManager.js"></script>

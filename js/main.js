@@ -543,9 +543,15 @@ function initGame() {
         let selectedTemplate = robotKeys[currentRobotIndex];
         let selectedWeaponType = weaponKeys[currentWeaponIndex];
         
-        // Reiniciar equipo e inventario para nueva expedición
+        // Reiniciar equipo, inventario y reliquias para nueva expedición
         GAME_STATE.team = [];
         GAME_STATE.inventory = { items: [], weapons: [] };
+        if (typeof RelicsManager !== 'undefined') {
+            RelicsManager.resetForNewRun();
+        } else {
+            GAME_STATE.relics = [];
+            GAME_STATE.fenixTriggeredThisRun = false;
+        }
         
         addStarterRobot(selectedTemplate);
         
@@ -688,6 +694,13 @@ async function resumeSavedRun(checkpoint) {
         generateFullMap(GAME_STATE.currentTower);
     }
 
+    // Restaurar reliquias
+    GAME_STATE.relics = (checkpoint.relics && Array.isArray(checkpoint.relics)) ? checkpoint.relics : [];
+    GAME_STATE.fenixTriggeredThisRun = !!checkpoint.fenixTriggeredThisRun;
+    if (typeof RelicsManager !== 'undefined') {
+        RelicsManager.renderRelicsBar();
+    }
+
     renderMap();
     updateTeamUI();
     showScreen('screen-map');
@@ -696,6 +709,9 @@ async function resumeSavedRun(checkpoint) {
 // Iniciar
 window.onload = () => {
     initGame();
+    if (typeof RelicsManager !== 'undefined') {
+        RelicsManager.init();
+    }
     checkSavedCheckpoint();
     if (window.location.hash === '#start') {
         showScreen('screen-start');

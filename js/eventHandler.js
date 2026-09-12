@@ -42,10 +42,21 @@ function initChestEvent() {
     const actions = document.getElementById('event-actions');
     if (!actions) return;
     
-    let isWeapon = Math.random() < 0.5;
-    let rewardObj = null;
-    let rewardType = isWeapon ? 'WEAPON' : 'CHIP';
+    let roll = Math.random();
+    let unownedRelics = (typeof getRandomRelicPool === 'function' && typeof GAME_STATE !== 'undefined')
+        ? getRandomRelicPool(1, GAME_STATE.relics)
+        : [];
     
+    let rewardType = 'WEAPON';
+    if (unownedRelics.length > 0 && roll < 0.40) {
+        rewardType = 'RELIC';
+    } else if (roll < 0.70) {
+        rewardType = 'WEAPON';
+    } else {
+        rewardType = 'CHIP';
+    }
+    
+    let rewardObj = null;
     let cardContentHtml = '';
     let elemClass = '';
     let elemBadgeClass = '';
@@ -53,7 +64,33 @@ function initChestEvent() {
     let rewardEmoji = '';
     let rarityBadgeText = '';
     
-    if (isWeapon) {
+    if (rewardType === 'RELIC') {
+        const relic = unownedRelics[0];
+        rewardObj = relic;
+        rewardName = relic.name;
+        rewardEmoji = relic.icon;
+        elemClass = 'elem-relic';
+        const rarityKey = relic.rarity ? relic.rarity.toLowerCase() : 'comun';
+        elemBadgeClass = `badge-${rarityKey}`;
+        rarityBadgeText = `✨ RELIQUIA // ${relic.rarity || 'PASIVA'}`;
+        
+        cardContentHtml = `
+            <div class="chest-card-top">
+                <span class="chest-badge relic-modal-rarity-badge ${elemBadgeClass}">${rarityBadgeText}</span>
+                <span class="chest-type-tag">🔮 ${relic.category || 'PASIVA PERMANENTE'}</span>
+            </div>
+            <div class="chest-hero-visual">
+                <div class="chest-holo-pedestal platform-relic rarity-${rarityKey}">
+                    <div class="chest-reward-icon">${rewardEmoji}</div>
+                </div>
+                <div class="chest-reward-title">${relic.name}</div>
+            </div>
+            <div class="chest-reward-desc">
+                ${relic.desc}
+                ${relic.lore ? `<div style="margin-top:8px; font-size:11px; color:#8395a7; font-style:italic; border-top:1px solid rgba(255,255,255,0.06); padding-top:6px;">"${relic.lore}"</div>` : ''}
+            </div>
+        `;
+    } else if (rewardType === 'WEAPON') {
         const weapon = generateRandomWeapon();
         weapon.isUpgraded = true;
         weapon.name += " +1";
@@ -152,47 +189,90 @@ function claimPendingChestReward() {
         const { type, data } = pendingChestReward;
         if (type === 'WEAPON') {
             GAME_STATE.inventory.weapons.push(data);
-        } else {
+        } else if (type === 'CHIP') {
             GAME_STATE.inventory.items.push(data);
+        } else if (type === 'RELIC') {
+            if (typeof RelicsManager !== 'undefined') {
+                RelicsManager.addRelic(data.id);
+                RelicsManager.showRelicAcquiredToast(data);
+            } else {
+                if (!GAME_STATE.relics) GAME_STATE.relics = [];
+                if (!GAME_STATE.relics.includes(data.id)) GAME_STATE.relics.push(data.id);
+            }
         }
         pendingChestReward = null;
     }
     advanceFloor();
 }
 
-function initCampEvent() {
+let campOperationsRemaining = 1;
+
+function initCampEvent(isContinuing = false) {
     const actions = document.getElementById('event-actions');
     if (!actions) return;
+    
+    if (!isContinuing) {
+        campOperationsRemaining = (typeof RelicsManager !== 'undefined') ? RelicsManager.getCampMaxOperations() : 1;
+    }
     
     let healPct = (typeof SkillsManager !== 'undefined') ? SkillsManager.getRepairShopHealPct() : 0.30;
     let revivePct = (typeof SkillsManager !== 'undefined') ? SkillsManager.getReviveHpPct() : 0.10;
     let healPctStr = Math.round(healPct * 100);
     let revivePctStr = Math.round(revivePct * 100);
     
+    const canHeal = (typeof RelicsManager !== 'undefined') ? RelicsManager.canCampHeal() : true;
+    const isForgeFree = (typeof RelicsManager !== 'undefined') ? RelicsManager.isCampForgeFree() : false;
+    const hasKitForja = (typeof RelicsManager !== 'undefined' && RelicsManager.hasRelic('kit_forja_avanzada'));
+    
+    let subtitleExtra = '';
+    if (hasKitForja) {
+        subtitleExtra = ` <span style="color:#66fcf1; font-weight:700;">[⚡ Kit de Forja Avanzada: ${campOperationsRemaining} acción(es) disponible(s)]</span>`;
+    }
+    
+    let healButtonHtml = '';
+    let healDescHtml = '';
+    if (!canHeal) {
+        healButtonHtml = `
+            <button class="btn-camp-action" disabled style="opacity:0.45; cursor:not-allowed; border-color:#eb4d4b; color:#eb4d4b; background:rgba(235,77,75,0.1);">
+                <span class="btn-icon">🔒</span> BLOQUEADO (Pacto)
+            </button>
+        `;
+        healDescHtml = `<span style="color:#eb4d4b;">⚠️ Pacto del Desguazador activo:</span> Los nanobots de curación han sido transmutados a chatarra. La reparación está deshabilitada.`;
+    } else {
+        healButtonHtml = `
+            <button class="btn-camp-action btn-camp-heal" onclick="executeCampRepair(${healPct}, ${revivePct})">
+                <span class="btn-icon">🔧</span> Reparar Escuadrón
+            </button>
+        `;
+        healDescHtml = `Restaura un <strong>${healPctStr}% de salud máxima</strong> a todo el escuadrón y reactiva a los aliados caídos con <strong>${revivePctStr}% HP</strong>.`;
+    }
+    
+    let forgeBadgeHtml = isForgeFree
+        ? `<span class="camp-op-badge" style="background:rgba(235,77,75,0.2); color:#eb4d4b; border:1px solid #eb4d4b;">GRATIS / PACTO</span>`
+        : `<span class="camp-op-badge badge-gold">HERRERÍA</span>`;
+
     actions.innerHTML = `
         <div class="event-panel-container">
             <div class="event-header-panel">
                 <div class="event-header-badge">⛺ REFUGIO SECTORIAL // TALLER DE CAMPO</div>
                 <h1 class="event-main-title">CAMPAMENTO TÁCTICO</h1>
-                <p class="event-subtitle">Estación segura de mantenimiento. Selecciona una operación para tu escuadrón:</p>
+                <p class="event-subtitle">Estación segura de mantenimiento. Selecciona una operación para tu escuadrón:${subtitleExtra}</p>
             </div>
             
             <div class="camp-operations-grid">
                 <!-- Tarjeta 1: Reparar -->
-                <div class="camp-op-card">
+                <div class="camp-op-card ${!canHeal ? 'camp-op-locked' : ''}">
                     <div class="camp-op-top">
-                        <span class="camp-op-badge badge-green">RESTAURACIÓN</span>
-                        <div class="camp-op-stat">+${healPctStr}% HP</div>
+                        <span class="camp-op-badge ${canHeal ? 'badge-green' : ''}" style="${!canHeal ? 'background:rgba(235,77,75,0.15); color:#eb4d4b; border:1px solid #eb4d4b;' : ''}">${canHeal ? 'RESTAURACIÓN' : 'INHABILITADO'}</span>
+                        <div class="camp-op-stat" style="${!canHeal ? 'color:#eb4d4b;' : ''}">${canHeal ? '+' + healPctStr + '% HP' : '0% HP'}</div>
                     </div>
-                    <div class="camp-op-icon">🔧</div>
+                    <div class="camp-op-icon">${canHeal ? '🔧' : '🚫'}</div>
                     <div class="camp-op-title">Reparación Integral</div>
                     <div class="camp-op-desc">
-                        Restaura un <strong>${healPctStr}% de salud máxima</strong> a todo el escuadrón y reactiva a los aliados caídos con <strong>${revivePctStr}% HP</strong>.
+                        ${healDescHtml}
                     </div>
                     <div class="camp-op-footer">
-                        <button class="btn-camp-action btn-camp-heal" onclick="executeCampRepair(${healPct}, ${revivePct})">
-                            <span class="btn-icon">🔧</span> Reparar Escuadrón
-                        </button>
+                        ${healButtonHtml}
                     </div>
                 </div>
 
@@ -217,7 +297,7 @@ function initCampEvent() {
                 <!-- Tarjeta 3: Forjar -->
                 <div class="camp-op-card">
                     <div class="camp-op-top">
-                        <span class="camp-op-badge badge-gold">HERRERÍA</span>
+                        ${forgeBadgeHtml}
                         <div class="camp-op-stat">MEJORA +1</div>
                     </div>
                     <div class="camp-op-icon">⚒️</div>
@@ -248,7 +328,14 @@ function executeCampRepair(healPct, revivePct) {
             r.heal(r.maxHp * healPct);
         }
     });
-    renderEventResultUI("Campamento de Reparación", `🔧 Los sistemas de soporte vital restauraron a tu escuadrón. Todos los robots recuperaron energía y están listos para continuar.`);
+    
+    campOperationsRemaining--;
+    const hasMore = campOperationsRemaining > 0;
+    let msg = `🔧 Los sistemas de soporte vital restauraron a tu escuadrón. Todos los robots recuperaron energía y están listos para continuar.`;
+    if (hasMore) {
+        msg += `<br><br><span style="color:#66fcf1; font-weight:700;">⚡ ¡Kit de Forja Avanzada te otorga 1 operación adicional en este campamento!</span>`;
+    }
+    renderEventResultUI("Campamento de Reparación", msg, hasMore);
 }
 
 function showCampTrainingPicker() {
@@ -291,7 +378,7 @@ function showCampTrainingPicker() {
             </div>
             
             <div class="event-bottom-actions">
-                <button class="btn-camp-back" onclick="initCampEvent()">
+                <button class="btn-camp-back" onclick="initCampEvent(true)">
                     <span>◀ Volver a Opciones</span>
                 </button>
             </div>
@@ -305,7 +392,13 @@ function executeCampTraining(robotIndex) {
     if (typeof SoundManager !== 'undefined') SoundManager.play('ui_equip');
     let leveledUp = robot.gainXp(300);
     let msg = `💪 [${robot.name}] absorbió los paquetes de datos y ganó <strong>+300 XP</strong>.${leveledUp ? ` ¡Subió al <strong>Nivel ${robot.level}</strong>!` : ''}`;
-    renderEventResultUI("Calibración Completada", msg);
+    
+    campOperationsRemaining--;
+    const hasMore = campOperationsRemaining > 0;
+    if (hasMore) {
+        msg += `<br><br><span style="color:#66fcf1; font-weight:700;">⚡ ¡Kit de Forja Avanzada te otorga 1 operación adicional en este campamento!</span>`;
+    }
+    renderEventResultUI("Calibración Completada", msg, hasMore);
 }
 
 function showCampForgePicker() {
@@ -323,7 +416,7 @@ function showCampForgePicker() {
                     <p class="event-subtitle">Ningún robot de tu escuadrón tiene un arma equipada que pueda mejorarse (o ya están al nivel +1).</p>
                 </div>
                 <div class="event-bottom-actions">
-                    <button class="btn-camp-back" onclick="initCampEvent()">
+                    <button class="btn-camp-back" onclick="initCampEvent(true)">
                         <span>◀ Volver a Opciones</span>
                     </button>
                 </div>
@@ -363,7 +456,7 @@ function showCampForgePicker() {
             </div>
             
             <div class="event-bottom-actions">
-                <button class="btn-camp-back" onclick="initCampEvent()">
+                <button class="btn-camp-back" onclick="initCampEvent(true)">
                     <span>◀ Volver a Opciones</span>
                 </button>
             </div>
@@ -386,7 +479,12 @@ function executeCampForge(robotId) {
     robot.recalculateStats();
     
     let msg = `⚒️ ¡El arma <strong>${w.name}</strong> de <strong>${robot.name}</strong> ha sido forjada con éxito al grado +1!`;
-    renderEventResultUI("Forja Exitosa", msg);
+    campOperationsRemaining--;
+    const hasMore = campOperationsRemaining > 0;
+    if (hasMore) {
+        msg += `<br><br><span style="color:#66fcf1; font-weight:700;">⚡ ¡Kit de Forja Avanzada te otorga 1 operación adicional en este campamento!</span>`;
+    }
+    renderEventResultUI("Forja Exitosa", msg, hasMore);
 }
 
 function initMysteryEvent() {
@@ -451,10 +549,14 @@ function executeMysteryChoice(choiceIndex) {
     currentMysteryEvent = null;
 }
 
-function renderEventResultUI(title, resultMsg) {
+function renderEventResultUI(title, resultMsg, hasMoreActions = false) {
     const actions = document.getElementById('event-actions');
     if (!actions) return;
     
+    const btnActionHtml = hasMoreActions
+        ? `<button class="btn-event-cta" onclick="initCampEvent(true)"><span class="btn-icon">⚒️</span> REALIZAR 2ª OPERACIÓN DE CAMPO <span class="btn-arrow">➔</span></button>`
+        : `<button class="btn-event-cta" onclick="advanceFloor()"><span class="btn-icon">⚡</span> CONTINUAR INCURSIÓN <span class="btn-arrow">➔</span></button>`;
+
     actions.innerHTML = `
         <div class="event-panel-container">
             <div class="event-header-panel">
@@ -468,9 +570,7 @@ function renderEventResultUI(title, resultMsg) {
             </div>
             
             <div class="event-bottom-actions">
-                <button class="btn-event-cta" onclick="advanceFloor()">
-                    <span class="btn-icon">⚡</span> CONTINUAR INCURSIÓN <span class="btn-arrow">➔</span>
-                </button>
+                ${btnActionHtml}
             </div>
         </div>
     `;
@@ -513,26 +613,56 @@ function initShopEvent() {
     
     currentShopItems = [];
     shopDismissalUsed = false;
-    let discountPct = (typeof SkillsManager !== 'undefined') ? SkillsManager.getShopDiscountPct() : 0;
+    let discountPct = Math.min(0.70, 
+        ((typeof SkillsManager !== 'undefined') ? SkillsManager.getShopDiscountPct() : 0) +
+        ((typeof RelicsManager !== 'undefined') ? RelicsManager.getShopDiscountPct() : 0)
+    );
     
-    // 1 Arma con elemento aleatorio (precio rebalanceado: 95 a 109 chatarra)
-    let w = generateRandomWeapon();
-    let rawWeaponCost = Math.floor(Math.random() * 15) + 95; // 95 - 109 chatarra
-    let weaponCost = Math.max(20, Math.floor(rawWeaponCost * (1 - discountPct)));
-    currentShopItems.push({
-        id: 'shop_weapon_0',
-        category: 'WEAPON',
-        data: w,
-        name: w.name,
-        element: w.element,
-        icon: WEAPON_EMOJIS[w.type],
-        desc: w.desc,
-        cost: weaponCost,
-        bought: false
-    });
-    
-    // 2 Consumibles tácticos aleatorios (Nanobots, PEM o Sobrecarga)
+    // 1. PRIMERO: 2 Armas (150 a 200 de chatarra base)
     for (let i = 0; i < 2; i++) {
+        let w = generateRandomWeapon();
+        let rawWeaponCost = Math.floor(Math.random() * 51) + 150; // 150 - 200 chatarra
+        let weaponCost = Math.max(30, Math.floor(rawWeaponCost * (1 - discountPct)));
+        currentShopItems.push({
+            id: 'shop_weapon_' + i,
+            category: 'WEAPON',
+            data: w,
+            name: w.name,
+            element: w.element,
+            icon: WEAPON_EMOJIS[w.type],
+            desc: w.desc,
+            cost: weaponCost,
+            bought: false
+        });
+    }
+    
+    // 2. SEGUNDO: 2 Reliquias pasivas (Solo Común, Rara o Épica; entre 150 y 200 según rareza)
+    let shopRelicPool = (typeof getRandomRelicPool === 'function' && typeof GAME_STATE !== 'undefined')
+        ? getRandomRelicPool(2, GAME_STATE.relics, ['COMUN', 'RARO', 'EPICO'])
+        : [];
+        
+    shopRelicPool.forEach((relic, idx) => {
+        let baseRelicCost = 150; // COMUN
+        if (relic.rarity === 'RARO') baseRelicCost = 175;
+        else if (relic.rarity === 'EPICO') baseRelicCost = 200;
+        
+        let relicCost = Math.max(30, Math.floor(baseRelicCost * (1 - discountPct)));
+        currentShopItems.push({
+            id: 'shop_relic_' + idx,
+            category: 'RELIC',
+            data: relic,
+            name: relic.name,
+            element: null,
+            icon: relic.icon,
+            desc: relic.desc,
+            rarity: relic.rarity,
+            cost: relicCost,
+            bought: false
+        });
+    });
+
+    // 3. TERCERO: 4 Consumibles tácticos aleatorios (Nanobots, PEM o Sobrecarga)
+    for (let i = 0; i < 4; i++) {
         let item = (typeof generateRandomConsumable === 'function')
             ? generateRandomConsumable()
             : (() => {
@@ -540,10 +670,10 @@ function initShopEvent() {
                 let t = ITEM_TYPES[keys[Math.floor(Math.random() * keys.length)]];
                 return { type: t, ...ITEM_DEFS[t] };
             })();
-        let rawCost = 25;
+        let rawCost = Math.floor(Math.random() * 10) + 25; // 25 - 34 chatarra
         let cost = Math.max(8, Math.floor(rawCost * (1 - discountPct)));
         currentShopItems.push({
-            id: 'shop_item_' + i,
+            id: 'shop_consumable_' + i,
             category: 'ITEM',
             data: item,
             name: item.name,
@@ -554,23 +684,6 @@ function initShopEvent() {
             bought: false
         });
     }
-
-    // 1 Consumible adicional en el hueco del 2º arma: Kit de Nanobots (curación) o Bomba PEM
-    let bonusType = Math.random() < 0.5 ? ITEM_TYPES.NANOBOTS : ITEM_TYPES.PEM;
-    let bonusItem = { type: bonusType, ...ITEM_DEFS[bonusType] };
-    let bonusRawCost = 25;
-    let bonusCost = Math.max(8, Math.floor(bonusRawCost * (1 - discountPct)));
-    currentShopItems.push({
-        id: 'shop_item_2',
-        category: 'ITEM',
-        data: bonusItem,
-        name: bonusItem.name,
-        element: null,
-        icon: bonusItem.emoji,
-        desc: bonusItem.desc,
-        cost: bonusCost,
-        bought: false
-    });
     
     renderShopUI();
 }
@@ -587,12 +700,22 @@ function renderShopUI(feedbackMessage = '') {
     let cardsHtml = currentShopItems.map((item, idx) => {
         const canAfford = GAME_STATE.scrap >= item.cost;
         const elemClass = item.element ? `elem-${item.element}` : '';
-        const elemBadgeClass = item.element ? `elem-badge-${item.element}` : 'badge-neutral';
+        let elemBadgeClass = 'badge-neutral';
         
         let tagText = 'ITEM';
-        if (item.category === 'WEAPON') tagText = `⚔️ ARMA (${item.element})`;
-        else if (item.category === 'CHIP') tagText = `💾 CHIP (${item.element})`;
-        else tagText = `🧪 CONSUMIBLE`;
+        if (item.category === 'WEAPON') {
+            tagText = `⚔️ ARMA (${item.element})`;
+            elemBadgeClass = `elem-badge-${item.element}`;
+        } else if (item.category === 'CHIP') {
+            tagText = `💾 CHIP (${item.element})`;
+            elemBadgeClass = `elem-badge-${item.element}`;
+        } else if (item.category === 'RELIC') {
+            const rKey = item.rarity ? item.rarity.toLowerCase() : 'comun';
+            tagText = `✨ RELIQUIA (${item.rarity || 'PASIVA'})`;
+            elemBadgeClass = `badge-${rKey}`;
+        } else {
+            tagText = `🧪 CONSUMIBLE`;
+        }
         
         let buttonHtml = '';
         if (item.bought) {
@@ -612,7 +735,7 @@ function renderShopUI(feedbackMessage = '') {
         }
         
         return `
-            <div class="shop-item-card ${item.bought ? 'item-bought' : ''} ${item.element ? 'card-elem-' + item.element : ''}">
+            <div class="shop-item-card ${item.bought ? 'item-bought' : ''} ${item.element ? 'card-elem-' + item.element : ''} ${item.category === 'RELIC' ? 'card-relic' : ''}">
                 <div class="shop-card-top">
                     <span class="shop-tag-badge ${elemBadgeClass}">${tagText}</span>
                     <div class="shop-price-tag ${canAfford || item.bought ? 'price-ok' : 'price-no'}">
@@ -621,7 +744,7 @@ function renderShopUI(feedbackMessage = '') {
                 </div>
                 
                 <div class="shop-card-hero">
-                    <div class="shop-holo-pedestal ${item.element ? 'platform-' + item.element : ''}">
+                    <div class="shop-holo-pedestal ${item.element ? 'platform-' + item.element : (item.category === 'RELIC' ? 'platform-relic' : '')}">
                         <div class="shop-card-icon ${elemClass}">${item.icon}</div>
                     </div>
                     <div class="shop-card-name ${elemClass}">${item.name}</div>
@@ -835,15 +958,23 @@ function buyShopItem(idx) {
     addScrap(-item.cost);
     item.bought = true;
     
-    // Añadir copia al inventario
+    // Añadir al inventario / reliquias
     const clonedData = JSON.parse(JSON.stringify(item.data));
     if (item.category === 'WEAPON') {
         GAME_STATE.inventory.weapons.push(clonedData);
+    } else if (item.category === 'RELIC') {
+        if (typeof RelicsManager !== 'undefined') {
+            RelicsManager.addRelic(clonedData.id);
+            RelicsManager.showRelicAcquiredToast(clonedData);
+        } else {
+            if (!GAME_STATE.relics) GAME_STATE.relics = [];
+            if (!GAME_STATE.relics.includes(clonedData.id)) GAME_STATE.relics.push(clonedData.id);
+        }
     } else {
         GAME_STATE.inventory.items.push(clonedData);
     }
     
-    let msg = `✓ ¡Adquiriste <strong>${item.name}</strong> por ${item.cost} ⚙️! Guardado en tu inventario.`;
+    let msg = `✓ ¡Adquiriste <strong>${item.name}</strong> por ${item.cost} ⚙️! Guardado en tu ${item.category === 'RELIC' ? 'colección de reliquias' : 'inventario'}.`;
     renderShopUI(msg);
 }
 
@@ -856,6 +987,14 @@ function buyAllAvailableShopItems() {
             const clonedData = JSON.parse(JSON.stringify(item.data));
             if (item.category === 'WEAPON') {
                 GAME_STATE.inventory.weapons.push(clonedData);
+            } else if (item.category === 'RELIC') {
+                if (typeof RelicsManager !== 'undefined') {
+                    RelicsManager.addRelic(clonedData.id);
+                    RelicsManager.showRelicAcquiredToast(clonedData);
+                } else {
+                    if (!GAME_STATE.relics) GAME_STATE.relics = [];
+                    if (!GAME_STATE.relics.includes(clonedData.id)) GAME_STATE.relics.push(clonedData.id);
+                }
             } else {
                 GAME_STATE.inventory.items.push(clonedData);
             }
@@ -868,7 +1007,7 @@ function buyAllAvailableShopItems() {
             SoundManager.play('shop_buy');
             setTimeout(() => SoundManager.play('ui_scrap'), 120);
         }
-        let msg = `⚡ ¡Compraste con éxito: <strong>${purchasedNames.join(', ')}</strong>! Guardados en tu inventario.`;
+        let msg = `⚡ ¡Compraste con éxito: <strong>${purchasedNames.join(', ')}</strong>! Guardados con éxito.`;
         renderShopUI(msg);
     }
 }

@@ -188,7 +188,7 @@ button:disabled {
 
 .screen {
     display: none;
-    padding: 65px 25px 25px 25px;
+    padding: 94px 22px 22px 22px;
     height: 100%;
     width: 100%;
     box-sizing: border-box;
@@ -2389,7 +2389,7 @@ button:disabled {
 
 #screen-post-battle {
     justify-content: flex-start;
-    padding: 75px 25px 25px 25px;
+    padding: 96px 22px 22px 22px;
     overflow-y: auto;
 }
 
@@ -3145,7 +3145,7 @@ button:disabled {
     justify-content: center;
     align-items: center;
     gap: 6px;
-    padding-top: 46px;
+    padding-top: 88px;
     padding-bottom: 6px;
     padding-left: 10px;
     padding-right: 10px;
@@ -3238,15 +3238,25 @@ button:disabled {
     display: flex;
     gap: 6px;
     align-items: center;
-    background: rgba(11, 12, 16, 0.9);
+    background: rgba(11, 12, 16, 0.92);
     backdrop-filter: blur(10px);
-    border: 1px solid rgba(102, 252, 241, 0.3);
-    border-radius: 20px;
-    padding: 3px 6px;
+    border: 1px solid rgba(102, 252, 241, 0.35);
+    border-radius: 22px;
+    padding: 4px 10px;
     z-index: 30;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.8), 0 0 12px rgba(102, 252, 241, 0.15);
-    max-width: 90%;
+    max-width: 92%;
     overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    box-sizing: border-box;
+}
+
+.combat-turn-queue::-webkit-scrollbar {
+    display: none;
+    width: 0;
+    height: 0;
 }
 
 .turn-queue-label {
@@ -3259,13 +3269,14 @@ button:disabled {
     gap: 4px;
     font-size: 11px;
     font-weight: 700;
-    padding: 2px 7px;
+    padding: 3px 8px;
     border-radius: 12px;
     background: rgba(255, 255, 255, 0.05);
     border: 1px solid rgba(255, 255, 255, 0.12);
     color: #c5c6c7;
-    transition: all 0.25s ease;
+    transition: all 0.2s ease;
     white-space: nowrap;
+    box-sizing: border-box;
 }
 
 .turn-queue-item.is-player {
@@ -3278,19 +3289,20 @@ button:disabled {
 }
 
 .turn-queue-item.is-current {
-    background: rgba(102, 252, 241, 0.25);
+    background: rgba(102, 252, 241, 0.28);
     border-color: var(--accent-color);
     color: #ffffff;
-    box-shadow: 0 0 14px var(--accent-color);
-    transform: scale(1.12);
+    box-shadow: 0 0 12px var(--accent-color);
     font-weight: 900;
+    outline: 1px solid var(--accent-color);
 }
 
 .turn-queue-item.is-enemy.is-current {
-    background: rgba(255, 71, 87, 0.3);
+    background: rgba(255, 71, 87, 0.35);
     border-color: #ff4757;
-    box-shadow: 0 0 14px #ff4757;
+    box-shadow: 0 0 12px #ff4757;
     color: #ffffff;
+    outline: 1px solid #ff4757;
 }
 
 .turn-queue-spd {
@@ -5622,32 +5634,77 @@ progress::-webkit-progress-value {
     margin-left: 3px;
 }
 
-/* Barra superior */
+/* Barra Superior Persistente (2 Filas / Pestañas) */
 #top-bar {
     position: absolute;
     top: 0;
     left: 0;
     width: 100%;
-    height: 52px;
-    padding: 6px 20px;
-    background-color: rgba(11, 12, 16, 0.95);
+    background-color: rgba(11, 12, 16, 0.96);
     display: none; /* Oculto por defecto, main.js lo muestra */
-    justify-content: space-between;
-    align-items: center;
+    flex-direction: column;
     z-index: 1000;
-    border-bottom: 1px solid var(--secondary-accent);
+    border-bottom: 1.5px solid rgba(102, 252, 241, 0.35);
     box-sizing: border-box;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.65);
+    backdrop-filter: blur(10px);
 }
 
-.top-bar-left, .top-bar-right, .top-bar-center {
+/* Fila 1: Pestaña Superior Principal (Usuario, Timer Centrado, Audio a la Derecha) */
+.top-bar-primary {
+    display: flex;
+    width: 100%;
+    height: 44px;
+    padding: 4px 18px;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid rgba(102, 252, 241, 0.14);
+    box-sizing: border-box;
+}
+
+/* Fila 2: Sub-Barra Inferior (Reliquias a la Izquierda, Chatarra + Inventario a la Derecha) */
+.top-bar-secondary {
+    display: flex;
+    width: 100%;
+    min-height: 38px;
+    padding: 3px 18px;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(6, 8, 12, 0.65);
+    box-sizing: border-box;
+}
+
+.top-bar-left, .top-bar-right, .top-bar-center,
+.top-bar-secondary-left, .top-bar-secondary-right {
     display: flex;
     align-items: center;
     gap: 12px;
 }
 
+.top-bar-left {
+    flex: 1;
+    justify-content: flex-start;
+}
+
 .top-bar-center {
+    flex: 2;
     justify-content: center;
+}
+
+.top-bar-right {
+    flex: 1;
+    justify-content: flex-end;
+}
+
+.top-bar-secondary-left {
+    flex: 1;
+    justify-content: flex-start;
+    overflow: hidden;
+}
+
+.top-bar-secondary-right {
+    flex-shrink: 0;
+    justify-content: flex-end;
 }
 
 .run-timer-badge {
@@ -5660,10 +5717,10 @@ progress::-webkit-progress-value {
     letter-spacing: 1.5px;
     color: #66fcf1;
     background: rgba(102, 252, 241, 0.08);
-    border: 1px solid rgba(102, 252, 241, 0.25);
-    padding: 4px 12px;
+    border: 1px solid rgba(102, 252, 241, 0.3);
+    padding: 3px 14px;
     border-radius: 6px;
-    box-shadow: 0 0 12px rgba(102, 252, 241, 0.15);
+    box-shadow: 0 0 12px rgba(102, 252, 241, 0.2);
     user-select: none;
 }
 
@@ -5686,24 +5743,53 @@ progress::-webkit-progress-value {
     letter-spacing: 1.5px;
     color: #c5c6c7;
     background: rgba(0, 0, 0, 0.45);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    padding: 5px 12px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    padding: 4px 12px;
     border-radius: 6px;
     user-select: none;
-    cursor: default;
-    pointer-events: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.session-status-badge:hover {
+    border-color: var(--accent-color);
+    box-shadow: 0 0 10px rgba(102, 252, 241, 0.3);
+}
+
+.audio-top-btn {
+    background: rgba(102, 252, 241, 0.08);
+    border: 1px solid rgba(102, 252, 241, 0.25);
+    color: #fff;
+    width: 34px;
+    height: 32px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    margin: 0;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.audio-top-btn:hover {
+    background: var(--accent-color);
+    color: #0b0c10;
+    box-shadow: 0 0 10px rgba(102, 252, 241, 0.5);
+    transform: translateY(-1px);
 }
 
 .inventory-btn {
     background-color: rgba(102, 252, 241, 0.1);
     border: 1px solid var(--secondary-accent);
     color: var(--accent-color);
-    padding: 6px 16px;
+    padding: 5px 14px;
     cursor: pointer;
-    border-radius: 4px;
-    font-size: 14px;
+    border-radius: 6px;
+    font-size: 13.5px;
     font-weight: 700;
-    letter-spacing: 0.5px;
+    letter-spacing: 0.8px;
     display: flex;
     align-items: center;
     gap: 6px;
@@ -5718,24 +5804,25 @@ progress::-webkit-progress-value {
 }
 
 .inventory-btn-icon {
-    font-size: 15px;
+    font-size: 14px;
     line-height: 1;
 }
 
 #scrap-display {
-    font-size: 15px;
+    font-size: 14.5px;
     font-weight: 700;
     color: #feca57;
     background: rgba(254, 202, 87, 0.1);
-    border: 1px solid rgba(254, 202, 87, 0.3);
-    padding: 5px 14px;
+    border: 1px solid rgba(254, 202, 87, 0.35);
+    padding: 4px 12px;
     border-radius: 6px;
     display: flex;
     align-items: center;
-    gap: 4px;
+    gap: 5px;
     letter-spacing: 0.5px;
     font-family: 'Rajdhani', sans-serif;
     margin: 0;
+    user-select: none;
 }
 
 /* Modal del Inventario Cyberpunk */
@@ -6614,9 +6701,428 @@ progress::-webkit-progress-value {
 }
 
 /* ==========================================================================
-   Efectos y Popups de Combos Elementales y Daño
+   Efectos y Popups de Combos Elementales Épicos y Animaciones Cinemáticas
    ========================================================================== */
 
+/* --- 1. Keyframes de Sacudida de Pantalla (Screen Shake) --- */
+@keyframes screenShakeHeavy {
+    0% { transform: translate(0, 0) rotate(0deg); }
+    10% { transform: translate(-8px, -10px) rotate(-1.5deg); }
+    20% { transform: translate(10px, 8px) rotate(1.8deg); }
+    30% { transform: translate(-10px, 6px) rotate(-1.2deg); }
+    40% { transform: translate(8px, -8px) rotate(1.2deg); }
+    50% { transform: translate(-6px, 5px) rotate(-0.8deg); }
+    65% { transform: translate(5px, -4px) rotate(0.5deg); }
+    80% { transform: translate(-3px, 2px) rotate(-0.3deg); }
+    90% { transform: translate(2px, -1px) rotate(0.1deg); }
+    100% { transform: translate(0, 0) rotate(0deg); }
+}
+
+@keyframes screenShakeQuake {
+    0% { transform: translate(0, 0); }
+    12% { transform: translate(-6px, 12px); }
+    24% { transform: translate(7px, -9px); }
+    36% { transform: translate(-8px, 10px); }
+    48% { transform: translate(6px, -7px); }
+    60% { transform: translate(-5px, 6px); }
+    75% { transform: translate(3px, -4px); }
+    88% { transform: translate(-2px, 2px); }
+    100% { transform: translate(0, 0); }
+}
+
+@keyframes screenShakeVortex {
+    0% { transform: translate(0, 0) scale(1) rotate(0deg); }
+    15% { transform: translate(-6px, -5px) scale(1.025) rotate(-1.2deg); }
+    30% { transform: translate(7px, 6px) scale(0.985) rotate(1.5deg); }
+    45% { transform: translate(-5px, 6px) scale(1.018) rotate(-1deg); }
+    60% { transform: translate(6px, -4px) scale(0.99) rotate(0.8deg); }
+    75% { transform: translate(-3px, 3px) scale(1.008) rotate(-0.5deg); }
+    90% { transform: translate(2px, -2px) scale(1) rotate(0.2deg); }
+    100% { transform: translate(0, 0) scale(1) rotate(0deg); }
+}
+
+.anim-shake-heavy {
+    animation: screenShakeHeavy 0.65s cubic-bezier(0.36, 0.07, 0.19, 0.97) both !important;
+}
+
+.anim-shake-quake {
+    animation: screenShakeQuake 0.75s cubic-bezier(0.36, 0.07, 0.19, 0.97) both !important;
+}
+
+.anim-shake-vortex {
+    animation: screenShakeVortex 0.7s cubic-bezier(0.36, 0.07, 0.19, 0.97) both !important;
+}
+
+/* --- 2. Destello Cinemático de Arena (Flash de Colisión) --- */
+@keyframes comboArenaFlash {
+    0% { opacity: 0; }
+    20% { opacity: 0.45; }
+    50% { opacity: 0.25; }
+    100% { opacity: 0; }
+}
+
+.epic-arena-flash-layer {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 80;
+    mix-blend-mode: screen;
+    animation: comboArenaFlash 1.1s ease-out forwards;
+}
+
+/* --- 3. Onda de Choque Radial en Pedestal --- */
+@keyframes shockwaveExpand {
+    0% {
+        transform: translate(-50%, -50%) scale(0.2) rotate(0deg);
+        opacity: 1;
+        border-width: 6px;
+    }
+    50% {
+        opacity: 0.85;
+    }
+    100% {
+        transform: translate(-50%, -50%) scale(2.8) rotate(45deg);
+        opacity: 0;
+        border-width: 1px;
+    }
+}
+
+.epic-shockwave-ring {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 110px;
+    height: 110px;
+    border-radius: 50%;
+    border: 4px solid var(--accent-color);
+    box-shadow: 0 0 25px currentColor, inset 0 0 20px currentColor;
+    pointer-events: none;
+    z-index: 95;
+    animation: shockwaveExpand 1.0s cubic-bezier(0.1, 0.9, 0.2, 1) forwards;
+}
+
+/* --- 4. Micro-Partículas Elementales Disparadas --- */
+@keyframes particleRadialBurst {
+    0% {
+        transform: translate(-50%, -50%) translate(0, 0) scale(1) rotate(0deg);
+        opacity: 1;
+    }
+    100% {
+        transform: translate(-50%, -50%) translate(var(--p-tx), var(--p-ty)) scale(0) rotate(var(--p-rot));
+        opacity: 0;
+    }
+}
+
+.epic-combo-particle {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    font-size: 20px;
+    pointer-events: none;
+    z-index: 105;
+    animation: particleRadialBurst 1.2s cubic-bezier(0.12, 0.8, 0.32, 1) forwards;
+    filter: drop-shadow(0 0 8px currentColor);
+}
+
+/* --- 5. Banner Épico de Reacción Elemental (Contenedor Central) --- */
+@keyframes epicComboBannerAnimation {
+    0% {
+        opacity: 0;
+        transform: translate(-50%, 30px) scale(0.65);
+        filter: blur(10px) brightness(2.5);
+    }
+    18% {
+        opacity: 1;
+        transform: translate(-50%, -8px) scale(1.18);
+        filter: blur(0) brightness(1.4);
+    }
+    28% {
+        transform: translate(-50%, -2px) scale(1.0);
+        filter: brightness(1.1);
+    }
+    75% {
+        opacity: 1;
+        transform: translate(-50%, -6px) scale(1.0);
+        filter: brightness(1);
+    }
+    90% {
+        opacity: 0.85;
+        transform: translate(-50%, -18px) scale(0.96);
+    }
+    100% {
+        opacity: 0;
+        transform: translate(-50%, -36px) scale(0.85);
+        filter: blur(6px);
+    }
+}
+
+.epic-combo-banner {
+    position: absolute;
+    top: -95px;
+    left: 50%;
+    transform: translateX(-50%);
+    min-width: 260px;
+    max-width: 380px;
+    background: linear-gradient(145deg, rgba(10, 14, 22, 0.96) 0%, rgba(18, 24, 38, 0.94) 100%);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border: 2px solid var(--accent-color);
+    border-radius: 12px;
+    padding: 10px 18px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 120;
+    pointer-events: none;
+    box-shadow: 0 10px 35px rgba(0, 0, 0, 0.95), 0 0 25px var(--combo-glow, rgba(102, 252, 241, 0.6)), inset 0 0 15px rgba(255, 255, 255, 0.08);
+    animation: epicComboBannerAnimation 1.65s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    white-space: nowrap;
+    text-align: center;
+}
+
+/* Fila Superior: Colisión Elemental (💧 + 🔥 ➔) */
+.epic-combo-clash-header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    margin-bottom: 4px;
+}
+
+.epic-element-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.8px;
+    padding: 2px 8px;
+    border-radius: 20px;
+    background: rgba(0, 0, 0, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    text-transform: uppercase;
+}
+
+.epic-clash-symbol {
+    font-size: 12px;
+    font-weight: 900;
+    color: #ffd32a;
+    text-shadow: 0 0 8px rgba(255, 211, 42, 0.9);
+    animation: pulseSymbol 0.5s infinite alternate ease-in-out;
+}
+
+@keyframes pulseSymbol {
+    0% { transform: scale(0.9); opacity: 0.8; }
+    100% { transform: scale(1.25); opacity: 1; }
+}
+
+/* Título Monumental de la Reacción */
+.epic-combo-title {
+    font-size: 22px;
+    font-weight: 900;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    font-family: 'Rajdhani', sans-serif;
+    line-height: 1.1;
+    margin: 2px 0 3px 0;
+    background: var(--combo-title-gradient, linear-gradient(135deg, #ffffff 0%, #66fcf1 100%));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    filter: drop-shadow(0 0 12px var(--combo-glow, #66fcf1)) drop-shadow(0 2px 4px rgba(0, 0, 0, 0.9));
+}
+
+/* Badge Táctico de Efecto Secundario */
+.epic-combo-tag {
+    font-size: 10.5px;
+    font-weight: 800;
+    letter-spacing: 1px;
+    padding: 2px 10px;
+    border-radius: 4px;
+    background: rgba(0, 0, 0, 0.65);
+    border: 1px solid currentColor;
+    text-transform: uppercase;
+    margin-bottom: 2px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+}
+
+/* Descripción Táctica */
+.epic-combo-desc {
+    font-size: 11.5px;
+    color: #e2e8f0;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
+}
+
+/* --- 6. Tematización Específica para las 12 Reacciones Elementales --- */
+
+/* 1. VAPORIZACIÓN (💧 Agua + 🔥 Fuego) */
+.combo-theme-vaporizacion {
+    --combo-glow: rgba(255, 71, 87, 0.85);
+    --combo-title-gradient: linear-gradient(135deg, #ff4757 0%, #ff6b6b 45%, #48dbfb 100%);
+    border-color: #ff4757;
+}
+.combo-theme-vaporizacion .epic-combo-tag {
+    color: #ff6b6b;
+    border-color: #ff4757;
+}
+
+/* 2. LODO (💧 Agua + 🪨 Tierra) */
+.combo-theme-lodo {
+    --combo-glow: rgba(254, 202, 87, 0.8);
+    --combo-title-gradient: linear-gradient(135deg, #feca57 0%, #e67e22 50%, #48dbfb 100%);
+    border-color: #feca57;
+}
+.combo-theme-lodo .epic-combo-tag {
+    color: #feca57;
+    border-color: #e67e22;
+}
+
+/* 3. VENTISCA (💧 Agua + 💨 Aire) */
+.combo-theme-ventisca {
+    --combo-glow: rgba(72, 219, 251, 0.9);
+    --combo-title-gradient: linear-gradient(135deg, #ffffff 0%, #48dbfb 50%, #70a1ff 100%);
+    border-color: #48dbfb;
+}
+.combo-theme-ventisca .epic-combo-tag {
+    color: #48dbfb;
+    border-color: #70a1ff;
+}
+
+/* 4. TORMENTA ÍGNEA (🔥 Fuego + 💨 Aire) */
+.combo-theme-tormenta-ignea {
+    --combo-glow: rgba(255, 107, 107, 0.9);
+    --combo-title-gradient: linear-gradient(135deg, #ff3838 0%, #ff9f1a 50%, #ffeaa7 100%);
+    border-color: #ff9f1a;
+}
+.combo-theme-tormenta-ignea .epic-combo-tag {
+    color: #ff9f1a;
+    border-color: #ff3838;
+}
+
+/* 5. CHOQUE TÉRMICO (🔥 Fuego + 💦 Agua) */
+.combo-theme-choque-termico {
+    --combo-glow: rgba(0, 210, 211, 0.85);
+    --combo-title-gradient: linear-gradient(135deg, #ff6b81 0%, #ff4757 40%, #00d2d3 100%);
+    border-color: #00d2d3;
+}
+.combo-theme-choque-termico .epic-combo-tag {
+    color: #00d2d3;
+    border-color: #ff6b81;
+}
+
+/* 6. ERUPCIÓN (🔥 Fuego + 🪨 Tierra) */
+.combo-theme-erupcion {
+    --combo-glow: rgba(255, 127, 80, 0.9);
+    --combo-title-gradient: linear-gradient(135deg, #ff4757 0%, #ff7f50 50%, #ffd32a 100%);
+    border-color: #ff7f50;
+}
+.combo-theme-erupcion .epic-combo-tag {
+    color: #ff7f50;
+    border-color: #ff4757;
+}
+
+/* 7. CRISTALIZACIÓN (🪨 Tierra + 🔥 Fuego) */
+.combo-theme-cristalizacion {
+    --combo-glow: rgba(255, 211, 42, 0.9);
+    --combo-title-gradient: linear-gradient(135deg, #ffffff 0%, #ffd32a 50%, #ff9f1a 100%);
+    border-color: #ffd32a;
+}
+.combo-theme-cristalizacion .epic-combo-tag {
+    color: #ffd32a;
+    border-color: #ff9f1a;
+}
+
+/* 8. EROSIÓN (🪨 Tierra + 💦 Agua) */
+.combo-theme-erosion {
+    --combo-glow: rgba(46, 213, 115, 0.9);
+    --combo-title-gradient: linear-gradient(135deg, #2ed573 0%, #7bed9f 50%, #2e86de 100%);
+    border-color: #2ed573;
+}
+.combo-theme-erosion .epic-combo-tag {
+    color: #2ed573;
+    border-color: #2e86de;
+}
+
+/* 9. TORMENTA DE ARENA (🪨 Tierra + 💨 Aire) */
+.combo-theme-tormenta-arena {
+    --combo-glow: rgba(236, 204, 104, 0.85);
+    --combo-title-gradient: linear-gradient(135deg, #eccc68 0%, #f39c12 50%, #d35400 100%);
+    border-color: #eccc68;
+}
+.combo-theme-tormenta-arena .epic-combo-tag {
+    color: #eccc68;
+    border-color: #f39c12;
+}
+
+/* 10. DEFLAGRACIÓN (💨 Aire + 🔥 Fuego) */
+.combo-theme-deflagracion {
+    --combo-glow: rgba(255, 56, 56, 0.95);
+    --combo-title-gradient: linear-gradient(135deg, #ff3838 0%, #ff5252 50%, #ffb142 100%);
+    border-color: #ff3838;
+}
+.combo-theme-deflagracion .epic-combo-tag {
+    color: #ff5252;
+    border-color: #ff3838;
+}
+
+/* 11. CICLÓN (💨 Aire + 💦 Agua) */
+.combo-theme-ciclon {
+    --combo-glow: rgba(112, 161, 255, 0.9);
+    --combo-title-gradient: linear-gradient(135deg, #70a1ff 0%, #1e90ff 50%, #00d2d3 100%);
+    border-color: #70a1ff;
+}
+.combo-theme-ciclon .epic-combo-tag {
+    color: #70a1ff;
+    border-color: #1e90ff;
+}
+
+/* 12. COLAPSO SÍSMICO (💨 Aire + 🪨 Tierra) */
+.combo-theme-colapso-sismico {
+    --combo-glow: rgba(164, 176, 190, 0.9);
+    --combo-title-gradient: linear-gradient(135deg, #ffffff 0%, #a4b0be 50%, #feca57 100%);
+    border-color: #a4b0be;
+}
+.combo-theme-colapso-sismico .epic-combo-tag {
+    color: #feca57;
+    border-color: #a4b0be;
+}
+
+/* Reacción Defensiva de Coraza de Espinas */
+.combo-theme-espina-reflect {
+    --combo-glow: rgba(46, 213, 115, 0.9);
+    --combo-title-gradient: linear-gradient(135deg, #2ed573 0%, #feca57 100%);
+    border-color: #2ed573;
+}
+.combo-theme-espina-reflect .epic-combo-tag {
+    color: #2ed573;
+    border-color: #feca57;
+}
+
+/* Reacción Defensiva de Barrera de Plasma */
+.combo-theme-barrera-counter {
+    --combo-glow: rgba(72, 219, 251, 0.9);
+    --combo-title-gradient: linear-gradient(135deg, #48dbfb 0%, #66fcf1 100%);
+    border-color: #48dbfb;
+}
+.combo-theme-barrera-counter .epic-combo-tag {
+    color: #48dbfb;
+    border-color: #66fcf1;
+}
+
+/* Cataclismo de Jefe Titán / Singularidad */
+.combo-theme-titan-cataclysm {
+    --combo-glow: rgba(255, 71, 87, 1);
+    --combo-title-gradient: linear-gradient(135deg, #ff4757 0%, #66fcf1 50%, #ffd32a 100%);
+    border-color: #ff4757;
+}
+.combo-theme-titan-cataclysm .epic-combo-tag {
+    color: #66fcf1;
+    border-color: #ff4757;
+}
+
+/* Fallback de compatibilidad */
 .combo-popup-banner {
     position: absolute;
     top: -68px;
@@ -7734,7 +8240,7 @@ progress::-webkit-progress-value {
 
     /* Pantalla de Combate */
     #screen-combat {
-        padding-top: 48px;
+        padding-top: 86px;
         padding-bottom: 8px;
         gap: 6px;
         justify-content: flex-start;
@@ -13754,6 +14260,1052 @@ progress::-webkit-progress-value {
     }
 }
 
+/* ==========================================================================
+   SISTEMA DE COMBINACIONES Y REACCIONES ELEMENTALES ÉPICAS CINEMÁTICAS
+   ========================================================================== */
 
+/* 1. Sacudidas de Pantalla Cinemáticas */
+.anim-shake-heavy {
+    animation: screenShakeHeavy 0.7s cubic-bezier(.36, .07, .19, .97) both;
+}
 
+@keyframes screenShakeHeavy {
+    0%, 100% { transform: translate3d(0, 0, 0) rotate(0deg); }
+    10% { transform: translate3d(-8px, -5px, 0) rotate(-1.5deg); }
+    20% { transform: translate3d(8px, 6px, 0) rotate(1.5deg); }
+    30% { transform: translate3d(-10px, 4px, 0) rotate(-1deg); }
+    40% { transform: translate3d(10px, -6px, 0) rotate(1.2deg); }
+    50% { transform: translate3d(-6px, 5px, 0) rotate(-0.8deg); }
+    60% { transform: translate3d(6px, -4px, 0) rotate(0.8deg); }
+    70% { transform: translate3d(-4px, 2px, 0) rotate(-0.5deg); }
+    80% { transform: translate3d(3px, -2px, 0) rotate(0.4deg); }
+    90% { transform: translate3d(-1px, 1px, 0) rotate(0deg); }
+}
+
+.anim-shake-quake {
+    animation: screenShakeQuake 0.75s ease-in-out both;
+}
+
+@keyframes screenShakeQuake {
+    0%, 100% { transform: translateY(0); }
+    15% { transform: translateY(-12px); }
+    30% { transform: translateY(10px); }
+    45% { transform: translateY(-7px); }
+    60% { transform: translateY(5px); }
+    75% { transform: translateY(-3px); }
+    90% { transform: translateY(1px); }
+}
+
+.anim-shake-vortex {
+    animation: screenShakeVortex 0.7s ease-in-out both;
+}
+
+@keyframes screenShakeVortex {
+    0%, 100% { transform: scale(1) rotate(0deg); }
+    20% { transform: scale(1.04) rotate(2deg) translate3d(-4px, 4px, 0); }
+    40% { transform: scale(0.97) rotate(-2.5deg) translate3d(5px, -3px, 0); }
+    60% { transform: scale(1.02) rotate(1.5deg) translate3d(-3px, -3px, 0); }
+    80% { transform: scale(0.99) rotate(-1deg) translate3d(2px, 2px, 0); }
+}
+
+/* 2. Capa de Destello de la Arena */
+.epic-arena-flash-layer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    pointer-events: none;
+    z-index: 85;
+    animation: arenaFlashPulse 0.6s cubic-bezier(0.1, 0.9, 0.2, 1) forwards;
+}
+
+@keyframes arenaFlashPulse {
+    0% { opacity: 0; transform: scale(0.95); }
+    25% { opacity: 0.85; transform: scale(1.02); }
+    100% { opacity: 0; transform: scale(1); }
+}
+
+/* 3. Onda de Choque Expansiva */
+.epic-shockwave-ring {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    border: 4px solid #fff;
+    transform: translate(-50%, -50%) scale(0.2);
+    pointer-events: none;
+    z-index: 90;
+    opacity: 1;
+    animation: shockwaveExpand 0.8s cubic-bezier(0.15, 0.85, 0.35, 1.2) forwards;
+}
+
+@keyframes shockwaveExpand {
+    0% {
+        transform: translate(-50%, -50%) scale(0.2);
+        opacity: 1;
+    }
+    60% {
+        opacity: 0.9;
+    }
+    100% {
+        transform: translate(-50%, -50%) scale(14);
+        opacity: 0;
+    }
+}
+
+/* 4. Ráfaga de Partículas Elementales */
+.epic-combo-particle {
+    position: absolute;
+    pointer-events: none;
+    z-index: 92;
+    user-select: none;
+    will-change: transform, opacity;
+    animation: particleBurstOut 0.9s cubic-bezier(0.12, 0.8, 0.32, 1) forwards;
+}
+
+@keyframes particleBurstOut {
+    0% {
+        opacity: 1;
+        transform: translate(-50%, -50%) translate3d(0, 0, 0) rotate(0deg) scale(0.3);
+    }
+    40% {
+        opacity: 1;
+        transform: translate(-50%, -50%) translate3d(calc(var(--tx) * 0.7), calc(var(--ty) * 0.7), 0) rotate(calc(var(--rot) * 0.5)) scale(1.4);
+    }
+    100% {
+        opacity: 0;
+        transform: translate(-50%, -50%) translate3d(var(--tx), var(--ty), 0) rotate(var(--rot)) scale(0.6);
+    }
+}
+
+/* 5. Banner Monumental de Reacción Elemental */
+.epic-combo-banner {
+    position: absolute;
+    top: 40%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0.85);
+    z-index: 100;
+    padding: 16px 26px;
+    border-radius: 14px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    min-width: 280px;
+    max-width: 440px;
+    box-sizing: border-box;
+    pointer-events: none;
+    backdrop-filter: blur(12px);
+    box-shadow: 0 15px 45px rgba(0, 0, 0, 0.9), inset 0 0 20px rgba(255, 255, 255, 0.1);
+    animation: epicBannerEntry 0.38s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+@keyframes epicBannerEntry {
+    0% {
+        opacity: 0;
+        transform: translate(-50%, -40%) scale(0.4) rotate(-3deg);
+    }
+    65% {
+        opacity: 1;
+        transform: translate(-50%, -52%) scale(1.08) rotate(1deg);
+    }
+    100% {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1) rotate(0deg);
+    }
+}
+
+.epic-combo-elements-collision {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 6px;
+    width: 100%;
+}
+
+.element-icon {
+    font-size: 11.5px;
+    font-weight: 800;
+    letter-spacing: 1px;
+    padding: 3px 9px;
+    border-radius: 8px;
+    background: rgba(0, 0, 0, 0.45);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    color: #fff;
+    text-shadow: 0 0 8px rgba(255, 255, 255, 0.5);
+    animation: elemIconPop 0.4s ease-out;
+}
+
+@keyframes elemIconPop {
+    0% { transform: scale(0.5); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+.collision-symbol {
+    font-size: 10px;
+    font-weight: 900;
+    letter-spacing: 1.5px;
+    color: #ffd700;
+    text-shadow: 0 0 10px #ffd700;
+    text-transform: uppercase;
+}
+
+.epic-combo-main-title {
+    font-size: 26px;
+    font-weight: 900;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    line-height: 1.15;
+    margin-bottom: 5px;
+    text-shadow: 0 0 20px currentColor, 0 2px 4px #000;
+    filter: drop-shadow(0 0 12px currentColor);
+}
+
+.epic-combo-tactical-badge {
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 1.2px;
+    padding: 3px 12px;
+    border-radius: 12px;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+    background: rgba(0, 0, 0, 0.6);
+    border: 1px solid currentColor;
+    box-shadow: 0 0 12px currentColor;
+}
+
+.epic-combo-subtitle {
+    font-size: 13.5px;
+    font-weight: 700;
+    color: #f1f2f6;
+    line-height: 1.35;
+    text-shadow: 0 1px 4px rgba(0, 0, 0, 0.9);
+}
+
+/* ==========================================================================
+   TEMAS INDIVIDUALES PARA LAS 12 COMBINACIONES ELEMENTALES + ESPECIALES
+   ========================================================================== */
+
+/* 1. Vaporización (💦 + 🔥) */
+.combo-theme-vaporizacion {
+    background: linear-gradient(135deg, rgba(255, 71, 87, 0.92) 0%, rgba(72, 219, 251, 0.88) 100%);
+    border: 2.5px solid #ff6b6b;
+    box-shadow: 0 0 35px rgba(255, 107, 107, 0.7), inset 0 0 15px rgba(72, 219, 251, 0.4);
+    color: #fff;
+}
+.combo-theme-vaporizacion .epic-combo-main-title {
+    color: #ffeedd;
+    text-shadow: 0 0 20px #ff4757, 0 0 35px #48dbfb;
+}
+.combo-theme-vaporizacion .epic-combo-tactical-badge {
+    color: #ff6b6b;
+}
+
+/* 2. Lodo (💦 + 🪨) */
+.combo-theme-lodo {
+    background: linear-gradient(135deg, rgba(254, 202, 87, 0.92) 0%, rgba(34, 112, 147, 0.9) 100%);
+    border: 2.5px solid #feca57;
+    box-shadow: 0 0 35px rgba(254, 202, 87, 0.6), inset 0 0 15px rgba(34, 112, 147, 0.4);
+    color: #fff;
+}
+.combo-theme-lodo .epic-combo-main-title {
+    color: #fff5cc;
+    text-shadow: 0 0 20px #feca57, 0 0 30px #227093;
+}
+.combo-theme-lodo .epic-combo-tactical-badge {
+    color: #feca57;
+}
+
+/* 3. Ventisca (💦 + 💨) */
+.combo-theme-ventisca {
+    background: linear-gradient(135deg, rgba(72, 219, 251, 0.92) 0%, rgba(200, 247, 255, 0.88) 100%);
+    border: 2.5px solid #48dbfb;
+    box-shadow: 0 0 40px rgba(72, 219, 251, 0.8), inset 0 0 20px rgba(255, 255, 255, 0.6);
+    color: #0b0c10;
+}
+.combo-theme-ventisca .epic-combo-main-title {
+    color: #0b2239;
+    text-shadow: 0 0 20px #48dbfb, 0 0 35px #ffffff;
+}
+.combo-theme-ventisca .epic-combo-tactical-badge {
+    color: #0b2239;
+    background: rgba(255, 255, 255, 0.85);
+    border-color: #48dbfb;
+}
+.combo-theme-ventisca .epic-combo-subtitle {
+    color: #0b2239;
+    font-weight: 800;
+}
+
+/* 4. Tormenta Ígnea (🔥 + 💨) */
+.combo-theme-tormenta-ignea {
+    background: linear-gradient(135deg, rgba(255, 71, 87, 0.94) 0%, rgba(255, 159, 67, 0.9) 100%);
+    border: 2.5px solid #ff4757;
+    box-shadow: 0 0 40px rgba(255, 71, 87, 0.8), inset 0 0 20px rgba(255, 159, 67, 0.5);
+    color: #fff;
+}
+.combo-theme-tormenta-ignea .epic-combo-main-title {
+    color: #fff;
+    text-shadow: 0 0 25px #ff4757, 0 0 40px #ff9f43;
+}
+.combo-theme-tormenta-ignea .epic-combo-tactical-badge {
+    color: #ff4757;
+}
+
+/* 5. Choque Térmico (🔥 + 💦) */
+.combo-theme-choque-termico {
+    background: linear-gradient(135deg, rgba(255, 71, 87, 0.9) 0%, rgba(10, 189, 227, 0.92) 100%);
+    border: 2.5px solid #48dbfb;
+    box-shadow: 0 0 40px rgba(72, 219, 251, 0.7), inset 0 0 20px rgba(255, 71, 87, 0.5);
+    color: #fff;
+}
+.combo-theme-choque-termico .epic-combo-main-title {
+    color: #fff;
+    text-shadow: 0 0 20px #48dbfb, 0 0 35px #ff4757;
+}
+.combo-theme-choque-termico .epic-combo-tactical-badge {
+    color: #48dbfb;
+}
+
+/* 6. Erupción (🔥 + 🪨) */
+.combo-theme-erupcion {
+    background: linear-gradient(135deg, rgba(235, 47, 6, 0.95) 0%, rgba(250, 130, 49, 0.9) 100%);
+    border: 2.5px solid #ffa502;
+    box-shadow: 0 0 40px rgba(250, 130, 49, 0.8), inset 0 0 20px rgba(235, 47, 6, 0.6);
+    color: #fff;
+}
+.combo-theme-erupcion .epic-combo-main-title {
+    color: #fff9e6;
+    text-shadow: 0 0 25px #eb2f06, 0 0 40px #ffa502;
+}
+.combo-theme-erupcion .epic-combo-tactical-badge {
+    color: #ffa502;
+}
+
+/* 7. Cristalización (🪨 + 🔥) */
+.combo-theme-cristalizacion {
+    background: linear-gradient(135deg, rgba(254, 202, 87, 0.94) 0%, rgba(243, 104, 224, 0.88) 100%);
+    border: 2.5px solid #feca57;
+    box-shadow: 0 0 40px rgba(254, 202, 87, 0.75), inset 0 0 20px rgba(243, 104, 224, 0.5);
+    color: #fff;
+}
+.combo-theme-cristalizacion .epic-combo-main-title {
+    color: #fff;
+    text-shadow: 0 0 25px #feca57, 0 0 35px #f368e0;
+}
+.combo-theme-cristalizacion .epic-combo-tactical-badge {
+    color: #feca57;
+}
+
+/* 8. Erosión (🪨 + 💦) */
+.combo-theme-erosion {
+    background: linear-gradient(135deg, rgba(46, 213, 115, 0.92) 0%, rgba(16, 172, 132, 0.9) 100%);
+    border: 2.5px solid #2ed573;
+    box-shadow: 0 0 40px rgba(46, 213, 115, 0.8), inset 0 0 20px rgba(16, 172, 132, 0.5);
+    color: #fff;
+}
+.combo-theme-erosion .epic-combo-main-title {
+    color: #eafff0;
+    text-shadow: 0 0 25px #2ed573, 0 0 35px #1dd1a1;
+}
+.combo-theme-erosion .epic-combo-tactical-badge {
+    color: #2ed573;
+}
+
+/* 9. Tormenta de Arena (🪨 + 💨) */
+.combo-theme-tormenta-arena {
+    background: linear-gradient(135deg, rgba(236, 204, 104, 0.94) 0%, rgba(132, 129, 122, 0.9) 100%);
+    border: 2.5px solid #eccc68;
+    box-shadow: 0 0 35px rgba(236, 204, 104, 0.7), inset 0 0 15px rgba(132, 129, 122, 0.5);
+    color: #fff;
+}
+.combo-theme-tormenta-arena .epic-combo-main-title {
+    color: #fffbee;
+    text-shadow: 0 0 20px #eccc68, 0 0 30px #d1ccc0;
+}
+.combo-theme-tormenta-arena .epic-combo-tactical-badge {
+    color: #eccc68;
+}
+
+/* 10. Deflagración (💨 + 🔥) */
+.combo-theme-deflagracion {
+    background: linear-gradient(135deg, rgba(255, 99, 72, 0.95) 0%, rgba(255, 56, 56, 0.92) 100%);
+    border: 2.5px solid #ff6348;
+    box-shadow: 0 0 45px rgba(255, 99, 72, 0.85), inset 0 0 20px rgba(255, 56, 56, 0.6);
+    color: #fff;
+}
+.combo-theme-deflagracion .epic-combo-main-title {
+    color: #fff;
+    text-shadow: 0 0 25px #ff6348, 0 0 45px #ff3838;
+}
+.combo-theme-deflagracion .epic-combo-tactical-badge {
+    color: #ff6348;
+}
+
+/* 11. Ciclón (💨 + 💦) */
+.combo-theme-ciclon {
+    background: linear-gradient(135deg, rgba(112, 161, 255, 0.94) 0%, rgba(83, 82, 237, 0.9) 100%);
+    border: 2.5px solid #70a1ff;
+    box-shadow: 0 0 40px rgba(112, 161, 255, 0.8), inset 0 0 20px rgba(83, 82, 237, 0.5);
+    color: #fff;
+}
+.combo-theme-ciclon .epic-combo-main-title {
+    color: #eef5ff;
+    text-shadow: 0 0 25px #70a1ff, 0 0 35px #5352ed;
+}
+.combo-theme-ciclon .epic-combo-tactical-badge {
+    color: #70a1ff;
+}
+
+/* 12. Colapso Sísmico (💨 + 🪨) */
+.combo-theme-colapso-sismico {
+    background: linear-gradient(135deg, rgba(164, 176, 190, 0.94) 0%, rgba(87, 96, 111, 0.94) 100%);
+    border: 2.5px solid #a4b0be;
+    box-shadow: 0 0 40px rgba(164, 176, 190, 0.75), inset 0 0 20px rgba(87, 96, 111, 0.6);
+    color: #fff;
+}
+.combo-theme-colapso-sismico .epic-combo-main-title {
+    color: #f1f2f6;
+    text-shadow: 0 0 20px #a4b0be, 0 0 30px #ffffff;
+}
+.combo-theme-colapso-sismico .epic-combo-tactical-badge {
+    color: #a4b0be;
+}
+
+/* Especial: Coraza de Espinas Reflex */
+.combo-theme-espina-reflect {
+    background: linear-gradient(135deg, rgba(46, 213, 115, 0.92) 0%, rgba(205, 97, 51, 0.92) 100%);
+    border: 2.5px solid #2ed573;
+    box-shadow: 0 0 40px rgba(46, 213, 115, 0.75);
+    color: #fff;
+}
+.combo-theme-espina-reflect .epic-combo-main-title {
+    color: #fff;
+    text-shadow: 0 0 20px #2ed573;
+}
+.combo-theme-espina-reflect .epic-combo-tactical-badge {
+    color: #2ed573;
+}
+
+/* Especial: Barrera de Plasma Counter */
+.combo-theme-barrera-counter {
+    background: linear-gradient(135deg, rgba(102, 252, 241, 0.92) 0%, rgba(9, 132, 227, 0.9) 100%);
+    border: 2.5px solid #66fcf1;
+    box-shadow: 0 0 40px rgba(102, 252, 241, 0.85);
+    color: #0b0c10;
+}
+.combo-theme-barrera-counter .epic-combo-main-title {
+    color: #0b2239;
+    text-shadow: 0 0 20px #66fcf1, 0 0 35px #ffffff;
+}
+.combo-theme-barrera-counter .epic-combo-tactical-badge {
+    color: #0b2239;
+    background: rgba(255, 255, 255, 0.9);
+    border-color: #66fcf1;
+}
+.combo-theme-barrera-counter .epic-combo-subtitle {
+    color: #0b2239;
+    font-weight: 800;
+}
+
+/* Especial: Golpe Titánico / Cataclismo de Jefe */
+.combo-theme-titan-cataclysm {
+    background: linear-gradient(135deg, rgba(255, 56, 56, 0.95) 0%, rgba(136, 8, 8, 0.95) 100%);
+    border: 2.5px solid #ff3838;
+    box-shadow: 0 0 45px rgba(255, 56, 56, 0.9), inset 0 0 20px rgba(255, 255, 255, 0.3);
+    color: #fff;
+}
+.combo-theme-titan-cataclysm .epic-combo-main-title {
+    color: #fff;
+    text-shadow: 0 0 25px #ff3838, 0 0 45px #ff4d4d;
+}
+.combo-theme-titan-cataclysm .epic-combo-tactical-badge {
+    color: #ff3838;
+}
+
+/* ==========================================================================
+   SISTEMA DE RELIQUIAS Y ARTEFACTOS PASIVOS (HUD + TOOLTIPS + MODALES)
+   ========================================================================== */
+
+/* 1. Barra superior de reliquias en la sub-barra de #top-bar */
+.top-relics-bar {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 2px 8px;
+    background: rgba(11, 28, 44, 0.65);
+    border: 1px solid rgba(102, 252, 241, 0.25);
+    border-radius: 18px;
+    max-width: 100%;
+    overflow-x: auto;
+    scrollbar-width: none;
+    backdrop-filter: blur(6px);
+    margin-left: 0;
+    box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.5), 0 0 8px rgba(102, 252, 241, 0.1);
+}
+.top-relics-bar::-webkit-scrollbar {
+    display: none;
+}
+
+.relics-bar-empty {
+    font-size: 11px;
+    color: rgba(164, 176, 190, 0.6);
+    font-weight: 600;
+    letter-spacing: 1px;
+    padding: 2px 6px;
+    white-space: nowrap;
+    text-transform: uppercase;
+}
+
+/* 2. Slot de reliquia en el HUD */
+.top-relic-slot {
+    position: relative;
+    width: 28px;
+    height: 28px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: rgba(15, 23, 42, 0.85);
+    border-radius: 50%;
+    border: 1.5px solid rgba(255, 255, 255, 0.2);
+    cursor: pointer;
+    transition: all 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    flex-shrink: 0;
+    user-select: none;
+}
+
+.top-relic-slot:hover {
+    transform: scale(1.22) translateY(-2px);
+    z-index: 10;
+}
+
+.top-relic-icon {
+    font-size: 15px;
+    z-index: 2;
+    filter: drop-shadow(0 0 4px rgba(0, 0, 0, 0.8));
+}
+
+.top-relic-glow {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    opacity: 0.6;
+    transition: opacity 0.2s ease;
+    z-index: 1;
+}
+.top-relic-slot:hover .top-relic-glow {
+    opacity: 1;
+    filter: blur(2px);
+}
+
+/* Bordes y resplandores por rareza */
+.top-relic-slot.rarity-comun {
+    border-color: #a4b0be;
+    box-shadow: 0 0 6px rgba(164, 176, 190, 0.3);
+}
+.top-relic-slot.rarity-raro {
+    border-color: #48dbfb;
+    box-shadow: 0 0 8px rgba(72, 219, 251, 0.5);
+}
+.top-relic-slot.rarity-epico {
+    border-color: #a55eea;
+    box-shadow: 0 0 10px rgba(165, 94, 234, 0.6);
+}
+.top-relic-slot.rarity-legendario {
+    border-color: #fed330;
+    box-shadow: 0 0 14px rgba(254, 211, 48, 0.8);
+    animation: pulseLegendaryRelic 2.5s infinite ease-in-out;
+}
+.top-relic-slot.rarity-corrupta {
+    border-color: #eb4d4b;
+    box-shadow: 0 0 12px rgba(235, 77, 75, 0.7);
+    animation: pulseCorruptedRelic 2s infinite ease-in-out;
+}
+
+@keyframes pulseLegendaryRelic {
+    0%, 100% { box-shadow: 0 0 8px rgba(254, 211, 48, 0.6); }
+    50% { box-shadow: 0 0 18px rgba(254, 211, 48, 1); }
+}
+
+@keyframes pulseCorruptedRelic {
+    0%, 100% { box-shadow: 0 0 8px rgba(235, 77, 75, 0.5); }
+    50% { box-shadow: 0 0 16px rgba(235, 77, 75, 0.95); }
+}
+
+/* 3. Toast de Reliquia Obtenida */
+.relic-acquired-toast {
+    position: absolute;
+    top: 60px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 12px 20px;
+    background: linear-gradient(135deg, rgba(15, 23, 42, 0.97) 0%, rgba(30, 41, 59, 0.95) 100%);
+    border-radius: 12px;
+    border: 2px solid #66fcf1;
+    box-shadow: 0 10px 35px rgba(0, 0, 0, 0.8), 0 0 25px rgba(102, 252, 241, 0.35);
+    z-index: 9999;
+    animation: slideDownToast 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    pointer-events: none;
+    max-width: 90%;
+    backdrop-filter: blur(10px);
+}
+
+.relic-acquired-toast.fade-out {
+    opacity: 0;
+    transform: translate(-50%, -20px) scale(0.95);
+    transition: all 0.5s ease;
+}
+
+@keyframes slideDownToast {
+    from { opacity: 0; transform: translate(-50%, -30px) scale(0.9); }
+    to { opacity: 1; transform: translate(-50%, 0) scale(1); }
+}
+
+.relic-toast-icon-wrap {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.08);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    border: 1.5px solid rgba(255, 255, 255, 0.2);
+    flex-shrink: 0;
+}
+
+.relic-toast-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 2px;
+}
+
+.relic-toast-badge {
+    font-size: 9.5px;
+    font-weight: 800;
+    letter-spacing: 1px;
+    padding: 1px 6px;
+    border-radius: 10px;
+    background: rgba(102, 252, 241, 0.2);
+    color: #66fcf1;
+    border: 1px solid rgba(102, 252, 241, 0.4);
+}
+
+.relic-toast-tag {
+    font-size: 11px;
+    font-weight: 700;
+    color: #a4b0be;
+    letter-spacing: 1px;
+}
+
+.relic-toast-name {
+    font-size: 17px;
+    font-weight: 800;
+    color: #fff;
+    margin-bottom: 2px;
+}
+
+.relic-toast-desc {
+    font-size: 13px;
+    color: #c8d6e5;
+    line-height: 1.3;
+}
+
+/* 4. Modal de Tooltip / Detalle de Reliquia */
+.relic-modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.75);
+    backdrop-filter: blur(6px);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 10000;
+    padding: 20px;
+    box-sizing: border-box;
+}
+
+.relic-modal-backdrop.active {
+    display: flex;
+    animation: fadeInModal 0.25s ease;
+}
+
+@keyframes fadeInModal {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.relic-modal-container {
+    width: 100%;
+    max-width: 440px;
+    background: linear-gradient(135deg, #0b111e 0%, #151f32 100%);
+    border-radius: 16px;
+    border: 2px solid rgba(102, 252, 241, 0.3);
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.9), 0 0 30px rgba(102, 252, 241, 0.2);
+    overflow: hidden;
+    animation: popInModal 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes popInModal {
+    from { transform: scale(0.85); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+}
+
+.relic-modal-card {
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.relic-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding-bottom: 12px;
+}
+
+.relic-modal-category {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    color: #66fcf1;
+    text-transform: uppercase;
+}
+
+.relic-modal-rarity-badge {
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 1.5px;
+    padding: 3px 10px;
+    border-radius: 20px;
+    text-transform: uppercase;
+}
+.relic-modal-rarity-badge.badge-comun { background: rgba(164, 176, 190, 0.15); color: #a4b0be; border: 1px solid #a4b0be; }
+.relic-modal-rarity-badge.badge-raro { background: rgba(72, 219, 251, 0.15); color: #48dbfb; border: 1px solid #48dbfb; }
+.relic-modal-rarity-badge.badge-epico { background: rgba(165, 94, 234, 0.15); color: #a55eea; border: 1px solid #a55eea; }
+.relic-modal-rarity-badge.badge-legendario { background: rgba(254, 211, 48, 0.2); color: #fed330; border: 1px solid #fed330; }
+.relic-modal-rarity-badge.badge-corrupta { background: rgba(235, 77, 75, 0.2); color: #eb4d4b; border: 1px solid #eb4d4b; }
+
+.relic-modal-hero {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.relic-modal-icon-pedestal {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(102, 252, 241, 0.2) 0%, rgba(15, 23, 42, 0.9) 70%);
+    border: 2px solid rgba(102, 252, 241, 0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    box-shadow: 0 0 15px rgba(102, 252, 241, 0.2);
+}
+
+.relic-modal-big-icon {
+    font-size: 32px;
+    filter: drop-shadow(0 0 8px rgba(0, 0, 0, 0.8));
+}
+
+.relic-modal-title {
+    font-size: 22px;
+    font-weight: 800;
+    color: #fff;
+    margin: 0;
+    letter-spacing: 1px;
+}
+
+.relic-modal-body {
+    background: rgba(0, 0, 0, 0.35);
+    border-radius: 10px;
+    padding: 14px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.relic-modal-desc-label {
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 1.5px;
+    color: #66fcf1;
+    margin-bottom: 6px;
+}
+
+.relic-modal-desc {
+    font-size: 15px;
+    color: #dfe4ea;
+    line-height: 1.45;
+}
+
+.relic-modal-desc strong {
+    color: #66fcf1;
+}
+
+.relic-modal-lore {
+    font-size: 13px;
+    color: #747d8c;
+    border-left: 2px solid rgba(102, 252, 241, 0.3);
+    padding-left: 10px;
+    font-style: italic;
+    line-height: 1.35;
+}
+
+.relic-modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 4px;
+}
+
+.btn-relic-modal-close {
+    background: rgba(102, 252, 241, 0.1);
+    color: #66fcf1;
+    border: 1px solid rgba(102, 252, 241, 0.4);
+    padding: 8px 22px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-relic-modal-close:hover {
+    background: rgba(102, 252, 241, 0.25);
+    box-shadow: 0 0 12px rgba(102, 252, 241, 0.4);
+    transform: translateY(-1px);
+}
+
+/* ==========================================================================
+   Relic Cards in Chests, Shop & Boss Drops
+   ========================================================================== */
+
+.platform-relic {
+    background: radial-gradient(circle, rgba(165, 94, 234, 0.3) 0%, transparent 70%) !important;
+    border-color: rgba(165, 94, 234, 0.6) !important;
+    box-shadow: 0 0 25px rgba(165, 94, 234, 0.4) !important;
+}
+
+.platform-relic.rarity-legendario {
+    background: radial-gradient(circle, rgba(254, 211, 48, 0.35) 0%, transparent 70%) !important;
+    border-color: rgba(254, 211, 48, 0.7) !important;
+    box-shadow: 0 0 30px rgba(254, 211, 48, 0.5) !important;
+}
+
+.platform-relic.rarity-corrupta {
+    background: radial-gradient(circle, rgba(235, 77, 75, 0.35) 0%, transparent 70%) !important;
+    border-color: rgba(235, 77, 75, 0.7) !important;
+    box-shadow: 0 0 30px rgba(235, 77, 75, 0.5) !important;
+}
+
+.card-relic {
+    border-color: rgba(165, 94, 234, 0.45) !important;
+    background: linear-gradient(180deg, rgba(20, 15, 35, 0.95) 0%, rgba(10, 10, 20, 0.98) 100%) !important;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8), 0 0 20px rgba(165, 94, 234, 0.25) !important;
+}
+
+/* ==========================================================================
+   Boss Relic Selection Section (Post-Batalla)
+   ========================================================================== */
+
+.boss-relic-reward-section {
+    width: 100%;
+    margin: 15px 0 20px 0;
+}
+
+.boss-relic-picker-box {
+    background: linear-gradient(180deg, rgba(15, 18, 30, 0.95) 0%, rgba(8, 10, 18, 0.98) 100%);
+    border: 2px solid rgba(254, 211, 48, 0.4);
+    border-radius: 16px;
+    padding: 20px 22px;
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.9), 0 0 30px rgba(254, 211, 48, 0.15);
+    backdrop-filter: blur(12px);
+    box-sizing: border-box;
+}
+
+.boss-relic-picker-header {
+    text-align: center;
+    margin-bottom: 18px;
+}
+
+.boss-relic-badge {
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 2px;
+    color: #fed330;
+    background: rgba(254, 211, 48, 0.15);
+    border: 1px solid rgba(254, 211, 48, 0.4);
+    border-radius: 20px;
+    padding: 3px 14px;
+    display: inline-block;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+}
+
+.boss-relic-title {
+    font-size: 22px;
+    font-weight: 900;
+    letter-spacing: 1.5px;
+    margin: 0 0 6px 0;
+    background: linear-gradient(90deg, #ffffff, #fed330, #fffa65);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.boss-relic-subtitle {
+    font-size: 13px;
+    color: #a4b0be;
+    margin: 0;
+    letter-spacing: 0.5px;
+}
+
+.boss-relic-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 16px;
+    margin-top: 14px;
+}
+
+.boss-relic-card {
+    background: rgba(13, 17, 23, 0.9);
+    border: 1.5px solid rgba(255, 255, 255, 0.15);
+    border-radius: 12px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    box-sizing: border-box;
+    transition: all 0.25s ease;
+    position: relative;
+}
+
+.boss-relic-card:hover {
+    border-color: #66fcf1;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8), 0 0 20px rgba(102, 252, 241, 0.35);
+    transform: translateY(-4px);
+}
+
+.boss-relic-card.rarity-comun { border-color: rgba(164, 176, 190, 0.3); }
+.boss-relic-card.rarity-raro { border-color: rgba(72, 219, 251, 0.4); box-shadow: 0 0 15px rgba(72, 219, 251, 0.15); }
+.boss-relic-card.rarity-epico { border-color: rgba(165, 94, 234, 0.5); box-shadow: 0 0 18px rgba(165, 94, 234, 0.2); }
+.boss-relic-card.rarity-legendario { border-color: rgba(254, 211, 48, 0.6); box-shadow: 0 0 22px rgba(254, 211, 48, 0.25); }
+.boss-relic-card.rarity-corrupta { border-color: rgba(235, 77, 75, 0.6); box-shadow: 0 0 22px rgba(235, 77, 75, 0.25); }
+
+.boss-relic-card.is-claimed {
+    border-color: #2ed573 !important;
+    background: rgba(46, 213, 115, 0.1) !important;
+    box-shadow: 0 0 25px rgba(46, 213, 115, 0.5) !important;
+}
+
+.boss-relic-card.is-unpicked {
+    opacity: 0.4;
+    filter: grayscale(0.8);
+    pointer-events: none;
+}
+
+.boss-relic-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    margin-bottom: 10px;
+}
+
+.boss-relic-category {
+    font-size: 10px;
+    font-weight: 700;
+    color: #8395a7;
+    letter-spacing: 1px;
+}
+
+.boss-relic-icon-wrap {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, rgba(0, 0, 0, 0.6) 70%);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 10px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.6);
+}
+
+.boss-relic-icon {
+    font-size: 34px;
+}
+
+.boss-relic-name {
+    font-size: 16px;
+    font-weight: 800;
+    color: #fff;
+    letter-spacing: 0.8px;
+    margin-bottom: 6px;
+}
+
+.boss-relic-desc {
+    font-size: 13px;
+    color: #c5c6c7;
+    line-height: 1.4;
+    background: rgba(0, 0, 0, 0.35);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 8px;
+    padding: 8px 10px;
+    width: 100%;
+    box-sizing: border-box;
+    flex-grow: 1;
+    margin-bottom: 8px;
+}
+
+.boss-relic-lore {
+    font-size: 11px;
+    color: #747d8c;
+    font-style: italic;
+    margin-bottom: 12px;
+    line-height: 1.3;
+}
+
+.btn-boss-relic-claim {
+    width: 100%;
+    background: linear-gradient(135deg, rgba(254, 211, 48, 0.2) 0%, rgba(254, 202, 87, 0.35) 100%);
+    border: 1.5px solid #fed330;
+    color: #fff;
+    padding: 10px 14px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 800;
+    letter-spacing: 1px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 0 15px rgba(254, 211, 48, 0.25);
+}
+
+.btn-boss-relic-claim:hover {
+    background: #fed330;
+    color: #0b0c10;
+    box-shadow: 0 0 25px rgba(254, 211, 48, 0.7);
+    transform: translateY(-2px);
+}
+
+.btn-boss-relic-claim.btn-claimed {
+    background: rgba(46, 213, 115, 0.25) !important;
+    border-color: #2ed573 !important;
+    color: #2ed573 !important;
+    cursor: default;
+    box-shadow: none !important;
+    transform: none !important;
+}
 

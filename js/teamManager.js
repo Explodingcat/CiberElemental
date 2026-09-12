@@ -8,7 +8,9 @@ const GAME_STATE = {
     inventory: {
         weapons: [],
         items: []
-    }
+    },
+    relics: [],
+    fenixTriggeredThisRun: false
 };
 
 function addStarterRobot(templateKey) {
@@ -62,9 +64,8 @@ function isGameOver() {
 }
 
 function updateTeamUI() {
-    // Actualizar UI del mapa, eventos y post-batalla
+    // Actualizar UI del mapa y post-batalla
     const mapTeam = document.getElementById('team-status-map');
-    const eventTeam = document.getElementById('team-status-event');
     const postTeam = document.getElementById('team-status-post');
     
     const teamHTML = GAME_STATE.team.map(r => {
@@ -142,7 +143,6 @@ function updateTeamUI() {
     }).join('');
     
     if(mapTeam) mapTeam.innerHTML = teamHTML;
-    if(eventTeam) eventTeam.innerHTML = teamHTML;
     if(postTeam) postTeam.innerHTML = teamHTML;
 }
 

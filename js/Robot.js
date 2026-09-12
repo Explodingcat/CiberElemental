@@ -181,6 +181,19 @@ class Robot {
             this.critChance += SkillsManager.getCritRateBonus();
         }
 
+        // Mejoras pasivas de Reliquias
+        if (this.isAlly && typeof RelicsManager !== 'undefined') {
+            if (RelicsManager.hasRelic('propulsor_iones')) {
+                this.spd += 2;
+            }
+            if (RelicsManager.hasRelic('chip_punteria_laser')) {
+                this.acc += 15;
+            }
+            if (RelicsManager.hasRelic('modulo_critico_mk2')) {
+                this.critChance += 10;
+            }
+        }
+
         if (this.equippedWeapon) {
             // Bono de afinidad temática especializada (coincidencia Robot + Arma del mismo elemento)
             if (this.hasAffinity()) {
@@ -338,6 +351,9 @@ class Robot {
         
         this.hp -= finalDamage;
         if (this.hp <= 0) {
+            if (typeof RelicsManager !== 'undefined' && RelicsManager.checkLethalSurvive(this)) {
+                return finalDamage;
+            }
             this.hp = 0;
             this.isOffline = true;
             this.statuses = []; // Limpiar estados al morir
@@ -359,6 +375,11 @@ class Robot {
     addStatus(status) {
         if (this.isOffline) return;
         
+        // Inmunidad a Aturdimiento y Lentitud Extrema por Reliquia Aislante Electroestático
+        if ((status.type === 'STUN' || status.type === 'SLOW_EXTREME') && this.isAlly && typeof RelicsManager !== 'undefined' && RelicsManager.hasRelic('aislante_electrostatico')) {
+            return;
+        }
+
         // Inmunidad o resistencia a aturdimiento por Firmeza Giroscópica
         if (status.type === 'STUN' && this.isAlly && typeof SkillsManager !== 'undefined') {
             let stunResist = SkillsManager.getModifier('stun_resist_chance', 0);
@@ -502,13 +523,19 @@ class Robot {
                 let burnRed = (this.isAlly && typeof SkillsManager !== 'undefined') 
                     ? SkillsManager.getModifier('burn_damage_reduction', 0) 
                     : 0;
-                let dmg = Math.max(1, Math.floor(this.maxHp * 0.08 * (1 - burnRed)));
+                let relicBurnRed = (this.isAlly && typeof RelicsManager !== 'undefined' && RelicsManager.hasRelic('disipador_criogenico')) ? 0.50 : 0;
+                let totalBurnRed = Math.min(0.9, burnRed + relicBurnRed);
+                let dmg = Math.max(1, Math.floor(this.maxHp * 0.08 * (1 - totalBurnRed)));
                 this.hp -= dmg;
                 totalDamage += dmg;
                 messages.push(`${this.name} sufre ${dmg} por Quemadura.`);
                 if (this.hp <= 0) {
-                    this.hp = 0;
-                    this.isOffline = true;
+                    if (typeof RelicsManager !== 'undefined' && RelicsManager.checkLethalSurvive(this)) {
+                        // Sobrevive con 1 HP gracias a Protocolo Fénix
+                    } else {
+                        this.hp = 0;
+                        this.isOffline = true;
+                    }
                 }
             }
             
