@@ -66,6 +66,8 @@ function startCombat(nodeType) {
             else if (robot.skills) robot.skills.forEach(s => {
                 s.currentCd = s.cd > 0 ? s.cd : 0;
             });
+            if (robot.consumeUltimateEnergy) robot.consumeUltimateEnergy();
+            else robot.ultimateEnergy = 0;
         });
     }
 
@@ -257,6 +259,23 @@ function renderCombatMiniHud(robot, isEnemy = false) {
         weaponIconHtml = `<span class="mini-weapon-icon elem-${wElem}" title="Arma: ${weapon.name}${wUpgraded}"> ${wEmoji}</span>`;
     }
 
+    // Barra de energía definitiva para aliados iniciales nivel 5+
+    let ultimateMiniHtml = '';
+    if (!isEnemy && robot.isStarter && robot.isUltimateUnlocked) {
+        const uEnergy = Math.min(100, Math.max(0, robot.ultimateEnergy || 0));
+        const isReady = uEnergy >= 100;
+        const ult = robot.getUltimateSkill();
+        const ultName = ult ? ult.name : 'Definitiva';
+        ultimateMiniHtml = `
+            <div class="mini-ultimate-wrapper ${isReady ? 'is-ready' : ''}" title="👑 ${ultName}: ${Math.floor(uEnergy)}% / 100% ${isReady ? '(¡LISTA!)' : ''}">
+                <div class="mini-ultimate-track">
+                    <div class="mini-ultimate-fill elem-fill-${robot.element} ${isReady ? 'pulse-ultimate-ready' : ''}" style="width: ${uEnergy}%;"></div>
+                </div>
+                <span class="mini-ultimate-icon ${isReady ? 'pulse-ready' : ''}">👑</span>
+            </div>
+        `;
+    }
+
     return `
         <div class="combat-mini-hud">
             <div class="mini-hp-row-wrapper">
@@ -271,6 +290,7 @@ function renderCombatMiniHud(robot, isEnemy = false) {
                 </div>
             </div>
             ${cdRowsHtml ? `<div class="mini-cd-container">${cdRowsHtml}</div>` : ''}
+            ${ultimateMiniHtml}
         </div>
     `;
 }
@@ -405,6 +425,15 @@ function renderTurnQueue(currentActor) {
         `;
     }).join('');
     
+    // Botón de Historial Táctico a la derecha de la barra de prioridad
+    html += `
+        <div class="turn-queue-divider"></div>
+        <button class="turn-queue-history-btn" onclick="openCombatHistory()" title="Ver Historial de Batalla y Registro Táctico">
+            <span class="history-btn-icon">📜</span>
+            <span class="history-btn-label">HISTORIAL</span>
+        </button>
+    `;
+
     queueContainer.innerHTML = html;
 }
 
@@ -1067,6 +1096,39 @@ function renderCombatActions(playerRobot, allyIndex, view = 'MAIN', activeSkillI
     const berserkClass = playerRobot.getBerserkGlowClass ? playerRobot.getBerserkGlowClass() : '';
     const desfaseClass = (playerRobot.hasStatus && playerRobot.hasStatus('DESFASE_100')) ? 'is-desfase' : '';
 
+    // Telemetría de Habilidad Definitiva (Starters Nivel 5+)
+    let ultimateTelemetryHtml = '';
+    if (playerRobot.isStarter) {
+        if (playerRobot.isUltimateUnlocked) {
+            const ult = playerRobot.getUltimateSkill();
+            const ultEnergy = Math.floor(playerRobot.ultimateEnergy || 0);
+            const isCharged = ultEnergy >= 100;
+            ultimateTelemetryHtml = `
+                <div class="dock-ultimate-section">
+                    <div class="dock-ultimate-header">
+                        <span class="dock-ultimate-label">👑 DEFINITIVA (${ult ? ult.name : 'OVERDRIVE'})</span>
+                        <span class="dock-ultimate-val ${isCharged ? 'is-charged' : ''}">${ultEnergy}%</span>
+                    </div>
+                    <div class="dock-ultimate-bar-track">
+                        <div class="dock-ultimate-bar-fill elem-fill-${playerRobot.element} ${isCharged ? 'pulse-ultimate-ready' : ''}" style="width: ${ultEnergy}%;"></div>
+                    </div>
+                </div>
+            `;
+        } else {
+            ultimateTelemetryHtml = `
+                <div class="dock-ultimate-section is-locked">
+                    <div class="dock-ultimate-header">
+                        <span class="dock-ultimate-label">🔒 DEFINITIVA (NV. 5)</span>
+                        <span class="dock-ultimate-val">0%</span>
+                    </div>
+                    <div class="dock-ultimate-bar-track">
+                        <div class="dock-ultimate-bar-fill" style="width: 0%;"></div>
+                    </div>
+                </div>
+            `;
+        }
+    }
+
     // Panel Izquierdo: Telemetría del Aliado Activo (50% Ancho)
     const allyTelemetryHtml = `
         <div class="dock-actor-panel dock-actor-player">
@@ -1093,6 +1155,7 @@ function renderCombatActions(playerRobot, allyIndex, view = 'MAIN', activeSkillI
                     </div>
                     ${renderCombatHpBar(playerRobot, false)}
                 </div>
+                ${ultimateTelemetryHtml}
             </div>
         </div>
     `;
@@ -1101,6 +1164,51 @@ function renderCombatActions(playerRobot, allyIndex, view = 'MAIN', activeSkillI
     let rightPanelHtml = '';
 
     if (view === 'MAIN') {
+        let ultBtnHtml = '';
+        if (playerRobot.isStarter) {
+            const elemEmoji = ELEMENT_EMOJIS[playerRobot.element] || '⚡';
+            if (playerRobot.isUltimateUnlocked) {
+                const ultSkill = playerRobot.getUltimateSkill();
+                const isReady = playerRobot.canUseUltimate();
+                const energyPct = Math.floor(playerRobot.ultimateEnergy || 0);
+                if (isReady) {
+                    ultBtnHtml = `
+                        <button class="tactical-cmd-btn cmd-ultimate is-ready elem-ult-${playerRobot.element} elem-glow-${playerRobot.element} pulse-ultimate-btn" 
+                                title="${ultSkill.name}: ${ultSkill.desc} (¡100% CARGADO!)"
+                                onclick="onTriggerUltimate(${allyIndex})">
+                            <span class="cmd-icon">${elemEmoji}</span>
+                            <span class="cmd-title">OVERDRIVE</span>
+                        </button>
+                    `;
+                } else {
+                    ultBtnHtml = `
+                        <button class="tactical-cmd-btn cmd-ultimate is-charging is-disabled elem-ult-${playerRobot.element}" 
+                                title="${ultSkill.name}: ${ultSkill.desc} (Cargando: ${energyPct}% / 100%)">
+                            <span class="cmd-icon">${elemEmoji}</span>
+                            <span class="cmd-title">OVERDRIVE (${energyPct}%)</span>
+                        </button>
+                    `;
+                }
+            } else {
+                ultBtnHtml = `
+                    <button class="tactical-cmd-btn cmd-ultimate is-locked is-disabled" 
+                            title="Habilidad Overdrive bloqueada. Se desbloquea al alcanzar Nivel 5.">
+                        <span class="cmd-icon">🔒</span>
+                        <span class="cmd-title">NIVEL 5</span>
+                    </button>
+                `;
+            }
+        } else {
+            // Personajes que no son iniciales: botón apagado con candado
+            ultBtnHtml = `
+                <button class="tactical-cmd-btn cmd-ultimate is-locked is-disabled" 
+                        title="Esta unidad no dispone de módulo Overdrive.">
+                    <span class="cmd-icon">🔒</span>
+                    <span class="cmd-title">BLOQUEADO</span>
+                </button>
+            `;
+        }
+
         rightPanelHtml = `
             <div class="dock-controls-panel">
                 <div class="dock-main-commands-grid">
@@ -1108,6 +1216,8 @@ function renderCombatActions(playerRobot, allyIndex, view = 'MAIN', activeSkillI
                         <span class="cmd-icon">⚔️</span>
                         <span class="cmd-title">ATACAR</span>
                     </button>
+
+                    ${ultBtnHtml}
 
                     <button class="tactical-cmd-btn cmd-defend" onclick="executeDefend(${allyIndex})">
                         <span class="cmd-icon">🛡️</span>
@@ -1117,11 +1227,6 @@ function renderCombatActions(playerRobot, allyIndex, view = 'MAIN', activeSkillI
                     <button class="tactical-cmd-btn cmd-inventory" onclick="renderCombatActions(GAME_STATE.team[${allyIndex}], ${allyIndex}, 'ITEMS')">
                         <span class="cmd-icon">🎒</span>
                         <span class="cmd-title">OBJETOS${consumableCount > 0 ? ` (${consumableCount})` : ''}</span>
-                    </button>
-
-                    <button class="tactical-cmd-btn cmd-history" onclick="openCombatHistory()">
-                        <span class="cmd-icon">📜</span>
-                        <span class="cmd-title">HISTORIAL</span>
                     </button>
                 </div>
             </div>
@@ -1280,6 +1385,50 @@ function renderCombatActions(playerRobot, allyIndex, view = 'MAIN', activeSkillI
             </div>
         `;
     }
+    else if (view === 'SELECT_ULTIMATE_TARGET') {
+        const ult = playerRobot.getUltimateSkill();
+        const ultTitle = ult ? ult.name : 'DEFINITIVA';
+        const validEnemies = (combatState.enemies || [])
+            .map((e, idx) => ({ robot: e, idx }))
+            .filter(item => !item.robot.isOffline && item.robot.hp > 0);
+
+        const enemiesHtml = validEnemies.map(item => {
+            const enemy = item.robot;
+            const eIdx = item.idx;
+
+            return `
+                <div class="target-enemy-card is-ultimate-target" onclick="executePlayerUltimate(${allyIndex}, ${eIdx})">
+                    <span class="ally-target-emoji elem-${enemy.element}">${enemy.emoji}</span>
+                    <div class="ally-target-info">
+                        <div style="display: flex; align-items: center; justify-content: space-between; gap: 4px;">
+                            <span class="ally-target-name">${enemy.name}</span>
+                            <span class="member-elem-badge elem-${enemy.element}">(${enemy.element})</span>
+                        </div>
+                        <div class="ally-target-hp-row">
+                            <span class="hud-hp-label">HP</span>
+                            <span class="hud-hp-val">${renderCombatHpText(enemy)}</span>
+                        </div>
+                        ${renderCombatHpBar(enemy, true)}
+                    </div>
+                    <span class="target-select-arrow" style="color: #ffd700;">👑</span>
+                </div>
+            `;
+        }).join('');
+
+        rightPanelHtml = `
+            <div class="dock-controls-panel dock-sub-panel">
+                <div class="dock-sub-header">
+                    <button class="btn-tactical-back" onclick="cancelEnemyTargetSelection(${allyIndex})">
+                        <span>◀ VOLVER</span>
+                    </button>
+                    <span class="dock-sub-title">OBJETIVO: ${ultTitle.toUpperCase()}</span>
+                </div>
+                <div class="dock-targets-grid">
+                    ${enemiesHtml}
+                </div>
+            </div>
+        `;
+    }
     else if (view === 'ITEMS') {
         const consumableEntries = (GAME_STATE && GAME_STATE.inventory && GAME_STATE.inventory.items)
             ? GAME_STATE.inventory.items
@@ -1343,6 +1492,32 @@ function renderCombatActions(playerRobot, allyIndex, view = 'MAIN', activeSkillI
     actionsContainer.innerHTML = allyTelemetryHtml + rightPanelHtml;
 }
 
+function onTriggerUltimate(allyIndex) {
+    if (combatState.isGameOver || combatState.isProcessing) return;
+    const ally = GAME_STATE.team[allyIndex];
+    if (!ally || !ally.canUseUltimate()) return;
+    const ultSkill = ally.getUltimateSkill();
+    if (!ultSkill) return;
+
+    if (ultSkill.target === 'ENEMY') {
+        // Terra: Single Target enemy selection
+        const aliveEnemies = (combatState.enemies || [])
+            .map((e, idx) => ({ robot: e, idx }))
+            .filter(item => !item.robot.isOffline && item.robot.hp > 0);
+            
+        if (aliveEnemies.length === 1) {
+            executePlayerUltimate(allyIndex, aliveEnemies[0].idx);
+        } else {
+            combatState.selectingTarget = { isUltimate: true, allyIndex: allyIndex };
+            renderPartyCombatUI();
+            renderCombatActions(ally, allyIndex, 'SELECT_ULTIMATE_TARGET');
+        }
+    } else {
+        // Ignis (ALL_ENEMIES), Aqua (ALL_ALLIES), Zephyr (RANDOM_ENEMIES)
+        executePlayerUltimate(allyIndex);
+    }
+}
+
 function onSelectSkill(skillIdx, allyIndex) {
     if (combatState.isGameOver || combatState.isProcessing) return;
     const ally = GAME_STATE.team[allyIndex];
@@ -1385,9 +1560,11 @@ function onSelectSkill(skillIdx, allyIndex) {
 
 function onSelectEnemyTarget(enemyIndex) {
     if (!combatState.selectingTarget || combatState.isProcessing || combatState.isGameOver) return;
-    const { skillIdx, allyIndex, isItem, itemIdx } = combatState.selectingTarget;
+    const { skillIdx, allyIndex, isItem, itemIdx, isUltimate } = combatState.selectingTarget;
     combatState.selectingTarget = null;
-    if (isItem) {
+    if (isUltimate) {
+        executePlayerUltimate(allyIndex, enemyIndex);
+    } else if (isItem) {
         useCombatItem(itemIdx, allyIndex, enemyIndex);
     } else {
         executePlayerTurn(skillIdx, allyIndex, null, enemyIndex);
@@ -1397,7 +1574,7 @@ function onSelectEnemyTarget(enemyIndex) {
 function cancelEnemyTargetSelection(allyIndex) {
     combatState.selectingTarget = null;
     renderPartyCombatUI();
-    renderCombatActions(GAME_STATE.team[allyIndex], allyIndex, 'ATTACK');
+    renderCombatActions(GAME_STATE.team[allyIndex], allyIndex, 'MAIN');
 }
 
 async function useCombatItem(idx, activeAllyIndex, targetEnemyIndex = 0) {
@@ -1571,6 +1748,320 @@ function processPostTurnStaff(actor) {
     }
 }
 
+async function playUltimateCinematic(ally, ult, allyIndex = 0) {
+    if (!ult) return;
+    
+    const arena = document.getElementById('combat-arena-bg') || document.querySelector('.combat-screen') || document.body;
+    
+    // 1. Mensaje flotante con SOLO el nombre de la habilidad SOBRE el personaje que lo invocó
+    let unitContainer = document.getElementById(`ally-unit-${allyIndex}`);
+    if (!unitContainer) {
+        unitContainer = document.getElementById('combat-player-team') || arena;
+    }
+    
+    const callout = document.createElement('div');
+    callout.className = `ultimate-unit-callout elem-callout-${ult.element}`;
+    callout.innerHTML = `<div class="callout-skill-name">${ult.name}</div>`;
+    unitContainer.appendChild(callout);
+    
+    // 2. Destello y Aura en el avatar del personaje
+    const avatarEl = document.getElementById(`player-emoji-${allyIndex}`);
+    if (avatarEl) {
+        avatarEl.classList.add('unit-overdrive-surge');
+        setTimeout(() => avatarEl.classList.remove('unit-overdrive-surge'), 1600);
+    }
+    
+    // 3. Esperar un momento con el cuadro visible antes de aplicar el tinte elemental
+    await delay(500);
+    
+    // 4. Audio
+    if (typeof SoundManager !== 'undefined') {
+        SoundManager.play('ultimate_activate');
+    }
+    
+    // 5. Pantalla completa con el color del elemento
+    const screenTint = document.createElement('div');
+    screenTint.className = `epic-ultimate-screen-tint elem-tint-${ult.element}`;
+    arena.appendChild(screenTint);
+    
+    // 6. Sacudida de pantalla en el escenario
+    arena.classList.add('anim-shake-heavy');
+    setTimeout(() => arena.classList.remove('anim-shake-heavy'), 650);
+    
+    await delay(1000);
+    
+    screenTint.classList.add('tint-out');
+    callout.classList.add('callout-out');
+    await delay(350);
+    
+    if (screenTint.parentNode) screenTint.remove();
+    if (callout.parentNode) callout.remove();
+}
+
+async function executePlayerUltimate(allyIndex, targetEnemyIndex = 0) {
+    if (combatState.isGameOver || combatState.isProcessing) return;
+    combatState.isProcessing = true;
+    combatState.selectingTarget = null;
+    
+    try {
+        const ally = GAME_STATE.team[allyIndex];
+        if (!ally || !ally.canUseUltimate()) {
+            combatState.isProcessing = false;
+            return;
+        }
+        const ult = ally.getUltimateSkill();
+        if (!ult) {
+            combatState.isProcessing = false;
+            return;
+        }
+        
+        // Consumir energía de la definitiva
+        ally.consumeUltimateEnergy();
+        
+        // Reproducir banner cinemático de Definitiva sobre el personaje y tint en la arena
+        await playUltimateCinematic(ally, ult, allyIndex);
+        
+        logCombat(`👑⚡ ¡[${ally.name.toUpperCase()}] DESATA SU HABILIDAD DEFINITIVA: <strong>${ult.name.toUpperCase()}</strong>!`);
+        showWaitingCombatActions(`👑 [${ally.name.toUpperCase()}] EJECUTANDO DEFINITIVA: ${ult.name.toUpperCase()}...`);
+        
+        // Animar al aliado
+        triggerCombatAnim(true, 'ATTACK', allyIndex);
+        
+        // Ejecutar según robot
+        if (ally.starterKey === 'IGNIS') {
+            // 🔥 Ignis: Supernova Piroclástica
+            // 1.2x AoE a todos los enemigos vivos + Quemadura 3 turnos + detona todas las marcas activas
+            const aliveEnemies = (combatState.enemies || []).filter(e => !e.isOffline && e.hp > 0);
+            
+            for (let i = 0; i < aliveEnemies.length; i++) {
+                const enemy = aliveEnemies[i];
+                const eIdx = combatState.enemies.indexOf(enemy);
+                
+                // Mult y daño base (1.2x)
+                let mult = getMultiplier(ELEMENTS.FUEGO, enemy.element);
+                let baseDmg = Math.floor(ally.atk * 1.2 * mult);
+                if (typeof RelicsManager !== 'undefined') {
+                    baseDmg = RelicsManager.modifyOutgoingDamage(ally, enemy, baseDmg, ult, false);
+                }
+                if (typeof SkillsManager !== 'undefined') {
+                    let elemBoost = SkillsManager.getElementalBoost(ELEMENTS.FUEGO);
+                    if (elemBoost > 0) baseDmg = Math.floor(baseDmg * (1 + elemBoost));
+                    if (SkillsManager.hasSkill('starter_fire_buff')) {
+                        baseDmg = Math.floor(baseDmg * 1.10);
+                    }
+                }
+                
+                // Evaluar combo de FUEGO
+                let { finalDmg, reaction } = processElementalCombo(ELEMENTS.FUEGO, enemy, ally, baseDmg);
+                if (reaction) {
+                    if (typeof RelicsManager !== 'undefined') {
+                        RelicsManager.onReactionTriggered(reaction, ally, enemy, true);
+                    }
+                    logCombat(`💥⚡ [COMBO] ${reaction.name} ${reaction.desc}`);
+                }
+                
+                // Si el enemigo tenía otras marcas residuales, detonarlas y consumirlas
+                if (enemy.statuses) {
+                    const remainingMarks = enemy.statuses.filter(s => s.type.startsWith('MARCA_'));
+                    if (remainingMarks.length > 0) {
+                        enemy.statuses = enemy.statuses.filter(s => !s.type.startsWith('MARCA_'));
+                        logCombat(`💥 ¡La Supernova detona y consume todas las marcas elementales en [${enemy.name}]!`);
+                    }
+                }
+                
+                // Aplicar Quemadura (3 turnos)
+                enemy.statuses = enemy.statuses.filter(s => s.type !== 'BURN');
+                enemy.addStatus({ type: 'BURN', duration: 3 });
+                logCombat(`🔥 [${enemy.name}] sufre Quemadura por 3 turnos.`);
+                
+                // Daño al enemigo y popup de daño juntos
+                let dmgDealt = enemy.takeDamage(finalDmg, 0, false, ally);
+                showDamagePopup(dmgDealt, true, eIdx, true, false);
+                triggerCombatAnim(false, 'HIT', eIdx);
+                logCombat(`- Inflige ${dmgDealt} de daño ígneo masivo a ${enemy.name}.`);
+
+                if (reaction) {
+                    await playEpicComboAnimation(reaction, true, eIdx);
+                }
+            }
+            
+        } else if (ally.starterKey === 'AQUA') {
+            // 💧 Aqua: Diluvio Purificador
+            // 20% Max HP Escudo a todo el equipo (2T) + Purga debuffs, stuns y marcas de todos los aliados (0 curación directa)
+            GAME_STATE.team.forEach((teamAlly, tIdx) => {
+                if (!teamAlly.isOffline && teamAlly.hp > 0) {
+                    // Escudo 20% Max HP
+                    const shieldVal = Math.max(1, Math.floor(teamAlly.maxHp * 0.20));
+                    teamAlly.statuses = teamAlly.statuses.filter(s => !(s.type === 'SHIELD' && s.subType === 'DILUVIO_PURIFICADOR'));
+                    teamAlly.addStatus({
+                        type: 'SHIELD',
+                        subType: 'DILUVIO_PURIFICADOR',
+                        amount: shieldVal,
+                        duration: 2,
+                        isBuff: true,
+                        name: 'Escudo Diluvio',
+                        desc: `Absorbe hasta ${shieldVal} de daño (2 turnos).`
+                    });
+                    
+                    // Purga de debuffs, stuns y marcas
+                    const debuffTypes = ['STUN', 'BURN', 'SLOW', 'SLOW_EXTREME', 'FROST', 'CORROSION', 'BLIND', 'DEF_DOWN', 'ARMOR_BREAK', 'DESACTIVADO', 'MARCA_FUEGO', 'MARCA_AGUA', 'MARCA_TIERRA', 'MARCA_AIRE', 'MARCA_DESFASE'];
+                    const purgedCount = teamAlly.statuses.filter(s => debuffTypes.includes(s.type) || s.type.startsWith('MARCA_')).length;
+                    teamAlly.statuses = teamAlly.statuses.filter(s => !debuffTypes.includes(s.type) && !s.type.startsWith('MARCA_'));
+                    
+                    showHitAnimation('SHIELD', false, tIdx);
+                    logCombat(`💧🛡️ [${teamAlly.name}] recibe un Escudo de plasma de ${shieldVal} HP (2T)${purgedCount > 0 ? ` y purga ${purgedCount} estados alterados/marcas!` : '.'}`);
+                }
+            });
+            
+        } else if (ally.starterKey === 'TERRA') {
+            // 🪨 Terra: Falla Tectónica
+            // 1.1x Daño AoE a todos los enemigos vivos
+            // - Epicentro (targetEnemyIndex seleccionado): STUN 1 turno garantizado
+            // - Resto de enemigos (Onda expansiva): Ralentización (-50% VEL / SLOW 2 turnos) + MARCA_TIERRA
+            const aliveEnemies = (combatState.enemies || []).filter(e => !e.isOffline && e.hp > 0);
+            let primaryTarget = (combatState.enemies && combatState.enemies[targetEnemyIndex]) 
+                ? combatState.enemies[targetEnemyIndex] 
+                : (aliveEnemies.length > 0 ? aliveEnemies[0] : combatState.enemy);
+
+            for (let i = 0; i < aliveEnemies.length; i++) {
+                const enemy = aliveEnemies[i];
+                const eIdx = combatState.enemies.indexOf(enemy);
+                const isPrimary = (enemy === primaryTarget);
+                
+                let mult = getMultiplier(ELEMENTS.TIERRA, enemy.element);
+                let baseDmg = Math.floor(ally.atk * 1.1 * mult);
+                if (typeof RelicsManager !== 'undefined') {
+                    baseDmg = RelicsManager.modifyOutgoingDamage(ally, enemy, baseDmg, ult, false);
+                }
+                if (typeof SkillsManager !== 'undefined') {
+                    let elemBoost = SkillsManager.getElementalBoost(ELEMENTS.TIERRA);
+                    if (elemBoost > 0) baseDmg = Math.floor(baseDmg * (1 + elemBoost));
+                    if (SkillsManager.hasSkill('starter_earth_buff')) {
+                        baseDmg = Math.floor(baseDmg * 1.10);
+                    }
+                }
+                
+                let { finalDmg, reaction } = processElementalCombo(ELEMENTS.TIERRA, enemy, ally, baseDmg);
+                if (reaction) {
+                    if (typeof RelicsManager !== 'undefined') {
+                        RelicsManager.onReactionTriggered(reaction, ally, enemy, true);
+                    }
+                    logCombat(`💥⚡ [COMBO] ${reaction.name} ${reaction.desc}`);
+                }
+                
+                if (isPrimary) {
+                    // Aplicar STUN garantizado al objetivo principal
+                    enemy.statuses = enemy.statuses.filter(s => s.type !== 'STUN');
+                    enemy.addStatus({ type: 'STUN', duration: 1 });
+                    logCombat(`💫 ¡[${enemy.name}] (Epicentro) queda completamente ATURDIDO (STUN 1T) por el impacto directo!`);
+                } else {
+                    // Aplicar Ralentización y Marca de Tierra a los objetivos secundarios
+                    enemy.statuses = enemy.statuses.filter(s => s.type !== 'SLOW');
+                    enemy.addStatus({ type: 'SLOW', duration: 2 });
+                    if (!reaction && !enemy.hasStatus('MARCA_TIERRA')) {
+                        enemy.addStatus({ type: 'MARCA_TIERRA', duration: 3 });
+                    }
+                    logCombat(`❄️ ¡[${enemy.name}] sufre la onda expansiva: Ralentizado (-50% VEL 2T) y marcado con Tierra!`);
+                }
+                
+                let dmgDealt = enemy.takeDamage(finalDmg, 0, false, ally);
+                showDamagePopup(dmgDealt, true, eIdx, true, false);
+                triggerCombatAnim(false, 'HIT', eIdx);
+                logCombat(`- Inflige ${dmgDealt} de daño sísmico a ${enemy.name}.`);
+
+                if (reaction) {
+                    await playEpicComboAnimation(reaction, true, eIdx);
+                }
+            }
+            
+        } else if (ally.starterKey === 'ZEPHYR') {
+            // 💨 Zephyr: Tempestad de Micro-Cortes
+            // 4 impactos consecutivos (0.8x cada uno) repartidos entre enemigos vivos con probabilidad normal de crítico y marcas
+            const totalHits = 4;
+            for (let hit = 1; hit <= totalHits; hit++) {
+                const aliveEnemies = (combatState.enemies || []).filter(e => !e.isOffline && e.hp > 0);
+                if (aliveEnemies.length === 0) break;
+                
+                // Seleccionar enemigo aleatorio entre los vivos
+                const randomEnemy = aliveEnemies[Math.floor(Math.random() * aliveEnemies.length)];
+                const eIdx = combatState.enemies.indexOf(randomEnemy);
+                
+                let mult = getMultiplier(ELEMENTS.AIRE, randomEnemy.element);
+                let baseDmg = Math.floor(ally.atk * 0.8 * mult);
+                
+                if (typeof RelicsManager !== 'undefined') {
+                    baseDmg = RelicsManager.modifyOutgoingDamage(ally, randomEnemy, baseDmg, ult, false);
+                }
+                if (typeof SkillsManager !== 'undefined') {
+                    let elemBoost = SkillsManager.getElementalBoost(ELEMENTS.AIRE);
+                    if (elemBoost > 0) baseDmg = Math.floor(baseDmg * (1 + elemBoost));
+                }
+                
+                // Probabilidad de Crítico normal
+                let critRate = (ally.critChance || 5);
+                let isCrit = false;
+                if (Math.random() * 100 < critRate) {
+                    let critMult = (typeof SkillsManager !== 'undefined') ? SkillsManager.getCritDmgMultiplier() : 1.5;
+                    baseDmg = Math.floor(baseDmg * critMult);
+                    isCrit = true;
+                }
+                
+                // Reacción elemental
+                let { finalDmg, reaction } = processElementalCombo(ELEMENTS.AIRE, randomEnemy, ally, baseDmg);
+                if (reaction) {
+                    if (typeof RelicsManager !== 'undefined') {
+                        RelicsManager.onReactionTriggered(reaction, ally, randomEnemy, true);
+                    }
+                    logCombat(`💥⚡ [COMBO] ${reaction.name} en corte #${hit}`);
+                }
+                
+                let dmgDealt = randomEnemy.takeDamage(finalDmg, 0, false, ally);
+                showDamagePopup(dmgDealt, true, eIdx, isCrit || reaction !== null, isCrit);
+                triggerCombatAnim(false, 'HIT', eIdx);
+                logCombat(`💨 [Corte #${hit}/4] ${dmgDealt} de daño a ${randomEnemy.name}${isCrit ? ' (¡CRÍTICO!)' : ''}.`);
+                
+                // Aplicar o refrescar Marca de Aire (con 50% chance o si no tenía marca)
+                if (randomEnemy.hp > 0 && Math.random() < 0.50 && !randomEnemy.statuses.some(s => s.type.startsWith('MARCA_'))) {
+                    randomEnemy.addStatus({ type: 'MARCA_AIRE', duration: 2, isDebuff: true });
+                    logCombat(`🌀 Adhiere Marca de Aire a [${randomEnemy.name}].`);
+                }
+                
+                await delay(250);
+            }
+        }
+        
+        await delay(500);
+        
+        // Verificar muertes de enemigos
+        if (combatState.enemies) {
+            combatState.enemies.forEach(e => {
+                if (e.hp <= 0 && !e.isOffline) {
+                    e.hp = 0;
+                    e.isOffline = true;
+                    logCombat(`💀 ¡${e.name} ha sido neutralizado!`);
+                    if (ally.addUltimateEnergy) {
+                        ally.addUltimateEnergy(20);
+                    }
+                    if (typeof RelicsManager !== 'undefined') {
+                        RelicsManager.onEnemyKilled(ally, e);
+                    }
+                }
+            });
+        }
+        
+        processPostTurnStaff({ type: 'PLAYER', robot: ally, allyIndex: allyIndex, enemyIndex: -1 });
+        renderPartyCombatUI();
+        await delay(650);
+        
+    } catch (err) {
+        console.error('Error durante la ejecución del Overdrive:', err);
+    } finally {
+        combatState.isProcessing = false;
+        combatState.queueIndex++;
+        advanceTurnQueue();
+    }
+}
+
 async function executePlayerTurn(skillIndex, allyIndex, targetAllyIndex = null, targetEnemyIndex = 0) {
     if (combatState.isGameOver || combatState.isProcessing) return;
     combatState.isProcessing = true;
@@ -1599,6 +2090,9 @@ async function executePlayerTurn(skillIndex, allyIndex, targetAllyIndex = null, 
                     e.hp = 0;
                     e.isOffline = true;
                     logCombat(`💀 ¡${e.name} ha sido neutralizado!`);
+                    if (ally.addUltimateEnergy) {
+                        ally.addUltimateEnergy(20);
+                    }
                     if (typeof RelicsManager !== 'undefined') {
                         RelicsManager.onEnemyKilled(ally, e);
                     }
@@ -1645,6 +2139,9 @@ async function executePlayerTurn(skillIndex, allyIndex, targetAllyIndex = null, 
         targetEnemy.hp = 0;
         targetEnemy.isOffline = true;
         logCombat(`💀 ¡${targetEnemy.name} ha sido neutralizado!`);
+        if (ally.addUltimateEnergy) {
+            ally.addUltimateEnergy(20);
+        }
         if (typeof RelicsManager !== 'undefined') {
             RelicsManager.onEnemyKilled(ally, targetEnemy);
         }
@@ -1900,13 +2397,13 @@ async function playEpicComboAnimation(reaction, isTargetEnemy, targetIndex = 0) 
         if (banner.parentNode) {
             banner.style.transition = 'opacity 0.35s ease, transform 0.35s ease';
             banner.style.opacity = '0';
-            banner.style.transform = 'translate(-50%, -60%) scale(0.9)';
+            banner.style.transform = 'translate(-50%, -15px) scale(0.9)';
             setTimeout(() => { if (banner.parentNode) banner.remove(); }, 350);
         }
-    }, 1400);
+    }, 1200);
 
     // Pausa dramática para asimilar la reacción elemental
-    await delay(1200);
+    await delay(1000);
 }
 
 function showComboPopup(reaction, isTargetEnemy, targetIndex = 0) {
@@ -2249,12 +2746,22 @@ function processElementalCombo(attackElement, defender, attacker, baseDmg) {
         finalDmg = Math.floor(finalDmg * 1.20);
     }
 
+    // Carga de Energía Definitiva por detonar Reacción Elemental (+25%)
+    if (reaction && attacker && attacker.isAlly && attacker.addUltimateEnergy) {
+        attacker.addUltimateEnergy(25);
+    }
+
     return { finalDmg, reaction };
 }
 
 async function executeTurnAoE(attacker, skill, isAttackerAlly, actorIndex = 0) {
     logCombat(`💥 [${attacker.name}] desata ${skill.name} en área!`);
     skill.currentCd = skill.cd;
+    
+    // Carga de energía definitiva por ejecutar habilidad (+15%)
+    if (isAttackerAlly && attacker.addUltimateEnergy) {
+        attacker.addUltimateEnergy(15);
+    }
     
     // Animar al atacante saltando hacia adelante
     triggerCombatAnim(isAttackerAlly, 'ATTACK', actorIndex);
@@ -2346,14 +2853,14 @@ async function executeTurnAoE(attacker, skill, isAttackerAlly, actorIndex = 0) {
             finalDmg = Math.floor(finalDmg * SkillsManager.getComboDamageMultiplier());
         }
         
-        if (reaction) {
-            await playEpicComboAnimation(reaction, isAttackerAlly, targetIdx);
-            logCombat(`💥⚡ [COMBO] ${reaction.name} ${reaction.desc}`);
-        }
-        
         let dmgDealt = defender.takeDamage(finalDmg, 0, false, attacker);
         logCombat(`- Inflige ${dmgDealt} de daño a ${defender.name}.`);
         showDamagePopup(dmgDealt, isAttackerAlly, targetIdx, reaction !== null, false);
+        
+        if (reaction) {
+            logCombat(`💥⚡ [COMBO] ${reaction.name} ${reaction.desc}`);
+            await playEpicComboAnimation(reaction, isAttackerAlly, targetIdx);
+        }
         
         if (skill.name === 'Pulso PEM Titánico' || skill.purgeShields) {
             showHitAnimation('PEM', isAttackerAlly, targetIdx);
@@ -2397,6 +2904,11 @@ async function executeTurn(attacker, skill, defender, isAttackerAlly, allyIndex 
     }
     logCombat(`[${attacker.name}] usa ${effectiveSkillName}`);
     skill.currentCd = skill.cd;
+    
+    // Carga de energía definitiva por ejecutar ataque/habilidad (+15%)
+    if (isAttackerAlly && attacker.addUltimateEnergy) {
+        attacker.addUltimateEnergy(15);
+    }
     
     // Animar al atacante saltando hacia adelante
     if (!skill.type.includes('BUFF')) {
@@ -2588,17 +3100,22 @@ async function executeTurn(attacker, skill, defender, isAttackerAlly, allyIndex 
                 penetrationRatio = Math.max(penetrationRatio, weaponPen);
             }
             
+            let dmgDealt = defender.takeDamage(finalDmg, penetrationRatio, false, attacker);
+            let multMsg = mult > 1 ? " ¡Súper efectivo!" : (mult < 1 ? " Poco efectivo..." : "");
+            logCombat(`- Inflige ${dmgDealt} de daño a ${defender.name}.${multMsg}`);
+
+            // Mostrar número de daño inmediatamente en el objetivo (Rojo si es crítico o reacción elemental de marcas)
+            let isRedDamage = isCrit || (reaction !== null);
+            let targetIdx = isAttackerAlly ? targetEnemyIndex : (targetAllyIndex !== null ? targetAllyIndex : allyIndex);
+            showDamagePopup(dmgDealt, isAttackerAlly, targetIdx, isRedDamage, isCrit);
+
             if (reaction) {
                 if (typeof RelicsManager !== 'undefined') {
                     RelicsManager.onReactionTriggered(reaction, attacker, defender, isAttackerAlly);
                 }
-                await playEpicComboAnimation(reaction, isAttackerAlly, isAttackerAlly ? targetEnemyIndex : (targetAllyIndex !== null ? targetAllyIndex : allyIndex));
                 logCombat(`💥⚡ [COMBO] ${reaction.name} ${reaction.desc}`);
+                await playEpicComboAnimation(reaction, isAttackerAlly, targetIdx);
             }
-
-            let dmgDealt = defender.takeDamage(finalDmg, penetrationRatio, false, attacker);
-            let multMsg = mult > 1 ? " ¡Súper efectivo!" : (mult < 1 ? " Poco efectivo..." : "");
-            logCombat(`- Inflige ${dmgDealt} de daño a ${defender.name}.${multMsg}`);
 
             // Deflector Reflectante: Refleja 40% del daño si defendía
             if (defender.hasStatus('DEFENDIENDO') && !isAttackerAlly && typeof RelicsManager !== 'undefined' && RelicsManager.hasRelic('deflector_reflectante') && dmgDealt > 0) {
@@ -2636,10 +3153,6 @@ async function executeTurn(attacker, skill, defender, isAttackerAlly, allyIndex 
                     renderTurnQueue(currentActor);
                 }
             }
-
-            // Mostrar número de daño (Rojo si es crítico o reacción elemental de marcas, Amarillo si es estándar)
-            let isRedDamage = isCrit || (reaction !== null);
-            showDamagePopup(dmgDealt, isAttackerAlly, isAttackerAlly ? targetEnemyIndex : (targetAllyIndex !== null ? targetAllyIndex : allyIndex), isRedDamage, isCrit);
             
             // Mutador Élite Espinas
             if (defender.mutator && defender.mutator.type === 'ESPINAS' && dmgDealt > 0) {

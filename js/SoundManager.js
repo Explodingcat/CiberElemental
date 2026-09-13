@@ -994,6 +994,66 @@ const SoundManager = (() => {
             gain.connect(sfxGain);
             osc.start(now);
             osc.stop(now + 0.85);
+        },
+
+        ultimate_activate: () => {
+            const ctx = ensureContext();
+            if (!ctx) return;
+            const now = ctx.currentTime;
+
+            duckMusic(0.1, 1.5);
+
+            // Capa 1: Crecendo brillante ascendente
+            const osc1 = ctx.createOscillator();
+            const gain1 = ctx.createGain();
+            osc1.type = 'sawtooth';
+            osc1.frequency.setValueAtTime(220, now);
+            osc1.frequency.exponentialRampToValueAtTime(880, now + 0.35);
+            osc1.frequency.exponentialRampToValueAtTime(1760, now + 0.7);
+
+            gain1.gain.setValueAtTime(0.05, now);
+            gain1.gain.linearRampToValueAtTime(0.4, now + 0.4);
+            gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.9);
+
+            osc1.connect(gain1);
+            gain1.connect(sfxGain);
+            osc1.start(now);
+            osc1.stop(now + 0.9);
+
+            // Capa 2: Impacto armónico grave
+            const osc2 = ctx.createOscillator();
+            const gain2 = ctx.createGain();
+            osc2.type = 'sine';
+            osc2.frequency.setValueAtTime(110, now + 0.35);
+            osc2.frequency.exponentialRampToValueAtTime(55, now + 0.85);
+
+            gain2.gain.setValueAtTime(0.45, now + 0.35);
+            gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.95);
+
+            osc2.connect(gain2);
+            gain2.connect(sfxGain);
+            osc2.start(now + 0.35);
+            osc2.stop(now + 0.95);
+        },
+
+        ultimate_charge: () => {
+            const ctx = ensureContext();
+            if (!ctx) return;
+            const now = ctx.currentTime;
+
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(440, now);
+            osc.frequency.exponentialRampToValueAtTime(880, now + 0.2);
+
+            gain.gain.setValueAtTime(0.2, now);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
+
+            osc.connect(gain);
+            gain.connect(sfxGain);
+            osc.start(now);
+            osc.stop(now + 0.25);
         }
     };
 

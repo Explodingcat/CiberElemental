@@ -223,10 +223,10 @@ const CHARACTER_TEMPLATES = {
     },
     
     // Salvajes Genéricos
-    'WILD_FUEGO': { name: 'Autómata Ígneo', group: '👾 Salvajes', template: { ...ROBOT_TEMPLATES.IGNIS, name: 'Autómata Ígneo', emoji: '👾' } },
-    'WILD_AGUA': { name: 'Autómata Glacial', group: '👾 Salvajes', template: { ...ROBOT_TEMPLATES.AQUA, name: 'Autómata Glacial', emoji: '👾' } },
-    'WILD_TIERRA': { name: 'Autómata Pétreo', group: '👾 Salvajes', template: { ...ROBOT_TEMPLATES.TERRA, name: 'Autómata Pétreo', emoji: '👾' } },
-    'WILD_AIRE': { name: 'Autómata Aéreo', group: '👾 Salvajes', template: { ...ROBOT_TEMPLATES.ZEPHYR, name: 'Autómata Aéreo', emoji: '👾' } },
+    'WILD_FUEGO': { name: 'Autómata Ígneo', group: '👾 Salvajes', template: { ...ROBOT_TEMPLATES.IGNIS, name: 'Autómata Ígneo', emoji: '👾', isStarter: false, starterKey: null } },
+    'WILD_AGUA': { name: 'Autómata Glacial', group: '👾 Salvajes', template: { ...ROBOT_TEMPLATES.AQUA, name: 'Autómata Glacial', emoji: '👾', isStarter: false, starterKey: null } },
+    'WILD_TIERRA': { name: 'Autómata Pétreo', group: '👾 Salvajes', template: { ...ROBOT_TEMPLATES.TERRA, name: 'Autómata Pétreo', emoji: '👾', isStarter: false, starterKey: null } },
+    'WILD_AIRE': { name: 'Autómata Aéreo', group: '👾 Salvajes', template: { ...ROBOT_TEMPLATES.ZEPHYR, name: 'Autómata Aéreo', emoji: '👾', isStarter: false, starterKey: null } },
     'WILD_NEUTRO': { name: 'Cyber-Drone', group: '👾 Salvajes', template: { name: 'Cyber-Drone', element: ELEMENTS.NEUTRO, emoji: '👾', skills: [{ name: 'Impacto Cinético', cd: 0, currentCd: 0, desc: 'Ataque neutro estándar.', type: 'DAMAGE', power: 1.0 }] } }
 };
 

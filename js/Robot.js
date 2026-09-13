@@ -36,6 +36,11 @@ class Robot {
         this.isElite = !!template.isElite;
         this.isBoss = !!template.isBoss;
         
+        // Starter & Habilidades Definitivas (Nivel 5+)
+        this.starterKey = template.starterKey || (['Ignis', 'Aqua', 'Terra', 'Zephyr'].includes(this.name) && this.isAlly ? this.name.toUpperCase() : null);
+        this.isStarter = template.isStarter !== undefined ? template.isStarter : (!!this.starterKey && this.isAlly);
+        this.ultimateEnergy = template.ultimateEnergy || 0; // 0 a 100
+        
         // Habilidades y Rotación de Turnos
         this.skills = template.skills ? JSON.parse(JSON.stringify(template.skills)) : [];
         this.turnPattern = template.turnPattern ? [...template.turnPattern] : null;
@@ -97,6 +102,30 @@ class Robot {
             this.recalculateStats();
         }
         return leveledUp;
+    }
+
+    get isUltimateUnlocked() {
+        return !!(this.isStarter && this.level >= 5 && this.starterKey && typeof ULTIMATE_SKILLS !== 'undefined' && ULTIMATE_SKILLS[this.starterKey]);
+    }
+
+    getUltimateSkill() {
+        if (!this.isUltimateUnlocked) return null;
+        return ULTIMATE_SKILLS[this.starterKey] || null;
+    }
+
+    canUseUltimate() {
+        return this.isUltimateUnlocked && (this.ultimateEnergy >= 100) && !this.isOffline && !this.hasStatus('STUN');
+    }
+
+    addUltimateEnergy(amount) {
+        if (!this.isUltimateUnlocked || this.isOffline) return 0;
+        const oldEnergy = this.ultimateEnergy;
+        this.ultimateEnergy = Math.min(100, Math.max(0, this.ultimateEnergy + amount));
+        return this.ultimateEnergy - oldEnergy;
+    }
+
+    consumeUltimateEnergy() {
+        this.ultimateEnergy = 0;
     }
 
     equipWeapon(weapon) {
@@ -347,6 +376,11 @@ class Robot {
         // Afinidad de Tierra: mitigación pasiva permanente del 10% del daño recibido
         if (this.hasAffinity() && this.element === ELEMENTS.TIERRA && finalDamage > 0) {
             finalDamage = Math.max(1, Math.floor(finalDamage * 0.90));
+        }
+        
+        // Carga de Energía Definitiva al recibir daño (+10%)
+        if (this.isAlly && (finalDamage > 0 || totalShieldAbsorbed > 0)) {
+            this.addUltimateEnergy(10);
         }
         
         this.hp -= finalDamage;
@@ -657,6 +691,9 @@ class Robot {
             isAlly: this.isAlly,
             isElite: !!this.isElite,
             isBoss: !!this.isBoss,
+            starterKey: this.starterKey,
+            isStarter: this.isStarter,
+            ultimateEnergy: this.ultimateEnergy,
             skills: this.skills,
             turnPattern: this.turnPattern,
             passive: this.passive,
@@ -681,6 +718,9 @@ class Robot {
             isAlly: data.isAlly,
             isElite: data.isElite,
             isBoss: data.isBoss,
+            starterKey: data.starterKey,
+            isStarter: data.isStarter,
+            ultimateEnergy: data.ultimateEnergy,
             skills: data.skills,
             turnPattern: data.turnPattern,
             passive: data.passive,

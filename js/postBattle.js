@@ -105,9 +105,15 @@ function initPostBattle(enemies) {
     let xpMsgs = [];
     GAME_STATE.team.forEach(r => {
         if (!r.isOffline) {
+            let prevLvl = r.level;
             let leveledUp = r.gainXp(totalXp);
             if (leveledUp) {
                 xpMsgs.push(`¡${r.name} subió al Nivel ${r.level}!`);
+                if (prevLvl < 5 && r.level >= 5 && r.isStarter) {
+                    const ult = r.getUltimateSkill ? r.getUltimateSkill() : null;
+                    const ultName = ult ? ult.name : 'Habilidad Definitiva';
+                    xpMsgs.push(`👑 ¡<strong>${r.name}</strong> ha desbloqueado su Habilidad Definitiva: <strong>${ultName}</strong>!`);
+                }
             }
         }
     });

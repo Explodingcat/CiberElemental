@@ -1,8 +1,61 @@
-// database.js
+const ULTIMATE_SKILLS = {
+    IGNIS: {
+        id: 'ULTIMATE_IGNIS',
+        name: 'Supernova Piroclástica',
+        element: ELEMENTS.FUEGO,
+        emoji: '🔥',
+        desc: 'Bombardeo térmico a todos los enemigos vivos (1.2x de daño). Aplica Quemadura (3 turnos) y detona de inmediato todas las Marcas Elementales activas en el campo.',
+        type: 'DAMAGE_AOE_IGNIS',
+        power: 1.2,
+        target: 'ALL_ENEMIES',
+        status: { type: 'BURN', duration: 3 },
+        detonateMarks: true,
+        energyCost: 100
+    },
+    AQUA: {
+        id: 'ULTIMATE_AQUA',
+        name: 'Diluvio Purificador',
+        element: ELEMENTS.AGUA,
+        emoji: '💧',
+        desc: 'Otorga un Escudo de plasma equivalente al 20% del HP Máximo a todo el escuadrón (2 turnos) y purga todos los debuffs, aturdimientos y marcas de los aliados.',
+        type: 'BUFF_SHIELD_PURGE',
+        target: 'ALL_ALLIES',
+        shieldPct: 0.20,
+        purgeDebuffs: true,
+        purgeMarks: true,
+        energyCost: 100
+    },
+    TERRA: {
+        id: 'ULTIMATE_TERRA',
+        name: 'Falla Tectónica',
+        element: ELEMENTS.TIERRA,
+        emoji: '🪨',
+        desc: 'Terremoto masivo de 1.1x de daño sísmico a todos los enemigos. Aturde (STUN 1T) al objetivo principal seleccionado y ralentiza (-50% VEL 2T) con Marca de Tierra al resto.',
+        type: 'DAMAGE_STATUS_AOE',
+        power: 1.1,
+        target: 'ENEMY',
+        status: { type: 'STUN', duration: 1 },
+        energyCost: 100
+    },
+    ZEPHYR: {
+        id: 'ULTIMATE_ZEPHYR',
+        name: 'Tempestad de Micro-Cortes',
+        element: ELEMENTS.AIRE,
+        emoji: '💨',
+        desc: 'Desata una ráfaga supersónica de 4 impactos consecutivos (0.8x cada uno) repartidos aleatoriamente entre los enemigos vivos, con probabilidad estándar de crítico y marcas.',
+        type: 'DAMAGE_MULTI_RANDOM',
+        hits: 4,
+        power: 0.8,
+        target: 'RANDOM_ENEMIES',
+        energyCost: 100
+    }
+};
 
 const ROBOT_TEMPLATES = {
     IGNIS: {
         name: 'Ignis',
+        starterKey: 'IGNIS',
+        isStarter: true,
         element: ELEMENTS.FUEGO,
         emoji: '🤖', // Robot icon tinted by css filter
         desc: 'Guerrero ofensivo de fuego. Especialista en daño térmico sostenido y quemaduras continuas.',
@@ -28,6 +81,8 @@ const ROBOT_TEMPLATES = {
     },
     AQUA: {
         name: 'Aqua',
+        starterKey: 'AQUA',
+        isStarter: true,
         element: ELEMENTS.AGUA,
         emoji: '🤖',
         desc: 'Soporte táctico y guardián de agua. Proyecta escudos hidrodinámicos que absorben daño y salpican con Marca de Agua.',
@@ -54,6 +109,8 @@ const ROBOT_TEMPLATES = {
     },
     TERRA: {
         name: 'Terra',
+        starterKey: 'TERRA',
+        isStarter: true,
         element: ELEMENTS.TIERRA,
         emoji: '🤖',
         desc: 'Coloso defensivo de tierra. Provoca a los enemigos, mitiga daño masivo y refleja Marca de Tierra.',
@@ -79,6 +136,8 @@ const ROBOT_TEMPLATES = {
     },
     ZEPHYR: {
         name: 'Zephyr',
+        starterKey: 'ZEPHYR',
+        isStarter: true,
         element: ELEMENTS.AIRE,
         emoji: '🤖',
         desc: 'Pícaro veloz de aire. Alta iniciativa, elevada esquiva y ataques cortantes con prioridad.',
