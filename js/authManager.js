@@ -319,6 +319,17 @@ const AuthManager = {
 
         const user = await this.getOrFetchCurrentUser();
         if (user && isSupabaseConfigured() && supabaseClient) {
+            const cleanRelics = (checkpointData.relics && Array.isArray(checkpointData.relics)) 
+                ? checkpointData.relics 
+                : ((checkpointData.inventory && Array.isArray(checkpointData.inventory.relics)) ? checkpointData.inventory.relics : []);
+
+            const cleanInventory = {
+                ...(checkpointData.inventory || {}),
+                items: (checkpointData.inventory && checkpointData.inventory.items) ? checkpointData.inventory.items : [],
+                weapons: (checkpointData.inventory && checkpointData.inventory.weapons) ? checkpointData.inventory.weapons : [],
+                relics: cleanRelics
+            };
+
             const payload = {
                 user_id: user.id,
                 tower_completed: checkpointData.tower_completed,
@@ -326,7 +337,9 @@ const AuthManager = {
                 floor: checkpointData.floor,
                 scrap: checkpointData.scrap || 0,
                 squad: checkpointData.squad,
-                inventory: checkpointData.inventory,
+                inventory: cleanInventory,
+                relics: cleanRelics,
+                fenix_triggered: !!checkpointData.fenixTriggeredThisRun,
                 updated_at: new Date().toISOString()
             };
 
@@ -334,9 +347,28 @@ const AuthManager = {
 
             // 1. Intentar guardar en la tabla especializada saved_tower_runs
             try {
-                const { error: runError } = await supabaseClient
+                let { error: runError } = await supabaseClient
                     .from('saved_tower_runs')
                     .upsert(payload, { onConflict: 'user_id' });
+                
+                // Si la tabla SQL no tiene las columnas relics/fenix_triggered a nivel raíz, reintentar (las reliquias quedan aseguradas en inventory.relics)
+                if (runError && (runError.message?.includes('column') || runError.code === 'PGRST204')) {
+                    const fallbackPayload = {
+                        user_id: user.id,
+                        tower_completed: checkpointData.tower_completed,
+                        current_tower: checkpointData.current_tower,
+                        floor: checkpointData.floor,
+                        scrap: checkpointData.scrap || 0,
+                        squad: checkpointData.squad,
+                        inventory: cleanInventory,
+                        updated_at: new Date().toISOString()
+                    };
+                    const retry = await supabaseClient
+                        .from('saved_tower_runs')
+                        .upsert(fallbackPayload, { onConflict: 'user_id' });
+                    runError = retry.error;
+                }
+
                 if (!runError) {
                     savedSuccessfully = true;
                     console.info('[AuthManager] Checkpoint guardado en saved_tower_runs en Supabase:', payload);
@@ -347,7 +379,7 @@ const AuthManager = {
                 console.warn('[AuthManager] saved_tower_runs no disponible:', tableErr);
             }
 
-            // 2. Guardar también en player_profiles.saved_run (garantía de persistencia en la BD)
+            // 2. Guardar también en player_profiles.saved_run (garantía de persistencia en la BD con todas las reliquias)
             try {
                 const { error: profileError } = await supabaseClient
                     .from('player_profiles')
@@ -367,7 +399,7 @@ const AuthManager = {
             }
 
             if (savedSuccessfully) {
-                console.info('[AuthManager] ✅ Checkpoint de torre asegurado 100% en la base de datos Supabase.');
+                console.info('[AuthManager] ✅ Checkpoint de torre y reliquias asegurados 100% en Supabase.');
             } else {
                 console.error('[AuthManager] ❌ No se pudo persistir el checkpoint en Supabase.');
             }
@@ -397,6 +429,10 @@ const AuthManager = {
                     .eq('user_id', user.id)
                     .maybeSingle();
                 if (!error && data && data.squad && Array.isArray(data.squad) && data.squad.length > 0) {
+                    if (!data.relics && data.inventory && Array.isArray(data.inventory.relics)) {
+                        data.relics = data.inventory.relics;
+                    }
+                    if (!data.relics) data.relics = [];
                     console.info('[AuthManager] Checkpoint recuperado desde saved_tower_runs:', data);
                     return data;
                 }
@@ -412,8 +448,13 @@ const AuthManager = {
                     .eq('user_id', user.id)
                     .maybeSingle();
                 if (!profError && profile && profile.saved_run && profile.saved_run.squad && Array.isArray(profile.saved_run.squad) && profile.saved_run.squad.length > 0) {
-                    console.info('[AuthManager] Checkpoint recuperado desde player_profiles.saved_run:', profile.saved_run);
-                    return profile.saved_run;
+                    const run = profile.saved_run;
+                    if (!run.relics && run.inventory && Array.isArray(run.inventory.relics)) {
+                        run.relics = run.inventory.relics;
+                    }
+                    if (!run.relics) run.relics = [];
+                    console.info('[AuthManager] Checkpoint recuperado desde player_profiles.saved_run:', run);
+                    return run;
                 }
             } catch (profErr) {
                 console.warn('[AuthManager] Error consultando player_profiles.saved_run:', profErr);

@@ -615,8 +615,15 @@ async function checkSavedCheckpoint() {
                 ? TOWERS_CONFIG[towerId] 
                 : { name: `Torre ${towerId}` };
             
+            const relicsCount = (checkpoint.relics && Array.isArray(checkpoint.relics)) 
+                ? checkpoint.relics.length 
+                : ((checkpoint.inventory && Array.isArray(checkpoint.inventory.relics)) ? checkpoint.inventory.relics.length : 0);
+
             const badgeEl = document.getElementById('resume-tower-badge');
-            if (badgeEl) badgeEl.innerText = `${towerCfg.name.toUpperCase()} (PISO ${checkpoint.floor})`;
+            if (badgeEl) {
+                const relicsText = relicsCount > 0 ? ` • 💎 ${relicsCount} Reliquias` : '';
+                badgeEl.innerText = `${towerCfg.name.toUpperCase()} (PISO ${checkpoint.floor})${relicsText}`;
+            }
             
             resumeBtn.style.display = 'flex';
             resumeBtn.onclick = () => resumeSavedRun(checkpoint);
@@ -670,8 +677,8 @@ async function resumeSavedRun(checkpoint) {
 
     // Restaurar inventario
     GAME_STATE.inventory = {
-        items: (checkpoint.inventory && checkpoint.inventory.items) ? checkpoint.inventory.items : [],
-        weapons: (checkpoint.inventory && checkpoint.inventory.weapons) ? checkpoint.inventory.weapons : []
+        items: (checkpoint.inventory && checkpoint.inventory.items) ? [...checkpoint.inventory.items] : [],
+        weapons: (checkpoint.inventory && checkpoint.inventory.weapons) ? [...checkpoint.inventory.weapons] : []
     };
 
     // Restaurar chatarra recolectada en la run
@@ -694,11 +701,24 @@ async function resumeSavedRun(checkpoint) {
         generateFullMap(GAME_STATE.currentTower);
     }
 
-    // Restaurar reliquias
-    GAME_STATE.relics = (checkpoint.relics && Array.isArray(checkpoint.relics)) ? checkpoint.relics : [];
-    GAME_STATE.fenixTriggeredThisRun = !!checkpoint.fenixTriggeredThisRun;
+    // Restaurar reliquias (desde checkpoint.relics o checkpoint.inventory.relics)
+    const loadedRelics = (checkpoint.relics && Array.isArray(checkpoint.relics)) 
+        ? checkpoint.relics 
+        : ((checkpoint.inventory && Array.isArray(checkpoint.inventory.relics)) ? checkpoint.inventory.relics : []);
+
+    GAME_STATE.relics = [...loadedRelics];
+    GAME_STATE.fenixTriggeredThisRun = !!(checkpoint.fenix_triggered || checkpoint.fenixTriggeredThisRun);
+    
     if (typeof RelicsManager !== 'undefined') {
         RelicsManager.renderRelicsBar();
+        // Recalcular estadísticas del equipo con las reliquias activas (ej. Propulsor de Iones)
+        if (GAME_STATE.team) {
+            GAME_STATE.team.forEach(r => {
+                if (r && typeof r.recalculateStats === 'function') {
+                    r.recalculateStats();
+                }
+            });
+        }
     }
 
     renderMap();

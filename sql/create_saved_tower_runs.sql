@@ -14,10 +14,12 @@ CREATE TABLE IF NOT EXISTS public.saved_tower_runs (
     scrap INT NOT NULL DEFAULT 0,
     squad JSONB NOT NULL,         -- Robots con HP, maxHp, nivel, XP, skills (chips), arma
     inventory JSONB NOT NULL,     -- Weapons e items recolectados
+    relics JSONB DEFAULT '[]'::jsonb, -- Reliquias pasivas activas en la expedición
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Columna de respaldo en player_profiles
+-- Columnas de respaldo / extensión
+ALTER TABLE public.saved_tower_runs ADD COLUMN IF NOT EXISTS relics JSONB DEFAULT '[]'::jsonb;
 ALTER TABLE public.player_profiles ADD COLUMN IF NOT EXISTS saved_run JSONB;
 
 -- Habilitar Seguridad por Fila (RLS)
