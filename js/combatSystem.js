@@ -405,32 +405,46 @@ function renderTurnQueue(currentActor) {
     }
     
     queueContainer.style.display = 'flex';
-    let html = '';
+    let html = `
+        <div class="turn-queue-header" title="Línea de Iniciativa (Orden por Velocidad)">
+            <span class="tq-header-icon">⚡</span>
+        </div>
+    `;
     
     html += combatState.initiativeQueue.map((item, idx) => {
         const isCurrent = (idx === combatState.queueIndex);
         const isEnemy = (item.type === 'ENEMY');
-        const elemIcon = ELEMENT_EMOJIS[item.robot.element] || '';
+        const rawEmoji = (item.robot.getSkinDef && item.robot.getSkinDef().emoji) 
+            ? item.robot.getSkinDef().emoji 
+            : (item.robot.emoji || '🤖');
         const name = item.robot.name.replace('Salvaje ', '').replace('ÉLITE ', '');
         const currentClass = isCurrent ? 'is-current' : '';
         const typeClass = isEnemy ? 'is-enemy' : 'is-player';
         const effectiveSpd = item.robot.getEffectiveSpeed ? item.robot.getEffectiveSpeed() : item.robot.spd;
+        const actorLabel = isEnemy ? 'Enemigo' : 'Aliado';
+        const activeBadge = isCurrent ? `<span class="tq-active-badge">ACT</span>` : '';
         
         return `
-            <div class="turn-queue-item ${typeClass} ${currentClass}" title="${item.robot.name} (Velocidad: ${effectiveSpd})">
-                <span class="turn-queue-avatar">${elemIcon}</span>
-                <span class="turn-queue-name">${name}</span>
+            <div class="turn-queue-item ${typeClass} ${currentClass}" 
+                 title="${name} (${actorLabel}) — ⚡ Velocidad: ${effectiveSpd}">
+                ${activeBadge}
+                <div class="turn-queue-avatar-box">
+                    <span class="turn-queue-avatar elem-${item.robot.element}">${rawEmoji}</span>
+                </div>
                 <span class="turn-queue-spd">⚡${effectiveSpd}</span>
+                <div class="turn-queue-hover-card">
+                    <span class="tq-card-name">${name}</span>
+                    <span class="tq-card-info">${actorLabel} · ⚡${effectiveSpd} VEL</span>
+                </div>
             </div>
         `;
     }).join('');
     
-    // Botón de Historial Táctico a la derecha de la barra de prioridad
+    // Botón de Historial Táctico compacto al final de la tira vertical
     html += `
         <div class="turn-queue-divider"></div>
         <button class="turn-queue-history-btn" onclick="openCombatHistory()" title="Ver Historial de Batalla y Registro Táctico">
             <span class="history-btn-icon">📜</span>
-            <span class="history-btn-label">HISTORIAL</span>
         </button>
     `;
 

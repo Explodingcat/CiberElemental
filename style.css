@@ -3229,28 +3229,34 @@ button:disabled {
     box-shadow: inset 0 0 145px rgba(255, 121, 63, 0.8);
 }
 
-/* Barra de Iniciativa / Cola de Turnos */
+/* ==========================================================================
+   ⚡ TIRA VERTICAL LATERAL DE INICIATIVA (Estilo Honkai / Octopath / FFX)
+   ========================================================================== */
 .combat-turn-queue {
     position: absolute;
-    top: 8px;
-    left: 50%;
-    transform: translateX(-50%);
+    top: 12px;
+    left: 10px;
+    height: auto;
+    max-height: calc(100% - 165px);
     display: flex;
-    gap: 6px;
+    flex-direction: column;
     align-items: center;
-    background: rgba(11, 12, 16, 0.92);
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(102, 252, 241, 0.35);
-    border-radius: 22px;
-    padding: 4px 10px;
-    z-index: 30;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.8), 0 0 12px rgba(102, 252, 241, 0.15);
-    max-width: 92%;
-    overflow-x: auto;
-    overflow-y: hidden;
+    justify-content: flex-start;
+    gap: 5px;
+    background: rgba(10, 14, 24, 0.38); /* Semi-transparente y sutil */
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid rgba(102, 252, 241, 0.20);
+    border-radius: 12px;
+    padding: 5px 3px;
+    z-index: 25;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4), inset 0 0 8px rgba(102, 252, 241, 0.04);
+    width: 40px;
+    box-sizing: border-box;
+    overflow-y: auto;
+    overflow-x: hidden;
     scrollbar-width: none;
     -ms-overflow-style: none;
-    box-sizing: border-box;
 }
 
 .combat-turn-queue::-webkit-scrollbar {
@@ -3259,113 +3265,213 @@ button:disabled {
     height: 0;
 }
 
+.turn-queue-header {
+    font-size: 10px;
+    color: var(--accent-color);
+    margin-bottom: 1px;
+    text-shadow: 0 0 8px rgba(102, 252, 241, 0.6);
+    user-select: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
 .turn-queue-label {
     display: none !important;
 }
 
 .turn-queue-item {
-    display: inline-flex;
+    display: flex;
+    flex-direction: column;
     align-items: center;
-    gap: 4px;
-    font-size: 11px;
-    font-weight: 700;
-    padding: 3px 8px;
-    border-radius: 12px;
+    justify-content: center;
+    gap: 1.5px;
+    width: 32px;
+    padding: 3px 1px;
+    border-radius: 7px;
     background: rgba(255, 255, 255, 0.05);
     border: 1px solid rgba(255, 255, 255, 0.12);
-    color: #c5c6c7;
-    transition: all 0.2s ease;
-    white-space: nowrap;
+    color: #ffffff;
+    transition: all 0.25s cubic-bezier(0.25, 0.8, 0.25, 1);
+    position: relative;
+    cursor: pointer;
     box-sizing: border-box;
+    user-select: none;
+    flex-shrink: 0;
+}
+
+.turn-queue-item:hover {
+    transform: scale(1.08);
+    background: rgba(255, 255, 255, 0.12);
+    z-index: 30;
 }
 
 .turn-queue-item.is-player {
-    border-color: rgba(102, 252, 241, 0.3);
+    border-color: rgba(102, 252, 241, 0.35);
 }
 
 .turn-queue-item.is-enemy {
-    border-color: rgba(255, 71, 87, 0.4);
-    color: #ff9e9e;
+    border-color: rgba(255, 71, 87, 0.45);
 }
 
 .turn-queue-item.is-current {
-    background: rgba(102, 252, 241, 0.28);
+    background: linear-gradient(180deg, rgba(102, 252, 241, 0.25) 0%, rgba(10, 14, 24, 0.8) 100%);
     border-color: var(--accent-color);
-    color: #ffffff;
-    box-shadow: 0 0 12px var(--accent-color);
-    font-weight: 900;
-    outline: 1px solid var(--accent-color);
+    box-shadow: 0 0 14px rgba(102, 252, 241, 0.75), inset 0 0 8px rgba(102, 252, 241, 0.4);
+    transform: scale(1.08);
+    animation: tqActivePulse 1.2s infinite alternate ease-in-out;
 }
 
 .turn-queue-item.is-enemy.is-current {
-    background: rgba(255, 71, 87, 0.35);
+    background: linear-gradient(180deg, rgba(255, 71, 87, 0.3) 0%, rgba(10, 14, 24, 0.8) 100%);
     border-color: #ff4757;
-    box-shadow: 0 0 12px #ff4757;
+    box-shadow: 0 0 14px rgba(255, 71, 87, 0.8), inset 0 0 8px rgba(255, 71, 87, 0.4);
+    animation: tqActiveEnemyPulse 1.2s infinite alternate ease-in-out;
+}
+
+@keyframes tqActivePulse {
+    0% { box-shadow: 0 0 8px rgba(102, 252, 241, 0.5); border-color: rgba(102, 252, 241, 0.6); }
+    100% { box-shadow: 0 0 16px rgba(102, 252, 241, 0.95); border-color: #ffffff; }
+}
+
+@keyframes tqActiveEnemyPulse {
+    0% { box-shadow: 0 0 8px rgba(255, 71, 87, 0.5); border-color: rgba(255, 71, 87, 0.6); }
+    100% { box-shadow: 0 0 16px rgba(255, 71, 87, 0.95); border-color: #ffffff; }
+}
+
+.tq-active-badge {
+    position: absolute;
+    top: -5px;
+    right: -4px;
+    font-size: 7px;
+    font-weight: 900;
+    background: var(--accent-color);
+    color: #0b0c10;
+    padding: 0px 3px;
+    border-radius: 4px;
+    letter-spacing: 0.5px;
+    line-height: 1.1;
+    box-shadow: 0 0 6px var(--accent-color);
+}
+
+.turn-queue-item.is-enemy .tq-active-badge {
+    background: #ff4757;
     color: #ffffff;
-    outline: 1px solid #ff4757;
+    box-shadow: 0 0 6px #ff4757;
+}
+
+.turn-queue-avatar-box {
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.turn-queue-avatar {
+    font-size: 16px;
+    line-height: 1;
 }
 
 .turn-queue-spd {
-    font-size: 9px;
+    font-size: 8.5px;
     color: #feca57;
     font-family: 'Rajdhani', monospace;
     font-weight: 800;
+    line-height: 1;
 }
 
-/* Divisor y Botón de Historial en la barra de prioridad */
+/* Tooltip Flotante al Hover */
+.turn-queue-hover-card {
+    position: absolute;
+    left: calc(100% + 8px);
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(11, 14, 22, 0.96);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(102, 252, 241, 0.45);
+    border-radius: 8px;
+    padding: 4px 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    white-space: nowrap;
+    pointer-events: none;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.85);
+    z-index: 100;
+}
+
+.turn-queue-item:hover .turn-queue-hover-card {
+    opacity: 1;
+    visibility: visible;
+}
+
+.tq-card-name {
+    font-size: 11px;
+    font-weight: 800;
+    color: #ffffff;
+    letter-spacing: 0.4px;
+}
+
+.tq-card-info {
+    font-size: 9px;
+    font-weight: 700;
+    color: #feca57;
+}
+
+/* Divisor y Botón de Historial en la tira vertical */
 .turn-queue-divider {
-    width: 1.5px;
-    height: 18px;
-    background: rgba(255, 255, 255, 0.22);
-    margin: 0 4px;
+    width: 24px;
+    height: 1px;
+    background: rgba(255, 255, 255, 0.2);
+    margin: 2px 0;
     flex-shrink: 0;
 }
 
 .turn-queue-history-btn {
-    display: inline-flex;
+    display: flex;
     align-items: center;
-    gap: 5px;
-    padding: 3px 10px;
-    border-radius: 12px;
-    background: linear-gradient(135deg, rgba(254, 202, 87, 0.18) 0%, rgba(11, 12, 16, 0.85) 100%);
-    border: 1px solid rgba(254, 202, 87, 0.5);
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    background: rgba(254, 202, 87, 0.15);
+    border: 1px solid rgba(254, 202, 87, 0.45);
     color: #feca57;
-    font-size: 11px;
-    font-weight: 800;
-    font-family: 'Rajdhani', sans-serif;
-    letter-spacing: 0.6px;
+    font-size: 14px;
     cursor: pointer;
-    transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
-    white-space: nowrap;
-    flex-shrink: 0;
+    transition: all 0.2s ease;
     box-sizing: border-box;
+    flex-shrink: 0;
 }
 
 .turn-queue-history-btn:hover {
-    background: linear-gradient(135deg, rgba(254, 202, 87, 0.35) 0%, rgba(11, 12, 16, 0.95) 100%);
+    background: rgba(254, 202, 87, 0.35);
     border-color: #ffd700;
-    color: #ffffff;
-    box-shadow: 0 0 12px rgba(254, 202, 87, 0.6);
-    transform: translateY(-1px) scale(1.03);
+    transform: scale(1.1);
+    box-shadow: 0 0 10px rgba(254, 202, 87, 0.6);
 }
 
 .turn-queue-history-btn .history-btn-icon {
-    font-size: 13px;
+    font-size: 14px;
     line-height: 1;
 }
 
-/* Escuadrón Aliado (Mitad Izquierda, vertical - Punta de Flecha > Compacta) */
+/* Escuadrón Aliado (Mitad Izquierda - Formación Táctica Frontline / Backline) */
 .combat-player-team {
     position: absolute;
-    top: 48px;
-    bottom: 160px;
-    left: 20px;
+    top: clamp(14px, 2.5vh, 26px);
+    bottom: clamp(146px, 18vh, 158px);
+    left: 64px;
     right: calc(50% + 15px);
     display: grid;
     grid-template-rows: repeat(3, auto);
     align-content: center;
     justify-content: center;
-    row-gap: 12px;
+    row-gap: clamp(2px, 1vh, 8px);
     z-index: 2;
     pointer-events: none;
 }
@@ -3375,7 +3481,7 @@ button:disabled {
     flex-direction: column;
     align-items: center;
     position: relative;
-    transition: transform 0.3s ease, opacity 0.3s ease;
+    transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1), opacity 0.3s ease;
     box-sizing: border-box;
     pointer-events: auto;
     justify-self: center;
@@ -3383,24 +3489,24 @@ button:disabled {
     margin-right: 0;
 }
 
-/* Distribución táctica vertical: 1 arriba (ala), 0 al medio (punta de lanza frontal), 2 abajo (ala) */
+/* Distribución táctica: 0 al medio (vanguardia frontal adelantada), 1 arriba y 2 abajo (retaguardia en ala) */
 .combat-ally-unit.slot-top {
     grid-row: 1;
-    transform: translateX(-12px);
+    transform: translateX(-16px);
 }
 .combat-ally-unit.slot-center {
     grid-row: 2;
-    transform: translateX(48px); /* Punta de Flecha > Compacta y unificada (60px de profundidad) */
+    transform: translateX(45px); /* Vanguardia adelantada hacia el centro de la arena */
 }
 .combat-ally-unit.slot-bottom {
     grid-row: 3;
-    transform: translateX(-12px);
+    transform: translateX(-16px);
 }
 
 /* Solo el robot activo en el turno se mueve, de forma rápida y notoria, sin alterar su color elemental */
 .combat-ally-unit .combat-avatar-emoji {
     animation: none;
-    font-size: 48px;
+    font-size: clamp(38px, 6vh, 48px);
 }
 
 .combat-ally-unit.acting-now .combat-avatar-emoji:not(.anim-attack-player):not(.anim-hit-player) {
@@ -3420,7 +3526,7 @@ button:disabled {
 
 @keyframes allyActivePulse {
     0% { transform: translateY(0); }
-    100% { transform: translateY(-12px); }
+    100% { transform: translateY(-10px); }
 }
 
 @keyframes platformGlow {
@@ -3428,18 +3534,18 @@ button:disabled {
     100% { transform: translateX(-50%) scale(1.1); opacity: 1; }
 }
 
-/* Escuadrón Enemigo (Mitad Derecha, vertical - Punta de Flecha < Compacta) */
+/* Escuadrón Enemigo (Mitad Derecha - Formación Táctica Frontline / Backline / Boss Escoltado) */
 .combat-enemy-team {
     position: absolute;
-    top: 48px;
-    bottom: 160px;
+    top: clamp(14px, 2.5vh, 26px);
+    bottom: clamp(146px, 18vh, 158px);
     left: calc(50% + 15px);
     right: 20px;
     display: grid;
     grid-template-rows: repeat(3, auto);
     align-content: center;
     justify-content: center;
-    row-gap: 12px;
+    row-gap: clamp(2px, 1vh, 8px);
     z-index: 2;
 }
 
@@ -3448,7 +3554,7 @@ button:disabled {
     flex-direction: column;
     align-items: center;
     position: relative;
-    transition: transform 0.3s ease, opacity 0.3s ease;
+    transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1), opacity 0.3s ease;
     box-sizing: border-box;
     text-align: center;
     justify-self: center;
@@ -3456,21 +3562,36 @@ button:disabled {
     margin-right: 0;
 }
 
-/* Distribución táctica vertical: 1 arriba (ala), 0 al medio (punta de lanza frontal), 2 abajo (ala) */
+/* Distribución táctica estándar para enemigos normales */
 .combat-enemy-unit.slot-top {
     grid-row: 1;
-    transform: translateX(12px);
+    transform: translateX(16px);
 }
 .combat-enemy-unit.slot-center {
     grid-row: 2;
-    transform: translateX(-48px); /* Punta de Flecha < Compacta y unificada */
+    transform: translateX(-45px); /* Punta frontal hacia el centro */
 }
 .combat-enemy-unit.slot-bottom {
     grid-row: 3;
-    transform: translateX(12px);
+    transform: translateX(16px);
 }
 
-/* Cuando solo hay 1 robot en combate, se centra sin desplazamiento de flecha */
+/* Cuando es un combate contra Jefe con Lacayos (enemy-count-3 o enemy-count-2 con Boss):
+   El Jefe se queda al fondo (retaguardia derecha) y los lacayos avanzan a la vanguardia (izquierda) */
+.enemy-count-3 .combat-enemy-unit.is-boss-titan.slot-center,
+.enemy-count-2 .combat-enemy-unit.is-boss-titan.slot-center {
+    transform: translateX(35px); /* Fondo / Retaguardia */
+}
+.enemy-count-3 .combat-enemy-unit:not(.is-boss-titan).slot-top,
+.enemy-count-2 .combat-enemy-unit:not(.is-boss-titan).slot-top {
+    transform: translateX(-35px); /* Vanguardia / Escudo arriba */
+}
+.enemy-count-3 .combat-enemy-unit:not(.is-boss-titan).slot-bottom,
+.enemy-count-2 .combat-enemy-unit:not(.is-boss-titan).slot-bottom {
+    transform: translateX(-35px); /* Vanguardia / Escudo abajo */
+}
+
+/* Cuando solo hay 1 robot en combate, se centra perfectamente */
 .team-count-1 .combat-ally-unit,
 .enemy-count-1 .combat-enemy-unit {
     transform: translateX(0) !important;
@@ -3485,7 +3606,7 @@ button:disabled {
 .combat-enemy-unit .combat-avatar-emoji {
     animation: float-enemy 2.8s ease-in-out infinite;
     transform: scaleX(-1);
-    font-size: 48px;
+    font-size: clamp(38px, 6vh, 48px);
 }
 
 .combat-enemy-unit.acting-now .combat-avatar-emoji:not(.anim-attack-enemy):not(.anim-hit-enemy) {
@@ -3500,7 +3621,7 @@ button:disabled {
 
 @keyframes enemyActivePulse {
     0% { transform: scaleX(-1) translateY(0); }
-    100% { transform: scaleX(-1) translateY(-12px); }
+    100% { transform: scaleX(-1) translateY(-10px); }
 }
 
 /* Modo selección de objetivo interactivo en arena */
@@ -3521,7 +3642,7 @@ button:disabled {
 /* Escalado para 1v1 */
 .team-count-1 .combat-ally-unit .combat-avatar-emoji,
 .enemy-count-1 .combat-enemy-unit .combat-avatar-emoji {
-    font-size: 56px;
+    font-size: clamp(48px, 8vh, 56px);
 }
 
 /* Mini HUD Flotante bajo cada robot en arena */
@@ -3529,9 +3650,9 @@ button:disabled {
     display: flex;
     flex-direction: column;
     align-items: flex-start;
-    gap: 2.5px;
-    margin-top: 3px;
-    width: 96px;
+    gap: 2px;
+    margin-top: 2px;
+    width: 86px;
     z-index: 5;
     pointer-events: none;
 }
@@ -4260,14 +4381,14 @@ button:disabled {
     border: 1px dashed rgba(255, 51, 102, 0.4);
 }
 
-/* TITAN-X: Jefe Colosal (Doble de tamaño, plataforma masiva, aura y sombra colosal) */
+/* TITAN-X / JEFE: Jefe Imponente (Escala controlada a ~100px, plataforma y sombra proporcionadas) */
 .combat-enemy-unit.is-boss-titan .combat-floor-shadow {
-    width: 250px !important;
-    height: 56px !important;
-    bottom: -10px !important;
+    width: 175px !important;
+    height: 38px !important;
+    bottom: -6px !important;
     background: radial-gradient(ellipse at center, rgba(0, 0, 0, 0.98) 0%, rgba(0, 0, 0, 0.8) 45%, rgba(0, 0, 0, 0.28) 75%, transparent 92%) !important;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.9) !important;
-    filter: blur(8px) !important;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.9) !important;
+    filter: blur(6px) !important;
 }
 
 /* Animaciones dinámicas de sombras */
@@ -4344,17 +4465,17 @@ button:disabled {
 }
 
 .combat-enemy-unit.is-boss-titan .combat-avatar-emoji {
-    font-size: 155px !important;
-    filter: drop-shadow(0 0 25px rgba(255, 71, 87, 0.95)) drop-shadow(0 0 50px rgba(255, 211, 42, 0.75)) !important;
+    font-size: clamp(75px, 12vh, 100px) !important;
+    filter: drop-shadow(0 0 20px rgba(255, 71, 87, 0.95)) drop-shadow(0 0 40px rgba(255, 211, 42, 0.75)) !important;
     animation: titanBreathing 2.4s ease-in-out infinite alternate !important;
     transform-origin: bottom center;
 }
 
 .combat-enemy-unit.is-boss-titan .enemy-platform {
-    width: 240px !important;
-    height: 52px !important;
+    width: 165px !important;
+    height: 38px !important;
     background: radial-gradient(ellipse at center, rgba(255, 71, 87, 0.8) 0%, rgba(255, 211, 42, 0.45) 45%, transparent 80%) !important;
-    box-shadow: 0 0 35px rgba(255, 71, 87, 0.9), 0 0 65px rgba(255, 211, 42, 0.6), inset 0 0 20px rgba(255, 71, 87, 0.7) !important;
+    box-shadow: 0 0 25px rgba(255, 71, 87, 0.9), 0 0 45px rgba(255, 211, 42, 0.6), inset 0 0 15px rgba(255, 71, 87, 0.7) !important;
     border: 2px solid #ff4757 !important;
 }
 
@@ -8184,11 +8305,17 @@ progress::-webkit-progress-value {
         max-height: 100%;
     }
 
+    .combat-turn-queue {
+        top: 12px;
+        left: 8px;
+        width: 42px;
+    }
+
     .combat-player-team {
         position: absolute;
-        top: 44px;
+        top: 12px;
         bottom: 154px;
-        left: 14px;
+        left: 56px;
         right: calc(50% + 12px);
         display: grid;
         grid-template-rows: repeat(3, auto);
@@ -8201,7 +8328,7 @@ progress::-webkit-progress-value {
 
     .combat-enemy-team {
         position: absolute;
-        top: 44px;
+        top: 12px;
         bottom: 154px;
         left: calc(50% + 12px);
         right: 14px;
@@ -8214,22 +8341,35 @@ progress::-webkit-progress-value {
     }
 
     .combat-ally-unit.slot-top {
-        transform: translateX(-10px);
+        transform: translateX(-14px);
     }
     .combat-ally-unit.slot-center {
-        transform: translateX(42px);
+        transform: translateX(40px);
     }
     .combat-ally-unit.slot-bottom {
-        transform: translateX(-10px);
+        transform: translateX(-14px);
     }
     .combat-enemy-unit.slot-top {
-        transform: translateX(10px);
+        transform: translateX(14px);
     }
     .combat-enemy-unit.slot-center {
-        transform: translateX(-42px);
+        transform: translateX(-40px);
     }
     .combat-enemy-unit.slot-bottom {
-        transform: translateX(10px);
+        transform: translateX(14px);
+    }
+
+    .enemy-count-3 .combat-enemy-unit.is-boss-titan.slot-center,
+    .enemy-count-2 .combat-enemy-unit.is-boss-titan.slot-center {
+        transform: translateX(30px);
+    }
+    .enemy-count-3 .combat-enemy-unit:not(.is-boss-titan).slot-top,
+    .enemy-count-2 .combat-enemy-unit:not(.is-boss-titan).slot-top {
+        transform: translateX(-30px);
+    }
+    .enemy-count-3 .combat-enemy-unit:not(.is-boss-titan).slot-bottom,
+    .enemy-count-2 .combat-enemy-unit:not(.is-boss-titan).slot-bottom {
+        transform: translateX(-30px);
     }
     
     .combat-tactical-box {
@@ -8664,11 +8804,20 @@ progress::-webkit-progress-value {
         font-size: 8.5px;
     }
 
+    .combat-turn-queue {
+        top: 10px;
+        left: 6px;
+        width: 38px;
+    }
+    .turn-queue-item {
+        width: 32px;
+    }
+
     .combat-player-team {
         position: absolute;
-        top: 38px;
+        top: 10px;
         bottom: 232px;
-        left: 10px;
+        left: 48px;
         right: calc(50% + 8px);
         display: grid;
         grid-template-rows: repeat(3, auto);
@@ -8681,7 +8830,7 @@ progress::-webkit-progress-value {
 
     .combat-enemy-team {
         position: absolute;
-        top: 38px;
+        top: 10px;
         bottom: 232px;
         left: calc(50% + 8px);
         right: 10px;
@@ -8694,22 +8843,35 @@ progress::-webkit-progress-value {
     }
 
     .combat-ally-unit.slot-top {
-        transform: translateX(-8px);
+        transform: translateX(-12px);
     }
     .combat-ally-unit.slot-center {
         transform: translateX(35px);
     }
     .combat-ally-unit.slot-bottom {
-        transform: translateX(-8px);
+        transform: translateX(-12px);
     }
     .combat-enemy-unit.slot-top {
-        transform: translateX(8px);
+        transform: translateX(12px);
     }
     .combat-enemy-unit.slot-center {
         transform: translateX(-35px);
     }
     .combat-enemy-unit.slot-bottom {
-        transform: translateX(8px);
+        transform: translateX(12px);
+    }
+
+    .enemy-count-3 .combat-enemy-unit.is-boss-titan.slot-center,
+    .enemy-count-2 .combat-enemy-unit.is-boss-titan.slot-center {
+        transform: translateX(25px);
+    }
+    .enemy-count-3 .combat-enemy-unit:not(.is-boss-titan).slot-top,
+    .enemy-count-2 .combat-enemy-unit:not(.is-boss-titan).slot-top {
+        transform: translateX(-25px);
+    }
+    .enemy-count-3 .combat-enemy-unit:not(.is-boss-titan).slot-bottom,
+    .enemy-count-2 .combat-enemy-unit:not(.is-boss-titan).slot-bottom {
+        transform: translateX(-25px);
     }
 
     .combat-ally-unit,
@@ -8719,15 +8881,15 @@ progress::-webkit-progress-value {
     }
 
     .combat-enemy-unit.is-boss-titan .combat-avatar-emoji {
-        font-size: 105px !important;
+        font-size: 90px !important;
     }
     .combat-enemy-unit.is-boss-titan .enemy-platform {
-        width: 160px !important;
-        height: 36px !important;
+        width: 145px !important;
+        height: 32px !important;
     }
     .combat-enemy-unit.is-boss-titan .combat-floor-shadow {
-        width: 170px !important;
-        height: 38px !important;
+        width: 155px !important;
+        height: 34px !important;
         filter: blur(5px) !important;
     }
 
@@ -9499,12 +9661,54 @@ progress::-webkit-progress-value {
         border-radius: 8px;
     }
 
+    .combat-turn-queue {
+        top: 8px;
+        left: 6px;
+        width: 32px;
+        padding: 3px 2px;
+        gap: 3px;
+        max-height: calc(100% - 210px);
+        background: rgba(10, 14, 24, 0.32);
+        border-radius: 9px;
+    }
+
+    .turn-queue-header {
+        font-size: 8.5px;
+        margin-bottom: 0;
+    }
+
+    .turn-queue-item {
+        width: 26px;
+        padding: 2px 1px;
+        border-radius: 5px;
+    }
+
+    .turn-queue-avatar-box {
+        width: 18px;
+        height: 18px;
+    }
+
+    .turn-queue-avatar {
+        font-size: 13px;
+    }
+
+    .turn-queue-spd {
+        font-size: 7px;
+    }
+
+    .turn-queue-history-btn {
+        width: 22px;
+        height: 22px;
+        border-radius: 5px;
+        font-size: 11px;
+    }
+
     .combat-player-team {
         position: absolute;
-        top: 34px;
-        bottom: 224px;
-        left: 6px;
-        right: calc(50% + 6px);
+        top: 8px;
+        bottom: 215px;
+        left: 42px;
+        right: calc(50% + 4px);
         display: grid;
         grid-template-rows: repeat(3, auto);
         align-content: center;
@@ -9516,9 +9720,9 @@ progress::-webkit-progress-value {
 
     .combat-enemy-team {
         position: absolute;
-        top: 34px;
-        bottom: 224px;
-        left: calc(50% + 6px);
+        top: 8px;
+        bottom: 215px;
+        left: calc(50% + 4px);
         right: 6px;
         display: grid;
         grid-template-rows: repeat(3, auto);
@@ -9763,11 +9967,11 @@ progress::-webkit-progress-value {
     }
 
     .combat-enemy-unit.is-boss-titan .combat-avatar-emoji {
-        font-size: 85px !important;
+        font-size: 78px !important;
     }
     .combat-enemy-unit.is-boss-titan .enemy-platform {
-        width: 130px !important;
-        height: 30px !important;
+        width: 125px !important;
+        height: 28px !important;
     }
 
     .hud-robot-name {
