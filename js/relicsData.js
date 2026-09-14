@@ -350,7 +350,15 @@ const RELICS_DATA = {
 };
 
 function getRelicData(relicId) {
-    return RELICS_DATA[relicId] || null;
+    if (!relicId) return null;
+    const key = (typeof relicId === 'object' && relicId !== null && relicId.id) ? relicId.id : relicId;
+    if (typeof key === 'string' && RELICS_DATA[key]) {
+        return RELICS_DATA[key];
+    }
+    if (typeof relicId === 'object' && relicId !== null && relicId.name) {
+        return relicId;
+    }
+    return null;
 }
 
 function getAllRelicsArray() {

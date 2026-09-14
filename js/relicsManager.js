@@ -1,4 +1,4 @@
-﻿// relicsManager.js - Gestor Central de Reliquias y Artefactos Pasivos
+// relicsManager.js - Gestor Central de Reliquias y Artefactos Pasivos
 
 const RelicsManager = {
     // Estado volátil por combate / sesión
@@ -23,24 +23,30 @@ const RelicsManager = {
 
     hasRelic(relicId) {
         if (!GAME_STATE || !GAME_STATE.relics || !Array.isArray(GAME_STATE.relics)) return false;
-        return GAME_STATE.relics.includes(relicId);
+        const cleanId = (typeof relicId === 'object' && relicId !== null) ? relicId.id : relicId;
+        if (!cleanId) return false;
+        return GAME_STATE.relics.some(r => {
+            const currentId = (typeof r === 'object' && r !== null) ? r.id : r;
+            return currentId === cleanId;
+        });
     },
 
     addRelic(relicId) {
         if (!GAME_STATE) return false;
-        if (!GAME_STATE.relics) GAME_STATE.relics = [];
-        if (this.hasRelic(relicId)) return false;
+        if (!GAME_STATE.relics || !Array.isArray(GAME_STATE.relics)) GAME_STATE.relics = [];
+        const cleanId = (typeof relicId === 'object' && relicId !== null) ? relicId.id : relicId;
+        if (!cleanId || this.hasRelic(cleanId)) return false;
 
-        const relic = getRelicData(relicId);
+        const relic = getRelicData(cleanId);
         if (!relic) return false;
 
-        GAME_STATE.relics.push(relicId);
+        GAME_STATE.relics.push(cleanId);
 
         // Si la reliquia es propulsor de iones, recalcular stats de velocidad de todo el equipo
-        if (relicId === 'propulsor_iones') {
+        if (cleanId === 'propulsor_iones') {
             if (GAME_STATE.team) {
                 GAME_STATE.team.forEach(r => {
-                    if (r && r.recalculateStats) r.recalculateStats();
+                    if (r && typeof r.recalculateStats === 'function') r.recalculateStats();
                 });
             }
         }
@@ -56,12 +62,16 @@ const RelicsManager = {
 
     removeRelic(relicId) {
         if (!GAME_STATE || !GAME_STATE.relics) return;
-        GAME_STATE.relics = GAME_STATE.relics.filter(id => id !== relicId);
+        const cleanId = (typeof relicId === 'object' && relicId !== null) ? relicId.id : relicId;
+        GAME_STATE.relics = GAME_STATE.relics.filter(r => {
+            const currentId = (typeof r === 'object' && r !== null) ? r.id : r;
+            return currentId !== cleanId;
+        });
         this.renderRelicsBar();
     },
 
     getRelics() {
-        if (!GAME_STATE || !GAME_STATE.relics) return [];
+        if (!GAME_STATE || !GAME_STATE.relics || !Array.isArray(GAME_STATE.relics)) return [];
         return GAME_STATE.relics.map(id => getRelicData(id)).filter(Boolean);
     },
 

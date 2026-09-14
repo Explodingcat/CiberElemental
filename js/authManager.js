@@ -309,40 +309,60 @@ const AuthManager = {
     async saveTowerCheckpoint(checkpointData) {
         if (!checkpointData) return null;
 
-        // Limpiar cualquier residuo de localStorage para evitar manipulaciones locales
-        try {
-            localStorage.removeItem('ciber_tower_checkpoint');
-            if (this.currentUser) {
-                localStorage.removeItem(`ciber_tower_checkpoint_${this.currentUser.id}`);
+        // 1. Extraer reliquias limpias como array de string IDs
+        let rawRelics = [];
+        if (checkpointData.relics && Array.isArray(checkpointData.relics) && checkpointData.relics.length > 0) {
+            rawRelics = checkpointData.relics;
+        } else if (checkpointData.inventory) {
+            const inv = (typeof checkpointData.inventory === 'string') 
+                ? JSON.parse(checkpointData.inventory) 
+                : checkpointData.inventory;
+            if (inv && Array.isArray(inv.relics)) {
+                rawRelics = inv.relics;
             }
-        } catch (e) {}
+        } else if (typeof GAME_STATE !== 'undefined' && Array.isArray(GAME_STATE.relics)) {
+            rawRelics = GAME_STATE.relics;
+        }
+
+        const cleanRelics = rawRelics.map(r => (typeof r === 'object' && r !== null ? r.id : r)).filter(Boolean);
+
+        const inventoryObj = (typeof checkpointData.inventory === 'string')
+            ? (JSON.parse(checkpointData.inventory) || {})
+            : (checkpointData.inventory || {});
+
+        const cleanInventory = {
+            ...inventoryObj,
+            items: Array.isArray(inventoryObj.items) ? inventoryObj.items : [],
+            weapons: Array.isArray(inventoryObj.weapons) ? inventoryObj.weapons : [],
+            relics: cleanRelics
+        };
+
+        const payload = {
+            user_id: this.currentUser ? this.currentUser.id : null,
+            tower_completed: checkpointData.tower_completed,
+            current_tower: checkpointData.current_tower,
+            floor: checkpointData.floor,
+            scrap: checkpointData.scrap || 0,
+            squad: checkpointData.squad,
+            inventory: cleanInventory,
+            relics: cleanRelics,
+            fenix_triggered: !!checkpointData.fenixTriggeredThisRun,
+            updated_at: new Date().toISOString()
+        };
+
+        // Guardar SIEMPRE una copia de seguridad en localStorage (offline/anonymous fallback)
+        try {
+            localStorage.setItem('ciber_tower_checkpoint', JSON.stringify(payload));
+            if (this.currentUser) {
+                localStorage.setItem(`ciber_tower_checkpoint_${this.currentUser.id}`, JSON.stringify(payload));
+            }
+        } catch (storageErr) {
+            console.warn('[AuthManager] Fallo al escribir checkpoint en localStorage:', storageErr);
+        }
 
         const user = await this.getOrFetchCurrentUser();
         if (user && isSupabaseConfigured() && supabaseClient) {
-            const cleanRelics = (checkpointData.relics && Array.isArray(checkpointData.relics)) 
-                ? checkpointData.relics 
-                : ((checkpointData.inventory && Array.isArray(checkpointData.inventory.relics)) ? checkpointData.inventory.relics : []);
-
-            const cleanInventory = {
-                ...(checkpointData.inventory || {}),
-                items: (checkpointData.inventory && checkpointData.inventory.items) ? checkpointData.inventory.items : [],
-                weapons: (checkpointData.inventory && checkpointData.inventory.weapons) ? checkpointData.inventory.weapons : [],
-                relics: cleanRelics
-            };
-
-            const payload = {
-                user_id: user.id,
-                tower_completed: checkpointData.tower_completed,
-                current_tower: checkpointData.current_tower,
-                floor: checkpointData.floor,
-                scrap: checkpointData.scrap || 0,
-                squad: checkpointData.squad,
-                inventory: cleanInventory,
-                relics: cleanRelics,
-                fenix_triggered: !!checkpointData.fenixTriggeredThisRun,
-                updated_at: new Date().toISOString()
-            };
-
+            payload.user_id = user.id;
             let savedSuccessfully = false;
 
             // 1. Intentar guardar en la tabla especializada saved_tower_runs
@@ -403,21 +423,47 @@ const AuthManager = {
             } else {
                 console.error('[AuthManager] ❌ No se pudo persistir el checkpoint en Supabase.');
             }
-            return checkpointData;
+            return payload;
         } else {
-            console.warn('[AuthManager] No se guardó el checkpoint: se requiere conexión a Supabase (sin localStorage).');
+            console.info('[AuthManager] Checkpoint guardado localmente (sin sesión Supabase activa).');
         }
-        return checkpointData;
+        return payload;
     },
 
     async getSavedTowerCheckpoint() {
-        // Limpiar cualquier residuo de localStorage
-        try {
-            localStorage.removeItem('ciber_tower_checkpoint');
-            if (this.currentUser) {
-                localStorage.removeItem(`ciber_tower_checkpoint_${this.currentUser.id}`);
+        // Función auxiliar para normalizar un objeto de checkpoint
+        const normalizeCheckpoint = (runData) => {
+            if (!runData || !runData.squad || !Array.isArray(runData.squad) || runData.squad.length === 0) {
+                return null;
             }
-        } catch (e) {}
+            let inventory = runData.inventory;
+            if (typeof inventory === 'string') {
+                try { inventory = JSON.parse(inventory); } catch(e) { inventory = {}; }
+            }
+            if (!inventory || typeof inventory !== 'object') {
+                inventory = {};
+            }
+
+            let rawRelics = [];
+            if (runData.relics && Array.isArray(runData.relics) && runData.relics.length > 0) {
+                rawRelics = runData.relics;
+            } else if (inventory.relics && Array.isArray(inventory.relics) && inventory.relics.length > 0) {
+                rawRelics = inventory.relics;
+            } else if (runData.relics && Array.isArray(runData.relics)) {
+                rawRelics = runData.relics;
+            } else if (typeof runData.relics === 'string') {
+                try {
+                    const parsed = JSON.parse(runData.relics);
+                    if (Array.isArray(parsed)) rawRelics = parsed;
+                } catch(e) {}
+            }
+
+            const cleanRelics = rawRelics.map(r => (typeof r === 'object' && r !== null ? r.id : r)).filter(Boolean);
+            runData.relics = cleanRelics;
+            inventory.relics = cleanRelics;
+            runData.inventory = inventory;
+            return runData;
+        };
 
         const user = await this.getOrFetchCurrentUser();
         if (user && isSupabaseConfigured() && supabaseClient) {
@@ -428,13 +474,12 @@ const AuthManager = {
                     .select('*')
                     .eq('user_id', user.id)
                     .maybeSingle();
-                if (!error && data && data.squad && Array.isArray(data.squad) && data.squad.length > 0) {
-                    if (!data.relics && data.inventory && Array.isArray(data.inventory.relics)) {
-                        data.relics = data.inventory.relics;
+                if (!error && data) {
+                    const normalized = normalizeCheckpoint(data);
+                    if (normalized) {
+                        console.info('[AuthManager] Checkpoint recuperado desde saved_tower_runs:', normalized);
+                        return normalized;
                     }
-                    if (!data.relics) data.relics = [];
-                    console.info('[AuthManager] Checkpoint recuperado desde saved_tower_runs:', data);
-                    return data;
                 }
             } catch (err) {
                 console.warn('[AuthManager] Error consultando saved_tower_runs:', err);
@@ -447,19 +492,39 @@ const AuthManager = {
                     .select('saved_run')
                     .eq('user_id', user.id)
                     .maybeSingle();
-                if (!profError && profile && profile.saved_run && profile.saved_run.squad && Array.isArray(profile.saved_run.squad) && profile.saved_run.squad.length > 0) {
-                    const run = profile.saved_run;
-                    if (!run.relics && run.inventory && Array.isArray(run.inventory.relics)) {
-                        run.relics = run.inventory.relics;
+                if (!profError && profile && profile.saved_run) {
+                    const normalized = normalizeCheckpoint(profile.saved_run);
+                    if (normalized) {
+                        console.info('[AuthManager] Checkpoint recuperado desde player_profiles.saved_run:', normalized);
+                        return normalized;
                     }
-                    if (!run.relics) run.relics = [];
-                    console.info('[AuthManager] Checkpoint recuperado desde player_profiles.saved_run:', run);
-                    return run;
                 }
             } catch (profErr) {
                 console.warn('[AuthManager] Error consultando player_profiles.saved_run:', profErr);
             }
         }
+
+        // 3. Fallback: Consultar localStorage
+        try {
+            let localStr = null;
+            if (this.currentUser) {
+                localStr = localStorage.getItem(`ciber_tower_checkpoint_${this.currentUser.id}`);
+            }
+            if (!localStr) {
+                localStr = localStorage.getItem('ciber_tower_checkpoint');
+            }
+            if (localStr) {
+                const localData = JSON.parse(localStr);
+                const normalized = normalizeCheckpoint(localData);
+                if (normalized) {
+                    console.info('[AuthManager] Checkpoint recuperado desde localStorage:', normalized);
+                    return normalized;
+                }
+            }
+        } catch (localErr) {
+            console.warn('[AuthManager] Error leyendo checkpoint de localStorage:', localErr);
+        }
+
         return null;
     },
 

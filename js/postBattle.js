@@ -619,9 +619,13 @@ async function saveCurrentTowerCheckpoint(towerCompletedId = null) {
         inventory: {
             items: [...((GAME_STATE && GAME_STATE.inventory && GAME_STATE.inventory.items) ? GAME_STATE.inventory.items : [])],
             weapons: [...((GAME_STATE && GAME_STATE.inventory && GAME_STATE.inventory.weapons) ? GAME_STATE.inventory.weapons : [])],
-            relics: [...((GAME_STATE && GAME_STATE.relics) ? GAME_STATE.relics : [])]
+            relics: (GAME_STATE && GAME_STATE.relics && Array.isArray(GAME_STATE.relics))
+                ? GAME_STATE.relics.map(r => (typeof r === 'object' && r !== null ? r.id : r)).filter(Boolean)
+                : []
         },
-        relics: [...((GAME_STATE && GAME_STATE.relics) ? GAME_STATE.relics : [])],
+        relics: (GAME_STATE && GAME_STATE.relics && Array.isArray(GAME_STATE.relics))
+            ? GAME_STATE.relics.map(r => (typeof r === 'object' && r !== null ? r.id : r)).filter(Boolean)
+            : [],
         fenixTriggeredThisRun: !!(GAME_STATE && GAME_STATE.fenixTriggeredThisRun),
         saved_at: new Date().toISOString()
     };

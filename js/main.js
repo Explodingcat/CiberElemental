@@ -615,13 +615,22 @@ async function checkSavedCheckpoint() {
                 ? TOWERS_CONFIG[towerId] 
                 : { name: `Torre ${towerId}` };
             
-            const relicsCount = (checkpoint.relics && Array.isArray(checkpoint.relics)) 
-                ? checkpoint.relics.length 
-                : ((checkpoint.inventory && Array.isArray(checkpoint.inventory.relics)) ? checkpoint.inventory.relics.length : 0);
+            let rawRelics = [];
+            if (checkpoint.relics && Array.isArray(checkpoint.relics) && checkpoint.relics.length > 0) {
+                rawRelics = checkpoint.relics;
+            } else if (checkpoint.inventory) {
+                const inv = (typeof checkpoint.inventory === 'string') ? JSON.parse(checkpoint.inventory) : checkpoint.inventory;
+                if (inv && Array.isArray(inv.relics) && inv.relics.length > 0) {
+                    rawRelics = inv.relics;
+                }
+            } else if (checkpoint.relics && Array.isArray(checkpoint.relics)) {
+                rawRelics = checkpoint.relics;
+            }
+            const relicsCount = rawRelics.length;
 
             const badgeEl = document.getElementById('resume-tower-badge');
             if (badgeEl) {
-                const relicsText = relicsCount > 0 ? ` • 💎 ${relicsCount} Reliquias` : '';
+                const relicsText = relicsCount > 0 ? ` • 💎 ${relicsCount} Reliquia${relicsCount > 1 ? 's' : ''}` : '';
                 badgeEl.innerText = `${towerCfg.name.toUpperCase()} (PISO ${checkpoint.floor})${relicsText}`;
             }
             
@@ -676,9 +685,13 @@ async function resumeSavedRun(checkpoint) {
     }
 
     // Restaurar inventario
+    const invData = (typeof checkpoint.inventory === 'string') 
+        ? JSON.parse(checkpoint.inventory) 
+        : (checkpoint.inventory || {});
+
     GAME_STATE.inventory = {
-        items: (checkpoint.inventory && checkpoint.inventory.items) ? [...checkpoint.inventory.items] : [],
-        weapons: (checkpoint.inventory && checkpoint.inventory.weapons) ? [...checkpoint.inventory.weapons] : []
+        items: (invData && Array.isArray(invData.items)) ? [...invData.items] : [],
+        weapons: (invData && Array.isArray(invData.weapons)) ? [...invData.weapons] : []
     };
 
     // Restaurar chatarra recolectada en la run
@@ -702,9 +715,21 @@ async function resumeSavedRun(checkpoint) {
     }
 
     // Restaurar reliquias (desde checkpoint.relics o checkpoint.inventory.relics)
-    const loadedRelics = (checkpoint.relics && Array.isArray(checkpoint.relics)) 
-        ? checkpoint.relics 
-        : ((checkpoint.inventory && Array.isArray(checkpoint.inventory.relics)) ? checkpoint.inventory.relics : []);
+    let rawRelics = [];
+    if (checkpoint.relics && Array.isArray(checkpoint.relics) && checkpoint.relics.length > 0) {
+        rawRelics = checkpoint.relics;
+    } else if (invData && Array.isArray(invData.relics) && invData.relics.length > 0) {
+        rawRelics = invData.relics;
+    } else if (checkpoint.relics && Array.isArray(checkpoint.relics)) {
+        rawRelics = checkpoint.relics;
+    } else if (typeof checkpoint.relics === 'string') {
+        try {
+            const parsed = JSON.parse(checkpoint.relics);
+            if (Array.isArray(parsed)) rawRelics = parsed;
+        } catch (e) {}
+    }
+
+    const loadedRelics = rawRelics.map(r => (typeof r === 'object' && r !== null ? r.id : r)).filter(Boolean);
 
     GAME_STATE.relics = [...loadedRelics];
     GAME_STATE.fenixTriggeredThisRun = !!(checkpoint.fenix_triggered || checkpoint.fenixTriggeredThisRun);
