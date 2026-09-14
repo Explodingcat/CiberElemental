@@ -57,27 +57,27 @@ function startCombat(nodeType) {
     // Generar encuentro de combate (1 a 3 robots según piso y tipo de nodo)
     combatState.enemies = generateEncounter(GAME_STATE.floor, nodeType);
     
-    // Limpiar estados previos, marcas, debuffs y configurar cooldowns completos de todo el escuadrón
+    // Limpiar estados previos, marcas, debuffs y configurar cooldowns de inicio de combate de todo el escuadrón
     if (GAME_STATE && GAME_STATE.team) {
         GAME_STATE.team.forEach(robot => {
             if (robot.clearStatuses) robot.clearStatuses();
             else robot.statuses = [];
             if (robot.resetCooldowns) robot.resetCooldowns(true);
             else if (robot.skills) robot.skills.forEach(s => {
-                s.currentCd = s.cd > 0 ? s.cd : 0;
+                s.currentCd = (s.initialCd !== undefined) ? s.initialCd : (s.startReady === true ? 0 : (s.cd > 0 ? s.cd : 0));
             });
-            if (robot.consumeUltimateEnergy) robot.consumeUltimateEnergy();
-            else robot.ultimateEnergy = 0;
+            // La energía Overdrive (ultimateEnergy) se conserva intacta entre combates para uso táctico
         });
     }
 
-    // Configurar cooldowns iniciales completos para los enemigos generados
+    // Configurar cooldowns iniciales para los enemigos generados (respetando aperturas de élites y jefes)
     if (combatState.enemies) {
         combatState.enemies.forEach(enemy => {
             if (enemy.clearStatuses) enemy.clearStatuses();
-            if (enemy.skills) {
+            if (enemy.resetCooldowns) enemy.resetCooldowns(true);
+            else if (enemy.skills) {
                 enemy.skills.forEach(s => {
-                    s.currentCd = s.cd > 0 ? s.cd : 0;
+                    s.currentCd = (s.initialCd !== undefined) ? s.initialCd : (s.startReady === true ? 0 : (s.cd > 0 ? s.cd : 0));
                 });
             }
         });
@@ -458,6 +458,7 @@ function formatStatusLabel(type) {
         case 'FROST': return 'Congelación (-20% PREC)';
         case 'BLIND': return 'Ceguera (-50% PREC)';
         case 'ARMOR_BREAK': return 'Rompearmaduras (-25% DEF)';
+        case 'BUFF_ATK_CATALIZADOR': return 'Sobrealimentación Térmica (+20% ATQ)';
         case 'MUTACION_ESPINAS': return 'Mutación: Espinas';
         case 'MUTACION_REGENERADOR': return 'Mutación: Regenerador';
         case 'MUTACION_RABIA': return 'Mutación: Rabia';
@@ -486,6 +487,7 @@ function renderStatusesSplitted(buffId, debuffId, statuses, owner = null) {
     const getIcon = (type) => {
         if (type === 'PASIVA_FURIA') return '🔥';
         if (type === 'BUFF_ESPADA_RACHA') return '⚔️';
+        if (type === 'BUFF_ATK_CATALIZADOR') return '⚡';
         if (type === 'REGENERACION') return '💧';
         if (type === 'SHIELD' || type === 'BARRIER') return '🛡️';
         if (type === 'EVADE') return '💨';
@@ -524,6 +526,8 @@ function renderStatusesSplitted(buffId, debuffId, statuses, owner = null) {
             } else {
                 tooltipText = `[Pasiva] Furia Sobrecalentada: Mientras menos vida tenga, más daño y crítico inflige (Permanente)`;
             }
+        } else if (s.type === 'BUFF_ATK_CATALIZADOR') {
+            tooltipText = `Sobrealimentación Térmica: Aumenta el ataque en +20% (${s.duration} turnos restantes)`;
         } else if (s.type === 'SHIELD' && s.amount !== undefined) {
             let shieldName = s.name || labelText;
             tooltipText = `${shieldName} (${s.amount} HP plomo): Absorbe daño antes de tocar la vida (1 turno)`;
@@ -2238,9 +2242,15 @@ async function executeEnemyTurn(enemy, enemyIndex = 0) {
                 .map((e, idx) => ({ enemy: e, idx }))
                 .filter(item => !item.enemy.isOffline && item.enemy.hp > 0);
             if (aliveEnemies.length > 0) {
-                let lowest = aliveEnemies.reduce((prev, curr) => (curr.enemy.hp / curr.enemy.maxHp < prev.enemy.hp / prev.enemy.maxHp ? curr : prev), aliveEnemies[0]);
-                recipientEnemy = lowest.enemy;
-                recipientIdx = lowest.idx;
+                let bossEnemy = aliveEnemies.find(item => item.enemy.isBoss || item.enemy.name.includes('TITAN') || item.enemy.name.includes('Jefe'));
+                if (bossEnemy && enemySkill.name === 'Matriz de Escudo Térmico') {
+                    recipientEnemy = bossEnemy.enemy;
+                    recipientIdx = bossEnemy.idx;
+                } else {
+                    let lowest = aliveEnemies.reduce((prev, curr) => (curr.enemy.hp / curr.enemy.maxHp < prev.enemy.hp / prev.enemy.maxHp ? curr : prev), aliveEnemies[0]);
+                    recipientEnemy = lowest.enemy;
+                    recipientIdx = lowest.idx;
+                }
             }
         }
         renderEnemyCombatDock(enemy, enemySkill.name, `🛡️ Activando soporte táctico sobre [${recipientEnemy.name.toUpperCase()}].`);
@@ -2808,7 +2818,7 @@ async function executeTurnAoE(attacker, skill, isAttackerAlly, actorIndex = 0) {
             elem2Emoji: '📡',
             tacticalTag: 'SOBRECARGA ELECTROMAGNÉTICA',
             particles: ['⚡', '📡', '✨', '💥', '🔵']
-        }, false, 1);
+        }, isAttackerAlly, 1);
     }
     
     for (const item of targets) {
@@ -2840,6 +2850,11 @@ async function executeTurnAoE(attacker, skill, isAttackerAlly, actorIndex = 0) {
         let berserkBonus = attacker.getBerserkBonus ? attacker.getBerserkBonus() : { dmgMult: 1, critBonus: 0 };
         if (berserkBonus.dmgMult > 1) {
             baseDmg = Math.floor(baseDmg * berserkBonus.dmgMult);
+        }
+
+        // Sobrealimentación Térmica del Drone Catalizador (+20% ATQ)
+        if (attacker.hasStatus && attacker.hasStatus('BUFF_ATK_CATALIZADOR')) {
+            baseDmg = Math.floor(baseDmg * 1.20);
         }
         
         if (isAttackerAlly && typeof SkillsManager !== 'undefined') {
@@ -2964,7 +2979,7 @@ async function executeTurn(attacker, skill, defender, isAttackerAlly, allyIndex 
                     elem2Emoji: '💥',
                     tacticalTag: 'IMPACTO DEMOLEDOR',
                     particles: ['🪨', '💥', '⚡', '🔨', '🌋']
-                }, !isAttackerAlly, isAttackerAlly ? targetEnemyIndex : (targetAllyIndex !== null ? targetAllyIndex : allyIndex));
+                }, isAttackerAlly, isAttackerAlly ? targetEnemyIndex : (targetAllyIndex !== null ? targetAllyIndex : allyIndex));
             } else if (['Protocolo Exterminio', 'Protocolo Aniquilación', 'Protocolo Singularidad'].includes(skill.name)) {
                 const arena = document.getElementById('combat-arena-bg');
                 if (arena) {
@@ -2986,7 +3001,7 @@ async function executeTurn(attacker, skill, defender, isAttackerAlly, allyIndex 
                     elem2Emoji: '☠️',
                     tacticalTag: 'ANIQUILACIÓN BALÍSTICA',
                     particles: ['☠️', '🎯', '💥', '⚡', '🔥']
-                }, !isAttackerAlly, isAttackerAlly ? targetEnemyIndex : (targetAllyIndex !== null ? targetAllyIndex : allyIndex));
+                }, isAttackerAlly, isAttackerAlly ? targetEnemyIndex : (targetAllyIndex !== null ? targetAllyIndex : allyIndex));
             }
 
             // Animar retroceso del defensor
@@ -3010,6 +3025,11 @@ async function executeTurn(attacker, skill, defender, isAttackerAlly, allyIndex 
             let berserkBonus = attacker.getBerserkBonus ? attacker.getBerserkBonus() : { dmgMult: 1, critBonus: 0 };
             if (berserkBonus.dmgMult > 1) {
                 baseDmg = Math.floor(baseDmg * berserkBonus.dmgMult);
+            }
+
+            // Sobrealimentación Térmica del Drone Catalizador (+20% ATQ)
+            if (attacker.hasStatus && attacker.hasStatus('BUFF_ATK_CATALIZADOR')) {
+                baseDmg = Math.floor(baseDmg * 1.20);
             }
 
             // Bonificaciones de daño de meta-progresión si el atacante es un aliado
@@ -3284,8 +3304,14 @@ async function executeTurn(attacker, skill, defender, isAttackerAlly, allyIndex 
             }
             defender.hadRocioShieldHit = false;
             
-            // Aplicar marca elemental si es habilidad especial o probabilidad del 20% en ataques básicos
-            if (skill.cd > 0 && attackElement !== ELEMENTS.NEUTRO) {
+            // Aplicar marca elemental si está definida explícitamente en skill.marks o por elemento con cd > 0
+            if (skill.marks && defender.hp > 0) {
+                let markType = skill.marks.type;
+                let duration = skill.marks.duration || 3;
+                defender.statuses = defender.statuses.filter(s => !s.type.startsWith('MARCA_'));
+                defender.addStatus({ type: markType, duration: duration });
+                logCombat(`- Adhiere ${formatStatusLabel(markType)} a [${defender.name}] (${duration} turnos).`);
+            } else if (skill.cd > 0 && attackElement !== ELEMENTS.NEUTRO) {
                 let markType = `MARCA_${attackElement}`;
                 defender.statuses = defender.statuses.filter(s => !s.type.startsWith('MARCA_'));
                 defender.addStatus({ type: markType, duration: 3 });
@@ -3299,9 +3325,21 @@ async function executeTurn(attacker, skill, defender, isAttackerAlly, allyIndex 
                     logCombat(`✨ ¡[${attacker.name}] imbuye su golpe y adhiere ${formatStatusLabel(markType)} a [${defender.name}] (3 turnos)!`);
                 }
             }
-            if (skill.name === 'Golpe Titánico') {
+
+            // Aplicar status secundario del skill si está configurado (con soporte de chance)
+            if (skill.status && defender.hp > 0) {
+                let chance = skill.status.chance !== undefined ? skill.status.chance : 1.0;
+                if (Math.random() <= chance) {
+                    let appliedStatus = JSON.parse(JSON.stringify(skill.status));
+                    delete appliedStatus.chance;
+                    defender.statuses = defender.statuses.filter(s => s.type !== appliedStatus.type);
+                    defender.addStatus(appliedStatus);
+                    logCombat(`- Aplica ${formatStatusLabel(appliedStatus.type)} a [${defender.name}] (${appliedStatus.duration} turnos).`);
+                }
+            }
+            if (['Golpe Titánico', 'Golpe Cuántico', 'Colapso Gravitatorio'].includes(skill.name)) {
                 showHitAnimation('TITAN_STRIKE', isAttackerAlly, isAttackerAlly ? targetEnemyIndex : (targetAllyIndex !== null ? targetAllyIndex : allyIndex));
-            } else if (skill.name === 'Protocolo Exterminio') {
+            } else if (['Protocolo Exterminio', 'Protocolo Aniquilación', 'Protocolo Singularidad'].includes(skill.name)) {
                 showHitAnimation('TITAN_BEAM', isAttackerAlly, isAttackerAlly ? targetEnemyIndex : (targetAllyIndex !== null ? targetAllyIndex : allyIndex));
             } else {
                 showHitAnimation(attackElement, isAttackerAlly, isAttackerAlly ? targetEnemyIndex : (targetAllyIndex !== null ? targetAllyIndex : allyIndex));
@@ -3415,6 +3453,10 @@ async function executeTurn(attacker, skill, defender, isAttackerAlly, allyIndex 
             recipient = GAME_STATE.team[targetAllyIndex];
             recipientAllyIdx = targetAllyIndex;
             recipientIsEnemy = false;
+        } else if (!isAttackerAlly && skill.target === 'ALLY' && defender) {
+            recipient = defender;
+            recipientAllyIdx = (targetEnemyIndex !== null && targetEnemyIndex !== undefined) ? targetEnemyIndex : 0;
+            recipientIsEnemy = true;
         }
 
         // Auto-daño para activar pasivas (ej. Sobrecarga de Furia del Berserker)
@@ -3449,21 +3491,15 @@ async function executeTurn(attacker, skill, defender, isAttackerAlly, allyIndex 
             logCombat(`🔥 [${attacker.name}] sobrecarga su núcleo térmico (-${selfDmg} HP) para entrar en ¡Furia Sobrecalentada!`);
         }
 
-        if (skill.status) {
-            let appliedStatus = JSON.parse(JSON.stringify(skill.status));
+        if (skill.status || skill.shieldPct || skill.type === 'BUFF_SHIELD') {
+            let appliedStatus = skill.status ? JSON.parse(JSON.stringify(skill.status)) : { type: 'SHIELD', duration: 2 };
             appliedStatus.casterId = attacker.id;
             appliedStatus.casterName = attacker.name;
             
             // Si ya tenía barrera previa, renovarla
             if (appliedStatus.type === 'BARRIER') {
                 recipient.statuses = recipient.statuses.filter(s => s.type !== 'BARRIER');
-            }
-            recipient.addStatus(appliedStatus);
-
-            if (skill.status.type === 'CORAZA_ESPINAS') {
-                logCombat(`- [${attacker.name}] activa Coraza de Espinas (reduce 50% daño recibido y refleja 50% al atacante hasta su próximo turno).`);
-                showHitAnimation('SHIELD', recipientIsEnemy, recipientAllyIdx);
-            } else if (skill.status.type === 'BARRIER') {
+                recipient.addStatus(appliedStatus);
                 // Curar 5% de la vida máxima del que recibe la barrera
                 let barrierHealRate = 0.05;
                 let healAmt = Math.max(1, Math.floor(recipient.maxHp * barrierHealRate));
@@ -3473,27 +3509,53 @@ async function executeTurn(attacker, skill, defender, isAttackerAlly, allyIndex 
                 }
                 logCombat(`🌊 [${attacker.name}] otorga Barrera de Plasma a [${recipient.name}] (100% protección hasta el próximo turno de ${attacker.name}) y le restaura ${actualHealed} HP.`);
                 showHitAnimation('SHIELD', recipientIsEnemy, recipientAllyIdx);
-            } else if (skill.status.type === 'SHIELD' || skill.shieldPct) {
-                // Escudo numérico plomo (Rocío Protector)
+            } else if (appliedStatus.type === 'CORAZA_ESPINAS') {
+                recipient.addStatus(appliedStatus);
+                logCombat(`- [${attacker.name}] activa Coraza de Espinas (reduce 50% daño recibido y refleja 50% al atacante hasta su próximo turno).`);
+                showHitAnimation('SHIELD', recipientIsEnemy, recipientAllyIdx);
+            } else if (appliedStatus.type === 'SHIELD' || skill.shieldPct || skill.type === 'BUFF_SHIELD') {
+                // Escudo numérico plomo
                 let shieldRate = (skill.shieldPct || (skill.status && skill.status.shieldPct)) || 0.20;
                 if (attacker.hasAffinity && attacker.hasAffinity() && attacker.element === ELEMENTS.AGUA) {
                     shieldRate *= 1.25; // Afinidad de Agua: +25% de potencia de escudo -> 25% de absorción
                 }
                 let shieldAmt = Math.max(1, Math.floor(recipient.maxHp * shieldRate));
                 appliedStatus.amount = shieldAmt;
-                appliedStatus.duration = 1;
-                recipient.statuses = recipient.statuses.filter(s => !(s.type === 'SHIELD' && s.subType === 'ROCIO_PROTECTOR'));
+                appliedStatus.duration = (skill.status && skill.status.duration) ? skill.status.duration : (skill.name === 'Matriz de Escudo Térmico' ? 2 : 1);
+                
+                if (skill.name === 'Matriz de Escudo Térmico' || appliedStatus.subType === 'ESCUDO_TERMICO') {
+                    appliedStatus.name = 'Matriz de Escudo Térmico';
+                    appliedStatus.subType = 'ESCUDO_TERMICO';
+                    recipient.statuses = recipient.statuses.filter(s => !(s.type === 'SHIELD' && s.subType === 'ESCUDO_TERMICO'));
+                    recipient.addStatus(appliedStatus);
+
+                    // Aplicar buff de ataque Sobrealimentación Térmica (+20% ATQ por 2 turnos)
+                    recipient.statuses = recipient.statuses.filter(s => s.type !== 'BUFF_ATK_CATALIZADOR');
+                    recipient.addStatus({
+                        type: 'BUFF_ATK_CATALIZADOR',
+                        duration: 2,
+                        casterId: attacker.id,
+                        casterName: attacker.name
+                    });
+
+                    logCombat(`🛡️⚡ [${attacker.name}] proyecta Matriz de Escudo Térmico sobre [${recipient.name}] (Escudo de ${shieldAmt} HP y +20% ATQ por 2 turnos).`);
+                    showHitAnimation('SHIELD', recipientIsEnemy, recipientAllyIdx);
+                } else {
+                    recipient.statuses = recipient.statuses.filter(s => !(s.type === 'SHIELD' && s.subType === 'ROCIO_PROTECTOR'));
+                    recipient.addStatus(appliedStatus);
+                    logCombat(`🛡️💧 [${attacker.name}] envuelve a [${recipient.name}] en un Rocío Protector (Escudo plomo de ${shieldAmt} HP por 1 turno).`);
+                    showHitAnimation('SHIELD', recipientIsEnemy, recipientAllyIdx);
+                }
+            } else if (appliedStatus.type === 'REGENERACION') {
                 recipient.addStatus(appliedStatus);
-                logCombat(`🛡️💧 [${attacker.name}] envuelve a [${recipient.name}] en un Rocío Protector (Escudo plomo de ${shieldAmt} HP por 1 turno).`);
-                showHitAnimation('SHIELD', recipientIsEnemy, recipientAllyIdx);
-            } else if (skill.status.type === 'REGENERACION') {
                 logCombat(`- 💧 [${recipient.name}] queda envuelto en Rocío Protector.`);
             } else {
-                logCombat(`- Obtiene ${formatStatusLabel(skill.status.type)} por ${skill.status.duration} turnos.`);
+                recipient.addStatus(appliedStatus);
+                logCombat(`- Obtiene ${formatStatusLabel(appliedStatus.type)} por ${appliedStatus.duration} turnos.`);
             }
             
             // Si el buff es elemental especial y NO es de reacción defensiva ni buff amistoso, salpica marca al rival
-            const isDefensiveReactionBuff = (skill.status && (skill.status.type === 'BARRIER' || skill.status.type === 'CORAZA_ESPINAS' || skill.status.type === 'SHIELD' || skill.status.type === 'REGENERACION'));
+            const isDefensiveReactionBuff = (appliedStatus && (appliedStatus.type === 'BARRIER' || appliedStatus.type === 'CORAZA_ESPINAS' || appliedStatus.type === 'SHIELD' || appliedStatus.type === 'REGENERACION'));
             const isFriendlyBuff = (skill.target === 'ALLY' || skill.target === 'SELF');
             if (!isDefensiveReactionBuff && !isFriendlyBuff && skill.cd > 0 && attackElement !== ELEMENTS.NEUTRO && defender && defender.hp > 0 && defender.isAlly !== attacker.isAlly) {
                 let markType = `MARCA_${attackElement}`;

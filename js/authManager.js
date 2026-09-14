@@ -1191,8 +1191,11 @@ const AuthManager = {
     },
 
     switchTab(tabId) {
-        document.querySelectorAll('.account-tab-btn').forEach(b => b.classList.remove('active'));
-        document.querySelectorAll('.account-tab-panel').forEach(p => p.classList.remove('active'));
+        const accountModal = document.getElementById('account-modal');
+        if (accountModal) {
+            accountModal.querySelectorAll('.account-tab-btn').forEach(b => b.classList.remove('active'));
+            accountModal.querySelectorAll('.account-tab-panel').forEach(p => p.classList.remove('active'));
+        }
 
         const btn = document.getElementById(`btn-${tabId}`);
         const panel = document.getElementById(tabId);

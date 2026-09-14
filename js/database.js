@@ -182,6 +182,7 @@ const ELITE_TEMPLATES = {
                 name: 'Impacto Tectónico',
                 cd: 0,
                 currentCd: 0,
+                initialCd: 0,
                 desc: 'Golpe demoledor de masa tectónica (1.5x de daño).',
                 type: 'DAMAGE',
                 power: 1.5
@@ -189,7 +190,9 @@ const ELITE_TEMPLATES = {
             {
                 name: 'Terremoto Cataclísmico',
                 cd: 4,
-                currentCd: 0,
+                currentCd: 4,
+                initialCd: 4,
+                startReady: false,
                 desc: 'Onda sísmica devastadora que golpea a todos los contrincantes (1.2x de daño), aplica Aturdimiento por 1 turno y adhiere Marca de Tierra (3 turnos).',
                 type: 'DAMAGE_AOE_STATUS',
                 target: 'ALL_ENEMIES',
@@ -218,6 +221,8 @@ const ELITE_TEMPLATES = {
                 name: 'Sobrecarga de Furia',
                 cd: 99,
                 currentCd: 0,
+                initialCd: 0,
+                startReady: true,
                 desc: 'Sobrecarga su núcleo térmico al inicio del combate: sacrifica 20% de su HP para activar Furia Sobrecalentada de inmediato.',
                 type: 'BUFF',
                 target: 'SELF',
@@ -227,6 +232,7 @@ const ELITE_TEMPLATES = {
                 name: 'Tajo Incandescente',
                 cd: 0,
                 currentCd: 0,
+                initialCd: 0,
                 desc: 'Ataque feroz de fuego que escala en daño y probabilidad de crítico a menor porcentaje de HP.',
                 type: 'DAMAGE',
                 power: 1.3
@@ -251,6 +257,7 @@ const ELITE_TEMPLATES = {
                 name: 'Tajo Asesino',
                 cd: 0,
                 currentCd: 0,
+                initialCd: 0,
                 desc: 'Tajo de frecuencia de alta potencia con perforación de defensas.',
                 type: 'DAMAGE',
                 power: 2.0,
@@ -260,6 +267,8 @@ const ELITE_TEMPLATES = {
                 name: 'Desfase Cuántico',
                 cd: 3,
                 currentCd: 0,
+                initialCd: 0,
+                startReady: true,
                 desc: 'Desplaza su firma cuántica, otorgándole 100% de Probabilidad de Esquiva durante 1 turno.',
                 type: 'BUFF',
                 target: 'SELF',
@@ -285,6 +294,7 @@ const ELITE_TEMPLATES = {
                 name: 'Ráfaga Gélida',
                 cd: 0,
                 currentCd: 0,
+                initialCd: 0,
                 desc: 'Disparo de viento cortante (Elemento Aire). Detona ¡Ventisca! si el objetivo tiene Marca de Agua.',
                 type: 'DAMAGE',
                 power: 1.1,
@@ -294,6 +304,8 @@ const ELITE_TEMPLATES = {
                 name: 'Ventisca de Cero Absoluto',
                 cd: 3,
                 currentCd: 0,
+                initialCd: 0,
+                startReady: true,
                 desc: 'Golpea a todos los contrincantes, reduce su velocidad al mínimo (SPD 1) por 2 turnos y adhiere Marca de Agua (3 turnos).',
                 type: 'DAMAGE_AOE_STATUS',
                 target: 'ALL_ENEMIES',
@@ -304,6 +316,95 @@ const ELITE_TEMPLATES = {
         ]
     }
 };
+
+const BOSS_MINION_TEMPLATES = {
+    CIBER_MEDUSA: {
+        name: 'Ciber-Medusa',
+        element: ELEMENTS.AGUA,
+        emoji: '🪼',
+        baseStatsOverride: {
+            maxHp: 95,
+            atk: 12,
+            spd: 10,
+            dodge: 5,
+            acc: 95,
+            critChance: 5
+        },
+        skills: [
+            {
+                name: 'Chorro de Hidro-Plasma',
+                cd: 0,
+                currentCd: 0,
+                initialCd: 0,
+                desc: 'Disparo de agua concentrada (1.0x de daño) que adhiere Marca de Agua (3 turnos).',
+                type: 'DAMAGE',
+                power: 1.0,
+                marks: { type: 'MARCA_AGUA', duration: 3 }
+            },
+            {
+                name: 'Salpicadura Corrosiva',
+                cd: 3,
+                currentCd: 0,
+                initialCd: 0,
+                startReady: true,
+                desc: 'Rocía a todo el escuadrón (0.75x de daño), adhiere Marca de Agua (3 turnos) y aplica Ralentización (-50% VEL por 1 turno).',
+                type: 'DAMAGE_AOE_STATUS',
+                target: 'ALL_ENEMIES',
+                power: 0.75,
+                status: { type: 'SLOW', duration: 1 },
+                marks: { type: 'MARCA_AGUA', duration: 3 }
+            }
+        ]
+    },
+    DRONE_CATALIZADOR: {
+        name: 'Drone Catalizador',
+        element: ELEMENTS.NEUTRO,
+        emoji: '🛰️',
+        baseStatsOverride: {
+            maxHp: 85,
+            atk: 10,
+            spd: 10,
+            dodge: 0,
+            acc: 100,
+            critChance: 0
+        },
+        skills: [
+            {
+                name: 'Láser de Fijación',
+                cd: 0,
+                currentCd: 0,
+                initialCd: 0,
+                desc: 'Haz balístico neutro (0.9x de daño) con 25% de prob. de aplicar Rompearmaduras (-25% DEF por 2 turnos).',
+                type: 'DAMAGE',
+                power: 0.9,
+                status: { type: 'ARMOR_BREAK', duration: 2, chance: 0.25 }
+            },
+            {
+                name: 'Matriz de Escudo Térmico',
+                cd: 3,
+                currentCd: 1,
+                initialCd: 1,
+                desc: 'Proyecta un Escudo de plasma (20% HP Máx) sobre TITAN-X (o un aliado) y le otorga +20% de daño de ataque por 2 turnos.',
+                type: 'BUFF_SHIELD',
+                target: 'ALLY',
+                shieldPct: 0.20,
+                atkBuffPct: 0.20,
+                status: { type: 'SHIELD', subType: 'ESCUDO_TERMICO', duration: 2 }
+            }
+        ]
+    }
+};
+
+function generateBossMinion(minionKey, level = 10) {
+    const template = BOSS_MINION_TEMPLATES[minionKey];
+    if (!template) return null;
+    return new Robot({
+        ...template,
+        level: level,
+        isAlly: false,
+        isElite: false
+    });
+}
 
 function generateRandomWeapon(forcedElement = null) {
     const types = Object.keys(WEAPON_TYPES);
@@ -610,6 +711,7 @@ function generateBoss(towerId = 1, equipWeapon = false) {
                     name: 'Golpe Cuántico',
                     cd: 0,
                     currentCd: 0,
+                    initialCd: 0,
                     desc: 'Impacto cuántico masivo neutro (1.45x) que sacude el subespacio.',
                     type: 'DAMAGE',
                     power: 1.45
@@ -618,6 +720,7 @@ function generateBoss(towerId = 1, equipWeapon = false) {
                     name: 'Sobrecarga Cuántica',
                     cd: 3,
                     currentCd: 1,
+                    initialCd: 1,
                     desc: 'Onda electromagnética que barre al escuadrón (0.85x), destruyendo todas las Barreras y Escudos.',
                     type: 'DAMAGE_AOE_STATUS',
                     target: 'ALL_ENEMIES',
@@ -628,6 +731,7 @@ function generateBoss(towerId = 1, equipWeapon = false) {
                     name: 'Protocolo Aniquilación',
                     cd: 4,
                     currentCd: 2,
+                    initialCd: 2,
                     desc: 'Haz de antimateria concentrado (2.3x). Infalible: Fijación balística absoluta, imposible de esquivar.',
                     type: 'DAMAGE',
                     power: 2.3,
@@ -656,6 +760,7 @@ function generateBoss(towerId = 1, equipWeapon = false) {
                     name: 'Colapso Gravitatorio',
                     cd: 0,
                     currentCd: 0,
+                    initialCd: 0,
                     desc: 'Aplastamiento de gravedad hiperdensa neutro (1.5x) que hace temblar la realidad.',
                     type: 'DAMAGE',
                     power: 1.5
@@ -664,6 +769,7 @@ function generateBoss(towerId = 1, equipWeapon = false) {
                     name: 'Tormenta del Vacío',
                     cd: 3,
                     currentCd: 1,
+                    initialCd: 1,
                     desc: 'Singularidad que absorbe el campo de batalla (0.9x), desintegrando todas las defensas y barreras aliadas.',
                     type: 'DAMAGE_AOE_STATUS',
                     target: 'ALL_ENEMIES',
@@ -674,6 +780,7 @@ function generateBoss(towerId = 1, equipWeapon = false) {
                     name: 'Protocolo Singularidad',
                     cd: 4,
                     currentCd: 2,
+                    initialCd: 2,
                     desc: 'Ruptura espacio-temporal terminal (2.4x). Infalible: Fijación absoluta, trasciende la esquiva.',
                     type: 'DAMAGE',
                     power: 2.4,
@@ -684,14 +791,14 @@ function generateBoss(towerId = 1, equipWeapon = false) {
     } else {
         bossConfig = {
             name: 'TITAN-X (Jefe)',
-            element: ELEMENTS.NEUTRO,
+            element: ELEMENTS.FUEGO,
             emoji: '👹',
             level: 10,
             isBoss: true,
             baseStatsOverride: {
                 maxHp: 350,
                 atk: 26,
-                spd: 11,
+                spd: 3,
                 dodge: 10,
                 acc: 100,
                 critChance: 12
@@ -702,7 +809,8 @@ function generateBoss(towerId = 1, equipWeapon = false) {
                     name: 'Golpe Titánico', 
                     cd: 0, 
                     currentCd: 0, 
-                    desc: 'Ataque demoledor neutro (1.4x de daño) que sacude la arena.', 
+                    initialCd: 0,
+                    desc: 'Ataque demoledor ígneo (1.4x de daño) que sacude la arena y detona marcas.', 
                     type: 'DAMAGE', 
                     power: 1.4 
                 },
@@ -710,6 +818,7 @@ function generateBoss(towerId = 1, equipWeapon = false) {
                     name: 'Pulso PEM Titánico', 
                     cd: 3, 
                     currentCd: 1, 
+                    initialCd: 1,
                     desc: 'Tormenta electromagnética masiva que descarga rayos sobre todo el escuadrón (0.8x) y desactiva todas las Barreras y Escudos aliados.', 
                     type: 'DAMAGE_AOE_STATUS', 
                     target: 'ALL_ENEMIES', 
@@ -720,6 +829,7 @@ function generateBoss(towerId = 1, equipWeapon = false) {
                     name: 'Protocolo Exterminio', 
                     cd: 4, 
                     currentCd: 2, 
+                    initialCd: 2,
                     desc: 'Haz orbital aniquilador concentrado (2.2x de daño masivo). Infalible: Fijación balística absoluta, no puede fallar ni ser esquivado.', 
                     type: 'DAMAGE', 
                     power: 2.2, 
@@ -739,6 +849,13 @@ function generateBoss(towerId = 1, equipWeapon = false) {
 function generateEncounter(floor, nodeType) {
     if (nodeType === NODE_TYPES.BOSS || floor === 10 || floor === 20 || floor === 30) {
         let towerId = (floor <= 10) ? 1 : ((floor <= 20) ? 2 : 3);
+        if (towerId === 1) {
+            let boss = generateBoss(1);
+            let minion1 = generateBossMinion('CIBER_MEDUSA', boss.level || 10);
+            let minion2 = generateBossMinion('DRONE_CATALIZADOR', boss.level || 10);
+            // Orden táctico: Index 0 = Centro (TITAN-X), Index 1 = Arriba (Ciber-Medusa), Index 2 = Abajo (Drone Catalizador)
+            return [boss, minion1, minion2];
+        }
         return [generateBoss(towerId)];
     }
     

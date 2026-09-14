@@ -11436,6 +11436,11 @@ progress::-webkit-progress-value {
     color: rgba(255, 255, 255, 0.6);
 }
 
+.leaderboard-tab-panel {
+    display: block;
+    width: 100%;
+}
+
 /* ==========================================================================
    Pestañas Selectoras de Torres del Leaderboard
    ========================================================================== */

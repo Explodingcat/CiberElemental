@@ -461,8 +461,18 @@ class Robot {
     resetCooldowns(atCombatStart = false) {
         if (this.skills) {
             this.skills.forEach(s => {
-                if (atCombatStart && s.cd > 0) {
-                    s.currentCd = s.cd;
+                if (atCombatStart) {
+                    if (s.initialCd !== undefined) {
+                        s.currentCd = s.initialCd;
+                    } else if (s.startReady === true) {
+                        s.currentCd = 0;
+                    } else if (s.startReady === false) {
+                        s.currentCd = s.cd > 0 ? s.cd : 0;
+                    } else if (s.cd > 0) {
+                        s.currentCd = s.cd;
+                    } else {
+                        s.currentCd = 0;
+                    }
                 } else {
                     s.currentCd = 0;
                 }

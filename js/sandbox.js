@@ -142,6 +142,10 @@ const CHARACTER_TEMPLATES = {
     'CYBER_STALKER': { name: 'Cyber-Stalker', group: '💀 Élites', template: ELITE_TEMPLATES.CYBER_STALKER, isElite: true },
     'CRIO_CENTINELA': { name: 'Crio-Centinela', group: '💀 Élites', template: ELITE_TEMPLATES.CRIO_CENTINELA, isElite: true },
     
+    // Sirvientes de Jefe
+    'CIBER_MEDUSA': { name: 'Ciber-Medusa', group: '👑 Jefes', template: (typeof BOSS_MINION_TEMPLATES !== 'undefined' ? BOSS_MINION_TEMPLATES.CIBER_MEDUSA : null) },
+    'DRONE_CATALIZADOR': { name: 'Drone Catalizador', group: '👑 Jefes', template: (typeof BOSS_MINION_TEMPLATES !== 'undefined' ? BOSS_MINION_TEMPLATES.DRONE_CATALIZADOR : null) },
+
     // Jefes
     'TITAN_X': {
         name: 'TITAN-X (Jefe Torre 1)',
@@ -149,23 +153,23 @@ const CHARACTER_TEMPLATES = {
         isBoss: true,
         template: {
             name: 'TITAN-X (Jefe)',
-            element: ELEMENTS.NEUTRO,
+            element: ELEMENTS.FUEGO,
             emoji: '👹',
             level: 10,
             isBoss: true,
             baseStatsOverride: {
                 maxHp: 350,
                 atk: 26,
-                spd: 11,
+                spd: 3,
                 dodge: 10,
                 acc: 100,
                 critChance: 12
             },
             turnPattern: ['Golpe Titánico', 'Pulso PEM Titánico', 'Protocolo Exterminio'],
             skills: [
-                { name: 'Golpe Titánico', cd: 0, currentCd: 0, desc: 'Ataque demoledor neutro (1.4x de daño) que sacude la arena.', type: 'DAMAGE', power: 1.4 },
-                { name: 'Pulso PEM Titánico', cd: 3, currentCd: 1, desc: 'Tormenta electromagnética masiva que descarga rayos sobre todo el escuadrón (0.8x) y desactiva todas las Barreras y Escudos aliados.', type: 'DAMAGE_AOE_STATUS', target: 'ALL_ENEMIES', power: 0.8, purgeShields: true },
-                { name: 'Protocolo Exterminio', cd: 4, currentCd: 2, desc: 'Haz orbital aniquilador concentrado (2.2x de daño masivo). Infalible: Fijación balística absoluta, no puede fallar ni ser esquivado.', type: 'DAMAGE', power: 2.2, cannotMiss: true }
+                { name: 'Golpe Titánico', cd: 0, currentCd: 0, initialCd: 0, desc: 'Ataque demoledor ígneo (1.4x de daño) que sacude la arena y detona marcas.', type: 'DAMAGE', power: 1.4 },
+                { name: 'Pulso PEM Titánico', cd: 3, currentCd: 1, initialCd: 1, desc: 'Tormenta electromagnética masiva que descarga rayos sobre todo el escuadrón (0.8x) y desactiva todas las Barreras y Escudos aliados.', type: 'DAMAGE_AOE_STATUS', target: 'ALL_ENEMIES', power: 0.8, purgeShields: true },
+                { name: 'Protocolo Exterminio', cd: 4, currentCd: 2, initialCd: 2, desc: 'Haz orbital aniquilador concentrado (2.2x de daño masivo). Infalible: Fijación balística absoluta, no puede fallar ni ser esquivado.', type: 'DAMAGE', power: 2.2, cannotMiss: true }
             ]
         }
     },
@@ -189,9 +193,9 @@ const CHARACTER_TEMPLATES = {
             },
             turnPattern: ['Golpe Cuántico', 'Sobrecarga Cuántica', 'Protocolo Aniquilación'],
             skills: [
-                { name: 'Golpe Cuántico', cd: 0, currentCd: 0, desc: 'Impacto cuántico neutro (1.5x de daño) que desestabiliza las frecuencias del blanco.', type: 'DAMAGE', power: 1.5 },
-                { name: 'Sobrecarga Cuántica', cd: 3, currentCd: 1, desc: 'Descarga cuántica masiva sobre todo el escuadrón (1.0x). Destruye escudos y aplica rompearmaduras.', type: 'DAMAGE_AOE_STATUS', target: 'ALL_ENEMIES', power: 1.0, purgeShields: true },
-                { name: 'Protocolo Aniquilación', cd: 4, currentCd: 2, desc: 'Rayo orbital concentrado (2.5x de daño masivo). Infalible: No puede fallar ni ser esquivado.', type: 'DAMAGE', power: 2.5, cannotMiss: true }
+                { name: 'Golpe Cuántico', cd: 0, currentCd: 0, initialCd: 0, desc: 'Impacto cuántico neutro (1.5x de daño) que desestabiliza las frecuencias del blanco.', type: 'DAMAGE', power: 1.5 },
+                { name: 'Sobrecarga Cuántica', cd: 3, currentCd: 1, initialCd: 1, desc: 'Descarga cuántica masiva sobre todo el escuadrón (1.0x). Destruye escudos y aplica rompearmaduras.', type: 'DAMAGE_AOE_STATUS', target: 'ALL_ENEMIES', power: 1.0, purgeShields: true },
+                { name: 'Protocolo Aniquilación', cd: 4, currentCd: 2, initialCd: 2, desc: 'Rayo orbital concentrado (2.5x de daño masivo). Infalible: No puede fallar ni ser esquivado.', type: 'DAMAGE', power: 2.5, cannotMiss: true }
             ]
         }
     },
@@ -215,9 +219,9 @@ const CHARACTER_TEMPLATES = {
             },
             turnPattern: ['Colapso Gravitatorio', 'Tormenta del Vacío', 'Protocolo Singularidad'],
             skills: [
-                { name: 'Colapso Gravitatorio', cd: 0, currentCd: 0, desc: 'Aplastamiento de gravedad cero (1.6x de daño neutro).', type: 'DAMAGE', power: 1.6 },
-                { name: 'Tormenta del Vacío', cd: 3, currentCd: 1, desc: 'Colapso dimensional en área (1.2x daño a todo el escuadrón). Purga barreras y deja conmoción.', type: 'DAMAGE_AOE_STATUS', target: 'ALL_ENEMIES', power: 1.2, purgeShields: true },
-                { name: 'Protocolo Singularidad', cd: 4, currentCd: 2, desc: 'Aniquilación total por horizonte de sucesos (3.0x daño devastador). Infalible.', type: 'DAMAGE', power: 3.0, cannotMiss: true }
+                { name: 'Colapso Gravitatorio', cd: 0, currentCd: 0, initialCd: 0, desc: 'Aplastamiento de gravedad cero (1.6x de daño neutro).', type: 'DAMAGE', power: 1.6 },
+                { name: 'Tormenta del Vacío', cd: 3, currentCd: 1, initialCd: 1, desc: 'Colapso dimensional en área (1.2x daño a todo el escuadrón). Purga barreras y deja conmoción.', type: 'DAMAGE_AOE_STATUS', target: 'ALL_ENEMIES', power: 1.2, purgeShields: true },
+                { name: 'Protocolo Singularidad', cd: 4, currentCd: 2, initialCd: 2, desc: 'Aniquilación total por horizonte de sucesos (3.0x daño devastador). Infalible.', type: 'DAMAGE', power: 3.0, cannotMiss: true }
             ]
         }
     },
@@ -556,14 +560,14 @@ function applyCombatPreset(presetKey) {
         Sandbox.combatConfig.options.arenaBg = 'bg-normal';
     } else if (presetKey === 'VS_BOSS') {
         Sandbox.combatConfig.allies = [
-            { enabled: true, templateKey: 'IGNIS', level: 7, weaponType: 'ESPADA', weaponElement: 'FUEGO', isUpgraded: true, chipType: 'CHIP_FUEGO', mutatorType: 'NONE' },
-            { enabled: true, templateKey: 'AQUA', level: 7, weaponType: 'BACULO', weaponElement: 'AGUA', isUpgraded: true, chipType: 'CHIP_AGUA', mutatorType: 'NONE' },
-            { enabled: true, templateKey: 'TERRA', level: 7, weaponType: 'HACHA', weaponElement: 'TIERRA', isUpgraded: true, chipType: 'CHIP_TIERRA', mutatorType: 'NONE' }
+            { enabled: true, templateKey: 'IGNIS', level: 8, weaponType: 'ESPADA', weaponElement: 'FUEGO', isUpgraded: true, chipType: 'CHIP_FUEGO', mutatorType: 'NONE' },
+            { enabled: true, templateKey: 'AQUA', level: 8, weaponType: 'BACULO', weaponElement: 'AGUA', isUpgraded: true, chipType: 'CHIP_AGUA', mutatorType: 'NONE' },
+            { enabled: true, templateKey: 'TERRA', level: 8, weaponType: 'HACHA', weaponElement: 'TIERRA', isUpgraded: true, chipType: 'CHIP_TIERRA', mutatorType: 'NONE' }
         ];
         Sandbox.combatConfig.enemies = [
-            { enabled: true, templateKey: 'TITAN_X', level: 10, weaponType: 'NONE', weaponElement: 'NEUTRO', isUpgraded: false, chipType: 'NONE', mutatorType: 'NONE' },
-            { enabled: false, templateKey: 'WILD_AGUA', level: 1, weaponType: 'NONE', weaponElement: 'AGUA', isUpgraded: false, chipType: 'NONE', mutatorType: 'NONE' },
-            { enabled: false, templateKey: 'WILD_TIERRA', level: 1, weaponType: 'NONE', weaponElement: 'TIERRA', isUpgraded: false, chipType: 'NONE', mutatorType: 'NONE' }
+            { enabled: true, templateKey: 'TITAN_X', level: 10, weaponType: 'NONE', weaponElement: 'FUEGO', isUpgraded: false, chipType: 'NONE', mutatorType: 'NONE' },
+            { enabled: true, templateKey: 'CIBER_MEDUSA', level: 10, weaponType: 'NONE', weaponElement: 'AGUA', isUpgraded: false, chipType: 'NONE', mutatorType: 'NONE' },
+            { enabled: true, templateKey: 'DRONE_CATALIZADOR', level: 10, weaponType: 'NONE', weaponElement: 'NEUTRO', isUpgraded: false, chipType: 'NONE', mutatorType: 'NONE' }
         ];
         Sandbox.combatConfig.options.arenaBg = 'bg-boss';
     } else if (presetKey === 'VS_TITAN_OMEGA') {
@@ -721,14 +725,23 @@ function launchSandboxCombat() {
     document.getElementById('combat-editor-container').style.display = 'none';
     document.getElementById('combat-live-container').style.display = 'flex';
     
-    // Limpiar estados de inicio y aplicar cooldowns completos al iniciar combate
+    // Limpiar estados de inicio y aplicar cooldowns al iniciar combate
     GAME_STATE.team.forEach(r => {
         r.statuses = r.statuses.filter(s => s.isPermanent);
         if (r.resetCooldowns) r.resetCooldowns(true);
         else if (r.skills) r.skills.forEach(s => {
-            s.currentCd = s.cd > 0 ? s.cd : 0;
+            s.currentCd = (s.initialCd !== undefined) ? s.initialCd : (s.startReady === true ? 0 : (s.cd > 0 ? s.cd : 0));
         });
     });
+    if (combatState.enemies) {
+        combatState.enemies.forEach(e => {
+            e.statuses = e.statuses.filter(s => s.isPermanent);
+            if (e.resetCooldowns) e.resetCooldowns(true);
+            else if (e.skills) e.skills.forEach(s => {
+                s.currentCd = (s.initialCd !== undefined) ? s.initialCd : (s.startReady === true ? 0 : (s.cd > 0 ? s.cd : 0));
+            });
+        });
+    }
     
     // Disparar hooks de reliquias al inicio del combate
     if (typeof RelicsManager !== 'undefined') {
