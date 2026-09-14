@@ -13020,6 +13020,18 @@ progress::-webkit-progress-value {
     transform: translateY(0); 
 }
 
+.btn-menu-wiki {
+    border-color: rgba(72, 219, 251, 0.45);
+    background: rgba(14, 25, 35, 0.85);
+}
+
+.btn-menu-wiki:hover {
+    background: rgba(72, 219, 251, 0.25);
+    border-color: #48dbfb;
+    color: #ffffff;
+    box-shadow: 0 0 25px rgba(72, 219, 251, 0.5), 0 8px 25px rgba(0, 0, 0, 0.7);
+}
+
 /* RESPONSIVE SKILL TREE UPDATES */
 .skills-modal-box { overflow-y: auto !important; overflow-x: hidden !important; }
 .skills-modal-body.full-width-grid { display: flex; flex-direction: column; overflow: visible !important; }
