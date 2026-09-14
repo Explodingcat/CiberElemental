@@ -27,7 +27,9 @@ El juego opera bajo una rueda de afinidades elemental táctica:
 | 💦 **AGUA** | **Aqua** | 130 | 14 | 9 | 5% | 95% | 5% | **Ataque Básico:** 1.0x Daño.<br>**Barrera Plasma (CD 3):** Otorga barrera a cualquier aliado: bloquea el 100% de daño recibido hasta el próximo turno del invocador, restaura 5% de HP Máx y adhiere Marca de Agua (3T) al enemigo cuando éste ataca al protegido. |
 | 🪨 **TIERRA** | **Terra** | 175 | 12 | 4 | 0% | 85% | 5% | **Ataque Básico:** 1.0x Daño.<br>**Coraza de Espinas (CD 2):** Provocación: obliga a los enemigos a atacarle (al de menor HP si hay varios), reduce 50% el daño recibido, refleja 50% y adhiere 3 Marcas de Tierra al atacante hasta su próximo turno. |
 | 💨 **AIRE** | **Zephyr** | 80 | 22 | 16 | 25% | 95% | 15% | **Ataque Básico:** 1.0x Daño.<br>**Ráfaga Cortante (CD 2):** Inflige 1.4x daño (garantiza actuar primero en el turno de uso). |
-| ⚙️ **NEUTRO** | **TITAN-X** *(Jefe Torre 1)* | 350 *(~507 Nv10)* | 26 *(~37 Nv10)* | 11 | 10% | 100% | 12% | **Golpe Titánico:** 1.4x Daño sísmico.<br>**Pulso PEM Titánico (CD 3):** 0.8x Daño en área a todo el escuadrón y destruye todas las barreras y escudos.<br>**Protocolo Exterminio (CD 4):** 2.2x Daño masivo infalible (fijación balística absoluta: no puede fallar ni ser esquivado). |
+| 🔥 **FUEGO** | **TITAN-X** *(Jefe Torre 1)* | 350 *(~507 Nv10)* | 26 *(~37 Nv10)* | 3 | 10% | 100% | 12% | **Golpe Titánico:** 1.4x Daño ígneo demoledor (detona marcas).<br>**Pulso PEM Titánico (CD 3):** 0.8x Daño en área a todo el escuadrón y destruye todas las barreras y escudos.<br>**Protocolo Exterminio (CD 4):** 2.2x Daño masivo infalible (fijación balística absoluta: no puede fallar ni ser esquivado). |
+| 💦 **AGUA** | **Ciber-Medusa** *(Sirviente Jefe)* | 95 *(~137 Nv10)* | 12 *(~17 Nv10)* | 10 | 5% | 95% | 5% | **Chorro de Hidro-Plasma:** 1.0x Daño + Marca de Agua (3T).<br>**Salpicadura Corrosiva (CD 3, lista en T1):** 0.75x Daño en área a todo el escuadrón + Marca de Agua (3T) + Ralentización (-50% VEL por 1 turno). |
+| ⚙️ **NEUTRO** | **Drone Catalizador** *(Sirviente Jefe)* | 85 *(~123 Nv10)* | 10 *(~14 Nv10)* | 10 | 0% | 100% | 0% | **Láser de Fijación:** 0.9x Daño + 25% prob. Rompearmaduras (-25% DEF, 2T).<br>**Matriz de Escudo Térmico (CD 3, CD inic. 1):** Proyecta un Escudo (20% HP Máx) sobre TITAN-X y le otorga Sobrealimentación Térmica (+20% ATQ por 2T). |
 | ⚛️ **NEUTRO** | **TITAN-OMEGA** *(Jefe Torre 2)* | 420 *(~819 Nv20)* | 28 *(~54 Nv20)* | 12 | 12% | 100% | 15% | **Golpe Cuántico:** 1.5x Daño electromagnético.<br>**Sobrecarga Cuántica (CD 3):** 1.0x Daño en área que destruye escudos y aplica rompearmaduras.<br>**Protocolo Aniquilación (CD 4):** 2.5x Daño infalible devastador con sacudida sísmica. |
 | 🌌 **NEUTRO** | **SINGULARIDAD-ZERO** *(Jefe Torre 3)* | 500 *(~1225 Nv30)* | 32 *(~78 Nv30)* | 14 | 15% | 100% | 20% | **Colapso Gravitatorio:** 1.6x Daño por aplastamiento espacial.<br>**Tormenta del Vacío (CD 3):** 1.2x Daño en área total, purga barreras y deja conmoción.<br>**Protocolo Singularidad (CD 4):** 3.0x Daño cataclísmico garantizado (no puede fallar). |
 | 👑 **LEGENDARIO** | **Armas Doradas** | — | +25% Afinidad | — | — | — | +20% Crít (+1) | **Afinidad Universal:** Otorga **+25% ATQ y +15% HP Máximo** a cualquier robot independientemente de su elemento.<br>**1.15x Daño Universal:** Sin desventaja contra ningún elemento. Al desmantelarse otorga +100 Chatarra. |
@@ -57,8 +59,17 @@ El juego opera bajo una rueda de afinidades elemental táctica:
 
 ### Acciones por Turno
 1. **⚔️ Ataque / Habilidad:** Ejecuta una habilidad básica (0 CD) o especial del robot activo.
-2. **🛡️ Defender:** **Reduce a la mitad (50%)** todo el daño recibido hasta el inicio de su **próximo turno** (protegiendo eficazmente tanto a unidades rápidas como lentas).
-3. **🎒 Objeto:** Usa consumibles tácticos desde la mochila (los Nanobots y Núcleos de Sobrecarga son acciones gratuitas; la Bomba PEM gasta el turno de acción).
+2. **👑 Overdrive (Habilidad Definitiva):** Se desbloquea al alcanzar **Nivel 5**. Al llenar el medidor de energía al **100%**, se activa el botón dorado de Overdrive para desatar una técnica devastadora o de soporte masivo.
+3. **🛡️ Defender:** **Reduce a la mitad (50%)** todo el daño recibido hasta el inicio de su **próximo turno** (protegiendo eficazmente tanto a unidades rápidas como lentas).
+4. **🎒 Objeto:** Usa consumibles tácticos desde la mochila (los Nanobots y Núcleos de Sobrecarga son acciones gratuitas; la Bomba PEM gasta el turno de acción).
+
+### 👑 Sistema de Overdrive y Persistencia de Energía
+* **Desbloqueo de Módulo:** Cada robot desbloquea su capacidad de acumular energía Overdrive al alcanzar **Nivel 5**.
+* **Generación de Energía en Combate:**
+  * **Al Atacar o usar Habilidad:** Carga **+15%** de energía Overdrive.
+  * **Al Recibir Daño o Absorber con Escudo:** Carga **+10%** de energía Overdrive.
+* **Persistencia Táctica Entre Combates:** A diferencia de otros juegos donde la energía se resetea por batalla, en Cyber-Elemental **el medidor de Overdrive se conserva intacto entre encuentros**. Puedes farmear y acumular energía en pisos normales (ej. llegar al 100%) para iniciar de inmediato con tu Overdrive contra un **Élite** o **Jefe**.
+* **Consumo:** Al ejecutar el Overdrive, la barra se vacía al 0% y reinicia su ciclo de carga.
 
 ---
 
@@ -112,10 +123,16 @@ Los **Chips Elementales (💾)** permiten a un robot aprender habilidades de **o
 
 Las armas otorgan **efectos pasivos permanentes** durante el combate.
 
-### Bono de Afinidad Elemental (🌟)
-Si el elemento del arma coincide con el elemento nativo del robot portador:
-* **+20% de HP Máximo**
-* **+20% de Ataque (ATQ)**
+### Bono de Afinidad Elemental Especializada (🌟)
+Equipar un arma que coincide con el elemento del robot otorga una **bonificación temática única**:
+
+| Elemento | Bono de Afinidad | Efecto Adicional en Combate |
+| :--- | :--- | :--- |
+| 🔥 **FUEGO** | **+15% ATQ Base** | **+15% de daño extra** contra objetivos que tengan Marca Elemental o Quemadura activa. |
+| 💦 **AGUA** | **+15% HP Máximo** | **+25% de potencia y absorción** a todos los escudos otorgados y generados (Báculo, Baterías, Reacciones). |
+| 🪨 **TIERRA** | **+25% HP Máximo** | **-10% de mitigación pasiva permanente** a todo el daño recibido. |
+| 💨 **AIRE** | **+15% ATQ Base** | **+2 Velocidad (SPD) fija** permanente y **+10% de Probabilidad de Esquiva**. |
+| 👑 **LEGENDARIO** | **Afinidad Universal** | **+25% ATQ Base y +15% HP Máximo** a cualquier robot sin importar su elemento. Daño 1.15x sin penalizaciones. |
 
 ### Tipos de Armas y Mejoras (+1)
 
@@ -125,11 +142,11 @@ En los **Campamentos / Talleres (⛺)** puedes **Forjar** para subir un arma a *
 | :--- | :---: | :--- | :--- |
 | **Daga** | 🗡️ | **25% de probabilidad** de asestar un segundo golpe consecutivo. | **40% de probabilidad** de doble ataque consecutivo. |
 | **Hacha** | 🪓 | **+10% ATQ base pasivo**, **20% prob. de Rompearmaduras** (-25% DEF, 2T) y **perfora 50%** de barreras/defensas.<br>**Verdugo:** +35% Daño a enemigos con $\le 40\%$ HP. | **Perfora 75%** de defensas.<br>**Verdugo Potenciado:** **+45% Daño** a enemigos con $\le 40\%$ HP.<br>Conserva el +10% ATQ y 20% Rompearmaduras. |
-| **Báculo** | 🪄 | Repara automáticamente un **5% del HP Máximo** del portador al final de cada turno (potenciado por Afinidad de Agua). | Repara un **7% del HP Máximo** del portador + **cura 5% HP al aliado más herido**.<br>**20% prob. de reducir 1 turno de Cooldown** a una habilidad aliada o propia. |
+| **Báculo** | 🪄 | Al finalizar su turno, genera un **Escudo de plasma (10% HP Máx)** que absorbe daño antes de tocar la vida (potenciado +25% por Afinidad de Agua). | Genera **Escudo del 15% HP Máx** + otorga **micro-escudo (8% HP)** al aliado más herido.<br>**20% prob. de reducir 1 turno de Cooldown** a una habilidad aliada o propia. |
 | **Espada** | ⚔️ | **+15% Daño base pasivo** + **10% de Golpe Crítico en Básicos**. Críticos activan Racha (+10% ATQ). | **+30% Daño base pasivo** + **20% de Golpe Crítico en Básicos**. Críticos activan Racha (+10% ATQ). |
 
 > [!NOTE]
-> Cualquier arma no deseada en el inventario puede ser **Desmantelada** por **+20 Chatarra (⚙️)**.
+> Cualquier arma no deseada en el inventario puede ser **Desmantelada** por **+20 Chatarra (⚙️)** (o +100 ⚙️ si es Legendaria).
 
 ### Objetos Consumibles
 
@@ -144,7 +161,59 @@ En los **Campamentos / Talleres (⛺)** puedes **Forjar** para subir un arma a *
 
 ---
 
-## 6. Mochila y Centro de Gestión Táctica
+## 6. Sistema de Reliquias y Artefactos Pasivos (34 Reliquias)
+
+Las **Reliquias** son artefactos pasivos obtenidos como botín tras combates Élite, cofres de tesoro o eventos narrativos. Se activan permanentemente durante toda la expedición y se visualizan en la barra superior del HUD (`💎`).
+
+### A. Sinergias Elementales (10 Reliquias)
+* **🔥 Catalizador Térmico (Raro):** Al detonar *Vaporización* o *Tormenta Ígnea*, propaga Quemadura (3T) a todos los demás enemigos vivos.
+* **🧊 Prisma de Escarcha (Común):** *Ventisca* reduce la precisión rival un -35% (en vez de -20%) y dura 3 turnos.
+* **⚡ Condensador de Plasma (Raro):** Al detonar *Choque Térmico*, descarga 20 de daño directo a todos los enemigos.
+* **🌋 Fisión Volcánica (Raro):** *Erupción* reduce la defensa un -40% (en vez de -25%) y salpica Marca de Fuego a los demás rivales.
+* **💎 Geoda de Resonancia (Común):** *Cristalización* genera un escudo del 35% del HP actual (en vez de 25%).
+* **🌿 Sifón Biotelúrico (Épico):** *Erosión* drena y cura el 50% del daño infligido (en vez de 30%).
+* **🌪️ Turbina Torbellino (Raro):** *Tormenta de Arena* aplica Ceguera por 2 turnos y reduce la Velocidad rival en -3.
+* **💉 Inyector de Nanomarcas (Épico):** Al inicio del combate, inyecta una Marca Elemental aleatoria (3T) a todos los enemigos.
+* **🔍 Lente de Refracción (Común):** Todas las Reacciones Elementales infligen un +15% de daño adicional.
+* **🔋 Batería Sobrecargada (Común):** Inicia cada combate con +25% de energía Overdrive en todos los aliados.
+
+### B. Armas & Maestrías (6 Reliquias)
+* **🗡️ Funda Holográfica (Común):** Las Dagas ganan un +15% de probabilidad de ataque doble adicional.
+* **🪓 Muela de Diamante (Común):** Las Hachas perforan un +20% de defensas y barreras adicional.
+* **🪄 Bucle de Retroalimentación (Raro):** Los Báculos tienen un 35% de probabilidad de reducir 1 CD a una habilidad al activarse.
+* **⚔️ Afilador de Neutrones (Raro):** La racha de Espadas otorga +25% ATQ en lugar de +10%.
+* **👑 Corona de Nanotubos (Épico):** Las Armas Legendarias otorgan un +15% de daño base y +10% de crítico adicional.
+* **🎯 Chip de Puntería Láser (Común):** +15% de Precisión base. Ataques a enemigos con estados alterados nunca fallan.
+
+### C. Supervivencia & Blindaje (6 Reliquias)
+* **🛡️ Blindaje de Nanografeno (Raro):** Inicia cada combate con un Escudo del 15% HP Máx por 2 turnos en todo el escuadrón.
+* **🦅 Protocolo Fénix (Legendario):** Una vez por expedición, previene la muerte fatal de un aliado: revive con 1 HP y Barrera de Plasma 1T.
+* **🧲 Deflector Reflectante (Raro):** Al estar en modo *Defender*, refleja el 30% del daño recibido al atacante.
+* **🌵 Manto de Espinas Reactivas (Común):** Cuando un enemigo golpea a un robot protegido por *Coraza de Espinas*, sufre Rompearmaduras (-25% DEF, 2T).
+* **💧 Condensador de Rocío (Raro):** Cuando se rompe un escudo de *Rocío Protector*, cura un 10% del HP Máx al portador.
+* **⚡ Aislante Electroestático (Común):** El escuadrón es totalmente inmune al estado de Aturdimiento (STUN) y Cero Absoluto.
+
+### D. Velocidad & Iniciativa (4 Reliquias)
+* **🚀 Propulsor de Iones (Común):** +2 Velocidad (SPD) fija permanente a todos los miembros del escuadrón.
+* **⏱️ Cronómetro de Sobredrive (Legendario):** Cuando un aliado derrota a un enemigo, obtiene inmediatamente un turno adicional gratuito.
+* **⚡ Batería Cinética (Raro):** Cada turno que un aliado no reciba daño, gana +5% de ATQ acumulativo (máx. +25%).
+* **💨 Módulo de Asalto Rápido (Común):** En la primera ronda del combate, todo el escuadrón inflige un +20% de daño.
+
+### E. Economía & Taller (4 Reliquias)
+* **🧲 Imán de Chatarra (Común):** +35% de Chatarra obtenida en todas las victorias de combate.
+* **💳 Tarjeta de Acceso VIP (Raro):** -25% de descuento en todos los artículos de las Tiendas de Mercado Negro.
+* **🔨 Kit de Forja Avanzada (Épico):** Permite realizar 2 operaciones en cada Taller de Reparación (en vez de 1).
+* **📈 Microprocesador Cuántico (Épico):** Duplica la ganancia de Experiencia (XP) de todo el escuadrón (+100% XP).
+
+### F. Reliquias Corruptas (4 Reliquias de Alto Riesgo)
+* **☣️ Núcleo Inestable (Corrupta):** +35% de Daño a todo el escuadrón, pero reciben un +15% de daño de todos los ataques.
+* **☣️ Pacto del Desguazador (Corrupta):** Duplica (+100%) toda la chatarra ganada y forjar armas es gratis, pero los talleres no pueden curar al equipo.
+* **☣️ Sobrecarga Cuántica (Corrupta):** Las habilidades especiales reducen su Cooldown en 1 turno, pero el atacante pierde un 5% de HP actual al usarlas.
+* **☣️ Prisma Maldito (Corrupta):** +25% de Probabilidad Crítica global, pero reduce la Precisión del escuadrón en un -15%.
+
+---
+
+## 7. Mochila y Centro de Gestión Táctica
 
 La ventana modal de **Mochila y Escuadrón (`🎒`)** ofrece control total sobre las unidades y recursos:
 
@@ -162,7 +231,7 @@ La ventana modal de **Mochila y Escuadrón (`🎒`)** ofrece control total sobre
 
 ---
 
-## 7. Navegación Multitorre y Nodos Sectoriales
+## 8. Navegación Multitorre y Nodos Sectoriales
 
 La incursión opera bajo un sistema de progresión roguelike estricto. **Toda expedición comienza obligatoriamente en el Piso 1 de la Torre 1**. Cada sector consta de 10 pisos con bifurcaciones tácticas:
 
@@ -202,7 +271,7 @@ Para garantizar la integridad competitiva y evitar manipulaciones en el cliente:
 
 ---
 
-## 8. Decisiones Post-Combate
+## 9. Decisiones Post-Combate
 
 Al neutralizar a un escuadrón rival:
 * **🤖 Reclutar (Normal):** Si el enemigo es estándar, se une garantizado al equipo al 50% de HP (máximo 3 miembros).
